@@ -27,7 +27,7 @@ import { pathToFileURL } from 'node:url';
 import puppeteer from 'puppeteer';
 import { ROOT, readAzureKey, synthesize, pace } from './azure.mjs';
 import { makeCompanion, placeInCourse, MAX_PAGE_STEPS } from './companion.mjs';
-import { readElevenKey, synthesizeEleven } from './elevenlabs.mjs';
+import { readElevenKey, synthesizeEleven, synthesizeElevenTimed } from './elevenlabs.mjs';
 import { makeFramer } from './frame.mjs';
 
 const PORT = 8123;
@@ -95,12 +95,12 @@ async function speech(speaker, text, pins = null) {
       }
       return file;
     };
-    // A voice with `gap` says each sentence on its own and joins them with that
-    // much quiet, so a narrator does not run one sentence into the next (Ken,
-    // November 7 2026: "put more natural, relaxed delays between sentences").
-    // A title's full stop ("Ms. Marvel") is not the end of a sentence.
-    // A colon, semicolon or dash inside a sentence gets a shorter pause (`clause`),
-    // so "nobody talks about: about four seconds" is not run together.
+    // A voice with `gap` pauses that long between sentences, so a narrator does not
+    // run one sentence into the next (Ken, November 7 2026: "put more natural,
+    // relaxed delays between sentences"). A title's full stop ("Ms. Marvel") is not
+    // the end of a sentence. A colon, semicolon or dash inside a sentence gets a
+    // shorter pause (`clause`), so "nobody talks about: about four seconds" is not run
+    // together.
     const kept = text.replace(/\b(Ms|Mr|Mrs|Dr|St)\./g, '$1\u0001');
     const sentences = eleven.gap
       ? kept.match(/[^.?!]+[.?!]+["'\u2019\u201d]*\s*|[^.?!]+$/g).map((x) => x.replace(/\u0001/g, '.').trim()).filter(Boolean)
@@ -110,20 +110,19 @@ async function speech(speaker, text, pins = null) {
       const clauses = eleven.clause ? sen.split(/(?<=[:;])\s+|\s+(?=[\u2014\u2013]\s)/).map((c) => c.trim()).filter(Boolean) : [sen];
       for (const [j, c] of clauses.entries()) pieces.push({ text: c, before: j ? eleven.clause : i ? eleven.gap : 0 });
     }
+    // A voice with `oneTake` says each whole line in one recording, told the
+    // speaker's lines either side of it, and the take is cut at its pauses. Said
+    // piece by piece, each sentence came out sounding as though it had been
+    // recorded in a different room (Ken, November 7 2026). `loudness` (LUFS) evens
+    // every line to one level.
+    if (eleven.oneTake) return oneTake(speaker, eleven, text, pieces);
     if (pieces.length < 2) return one(text);
     const inputs = [];
     for (const p of pieces) {
       if (p.before) inputs.push(silence(p.before, path.join(cacheDir, `gap-${p.before.toFixed(2)}-44k.mp3`), 44100));
       inputs.push(await one(p.text));
     }
-    const id = `joined:${inputs.join('|')}`;
-    const file = path.join(cacheDir, `${crypto.createHash('sha1').update(id).digest('hex').slice(0, 16)}.mp3`);
-    if (!fs.existsSync(file)) {
-      run(FFMPEG, ['-y', '-v', 'error', ...inputs.flatMap((f) => ['-i', f]),
-        '-filter_complex', `${inputs.map((_, i) => `[${i}:a]`).join('')}concat=n=${inputs.length}:v=0:a=1[a]`,
-        '-map', '[a]', '-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100', file]);
-    }
-    return file;
+    return joinAudio(inputs);
   }
   const voice = cast[speaker]?.azure;
   if (!voice) throw new Error(`No voice for speaker "${speaker}" in voices.json`);
@@ -623,6 +622,82 @@ function srtTime(s) {
   return `${p(Math.floor(ms / 3600000))}:${p(Math.floor(ms / 60000) % 60)}:${p(Math.floor(ms / 1000) % 60)},${p(ms % 1000, 3)}`;
 }
 
+const sha16 = (s) => crypto.createHash('sha1').update(s).digest('hex').slice(0, 16);
+
+// Joins audio files end to end into one cached file.
+function joinAudio(inputs) {
+  const file = path.join(cacheDir, `${sha16(`joined:${inputs.join('|')}`)}.mp3`);
+  if (!fs.existsSync(file)) {
+    run(FFMPEG, ['-y', '-v', 'error', ...inputs.flatMap((f) => ['-i', f]),
+      '-filter_complex', `${inputs.map((_, i) => `[${i}:a]`).join('')}concat=n=${inputs.length}:v=0:a=1[a]`,
+      '-map', '[a]', '-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100', file]);
+  }
+  return file;
+}
+
+// Each speaker's script lines in the order they are heard (filled in by main), so
+// a take can be told the lines said just before and after it.
+const linesBySpeaker = new Map();
+
+// One recording of a whole line, then cut at its pieces with the set pauses put
+// between them. ElevenLabs reports when each character is said; each piece is cut
+// a little before its first character and a little after its last, so the pause
+// heard is the set one, not whatever pause the voice happened to leave.
+async function oneTake(speaker, eleven, text, pieces) {
+  const order = linesBySpeaker.get(speaker) || [];
+  const at = order.indexOf(text);
+  const around = at < 0 ? {} : { previous: order[at - 1] || '', next: order[at + 1] || '' };
+  const hash = sha16(`take:${eleven.id}:${eleven.model || ''}:${JSON.stringify(eleven.settings || null)}:${eleven.speed ?? ''}`
+    + `:${eleven.seed ?? ''}:${eleven.loudness ?? ''}:${around.previous || ''}|${around.next || ''}\n${text}`);
+  const take = path.join(cacheDir, `${hash}-take.mp3`);
+  const timesFile = path.join(cacheDir, `${hash}-take.json`);
+  if (!fs.existsSync(take) || !fs.existsSync(timesFile)) {
+    elevenKey ??= readElevenKey();
+    const { audio, alignment } = await synthesizeElevenTimed(elevenKey, eleven, text, around);
+    const raw = `${take}.raw.mp3`;
+    fs.writeFileSync(raw, audio);
+    if (eleven.loudness == null) fs.renameSync(raw, take);
+    else { evenLoudness(raw, take, eleven.loudness); fs.unlinkSync(raw); }
+    fs.writeFileSync(timesFile, JSON.stringify(alignment));
+  }
+  if (pieces.length < 2) return take;
+  const al = JSON.parse(fs.readFileSync(timesFile, 'utf8'));
+  if (al.characters.length !== text.length) throw new Error(`STOPPING - ElevenLabs timed ${al.characters.length} characters of a ${text.length}-character line: ${text}`);
+  const spans = [];
+  let from = 0;
+  for (const p of pieces) {
+    const s = text.indexOf(p.text, from);
+    if (s < 0) throw new Error(`STOPPING - could not find "${p.text}" in its line`);
+    spans.push([al.character_start_times_seconds[s], al.character_end_times_seconds[s + p.text.length - 1]]);
+    from = s + p.text.length;
+  }
+  const total = durationOf(take);
+  const inputs = [];
+  for (const [k, p] of pieces.entries()) {
+    const lo = k ? Math.max((spans[k - 1][1] + spans[k][0]) / 2, spans[k][0] - 0.1) : 0;
+    const hi = k < pieces.length - 1 ? Math.min((spans[k][1] + spans[k + 1][0]) / 2, spans[k][1] + 0.15) : total;
+    const seg = path.join(cacheDir, `${hash}-take-${k}.mp3`);
+    if (!fs.existsSync(seg)) {
+      run(FFMPEG, ['-y', '-v', 'error', '-i', take, '-ss', lo.toFixed(3), '-to', hi.toFixed(3),
+        '-ar', '44100', '-ac', '1', '-c:a', 'libmp3lame', '-b:a', '128k', seg]);
+    }
+    if (p.before) inputs.push(silence(p.before, path.join(cacheDir, `gap-${p.before.toFixed(2)}-44k.mp3`), 44100));
+    inputs.push(seg);
+  }
+  return joinAudio(inputs);
+}
+
+// Two passes of ffmpeg's loudness filter: measure, then set the file to `target`
+// LUFS with one straight gain change, so a quiet piece and a loud one end up level.
+function evenLoudness(src, out, target) {
+  const filter = `loudnorm=I=${target}:TP=-2:LRA=11`;
+  const r = spawnSync(FFMPEG, ['-hide_banner', '-i', src, '-af', `${filter}:print_format=json`, '-f', 'null', '-'], { encoding: 'utf8' });
+  const m = JSON.parse(r.stderr.slice(r.stderr.lastIndexOf('{'), r.stderr.lastIndexOf('}') + 1));
+  run(FFMPEG, ['-y', '-v', 'error', '-i', src, '-af',
+    `${filter}:measured_I=${m.input_i}:measured_TP=${m.input_tp}:measured_LRA=${m.input_lra}:measured_thresh=${m.input_thresh}:offset=${m.target_offset}:linear=true`,
+    '-ar', '44100', '-ac', '1', '-c:a', 'libmp3lame', '-b:a', '128k', out]);
+}
+
 // A silent stretch of audio, for a step that shows something without a word said
 // (a caption-only moment in the demo).
 function silence(seconds, file, rate = 48000) {
@@ -665,6 +740,11 @@ async function main() {
   const nextLine = next ? `Next: ${next.title}${/[.?!]$/.test(next.title) ? '' : '.'}` : '';
   const allSteps = [...script.steps, ...endingSteps];
   for (const step of allSteps) if (typeof step.say === 'string') step.say = step.say.replace('{next}', nextLine).trim();
+  for (const step of allSteps) {
+    if (typeof step.say !== 'string') continue;
+    if (!linesBySpeaker.has(step.speaker)) linesBySpeaker.set(step.speaker, []);
+    linesBySpeaker.get(step.speaker).push(step.say);
+  }
   for (const step of allSteps) if (typeof step.say === 'string') await speech(step.speaker, step.say, pinsFor(step, step.say));
 
   const server = script.pictures ? null : await startServer();

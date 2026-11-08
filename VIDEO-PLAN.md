@@ -212,14 +212,14 @@ That makes two files in `Videos/Demo`:
 
 | File | Ending | Length |
 |---|---|---|
-| `Conversant AAC Demo.mp4` | Where to find Conversant. No mention of the beta. Use this one at ATIA and for promotion. | 10:43 |
-| `Conversant AAC Demo - Beta.mp4` | Asks for testers and says we cover the AI during the beta. | 10:58 |
+| `Conversant AAC Demo.mp4` | Where to find Conversant. No mention of the beta. Use this one at ATIA and for promotion. | 10:57 |
+| `Conversant AAC Demo - Beta.mp4` | Asks for testers and says we cover the AI during the beta. | 11:16 |
 
 Everything except the ending is shared, so the two can't drift apart. Each has a caption file (`.srt`) beside it.
 
 **How it differs from the how-to videos:**
 - **Voices** come from ElevenLabs: Ken's own cloned voice narrates, Eric is Marc, Charlie is Ramon, and River is the coffee-shop barista in the practice scene. The key is in `.elevenlabs-key` (git ignores it).
-- **Ken narrates the demos too (Ken, November 7 2026).** Nothing is printed under the picture: the narrator says what is about to happen, then the app does it. The voices are slowed a little (`speed` in the script) and the narrator's sentences are said one at a time with a pause between them (`gap`).
+- **Ken narrates the demos too (Ken, November 7 2026).** Nothing is printed under the picture: the narrator says what is about to happen, then the app does it. The voices are slowed a little (`speed` in the script) and the narrator's sentences are said one at a time with a pause between them (`gap`). Each narrator line is recorded in one take and then cut at its sentences, so the pauses can be set while the voice keeps one tone; recorded separately, each sentence sounded as though it came from a different room (`oneTake`). Every line is also evened to one loudness (`loudness`). **To stress a word, write it in capitals**: the tagline is "It speaks AS him, not FOR him." Capitals measurably lengthened "as" and "for" and took the stress off "him"; asterisks did not.
 - **The timing follows the real app.** The holding phrase starts two seconds after Ramon stops, and the options appear after the AI's real wait, never sooner than a second after the holding phrase ends.
 - **For the video only**, the script changes Marc's data as it loads (`adjustBackup`): one row each of Always, Flex and Context. (Marc no longer has a "Keep it short" goal anywhere; Ken removed it, November 7 2026.) Marc's Express Panel is also made taller than it ships, as a QWERTY user would, and the keyboard is set to on-screen so choosing a layout shows the keyboard. The backup file itself is unchanged.
 - **Marc is loaded from `Conference Demo/conversant-demo-marc.json`**, the same file used to set up a live demo.

@@ -38,8 +38,11 @@ async function settingsOf(key, id) {
 
 // Returns MP3 bytes. `voice` is { id, model, settings, speed }. `speed` (0.7 to
 // 1.2) slows or quickens the voice and keeps its other saved settings.
-export async function synthesizeEleven(key, voice, text) {
-  let settings = voice.settings || null;
+// `around` ({ previous, next }) is the text said just before and after this piece,
+// so a line said in pieces keeps one tone instead of each piece sounding as though
+// it was recorded somewhere else. `voice.seed` makes the same text come out the same.
+export async function synthesizeEleven(key, voice, text, around = {}) {
+  let settings = voice.settings ? { ...(await settingsOf(key, voice.id)), ...voice.settings } : null;
   if (voice.speed) settings = { ...(settings || await settingsOf(key, voice.id)), speed: voice.speed };
   const r = await fetch(`${API}/text-to-speech/${voice.id}?output_format=mp3_44100_128`, {
     method: 'POST',
@@ -48,10 +51,35 @@ export async function synthesizeEleven(key, voice, text) {
       text,
       model_id: voice.model || 'eleven_multilingual_v2',
       ...(settings ? { voice_settings: settings } : {}),
+      ...(voice.seed != null ? { seed: voice.seed } : {}),
+      ...(around.previous ? { previous_text: around.previous } : {}),
+      ...(around.next ? { next_text: around.next } : {}),
     }),
   });
   if (!r.ok) throw new Error(`ElevenLabs refused ${voice.name || voice.id}: ${r.status} ${(await r.text()).slice(0, 300)}`);
   return Buffer.from(await r.arrayBuffer());
+}
+
+// The same, plus the time each character is said, so one take of a whole line can
+// be cut at its sentences. Returns { audio: Buffer (MP3), alignment }.
+export async function synthesizeElevenTimed(key, voice, text, around = {}) {
+  let settings = voice.settings ? { ...(await settingsOf(key, voice.id)), ...voice.settings } : null;
+  if (voice.speed) settings = { ...(settings || await settingsOf(key, voice.id)), speed: voice.speed };
+  const r = await fetch(`${API}/text-to-speech/${voice.id}/with-timestamps?output_format=mp3_44100_128`, {
+    method: 'POST',
+    headers: headers(key, { 'Content-Type': 'application/json' }),
+    body: JSON.stringify({
+      text,
+      model_id: voice.model || 'eleven_multilingual_v2',
+      ...(settings ? { voice_settings: settings } : {}),
+      ...(voice.seed != null ? { seed: voice.seed } : {}),
+      ...(around.previous ? { previous_text: around.previous } : {}),
+      ...(around.next ? { next_text: around.next } : {}),
+    }),
+  });
+  if (!r.ok) throw new Error(`ElevenLabs refused ${voice.name || voice.id}: ${r.status} ${(await r.text()).slice(0, 300)}`);
+  const j = await r.json();
+  return { audio: Buffer.from(j.audio_base64, 'base64'), alignment: j.alignment };
 }
 
 // node scripts/video/elevenlabs.mjs  -> lists the voices this key can use.

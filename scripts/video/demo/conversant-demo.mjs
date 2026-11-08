@@ -170,7 +170,12 @@ export default {
     ep.sizes = { ...ep.sizes, shape: 'rows', contextRows: 1, flexRows: 1 };
   },
   voices: {
-    narrator: { name: 'Ken Hackbarth (cloned)', eleven: { id: 'UjNdMHnAjJXQL1HGr4ry', model: 'eleven_multilingual_v2', speed: 0.9, gap: 1.1, clause: 0.5 } },
+    // Each line said in one take (told the lines either side of it), steadier than
+    // the voice's saved settings (stability 0.5), one fixed seed, and every line
+    // evened to one loudness, so the narration sounds as though it was all recorded
+    // in the same room (Ken, November 7 2026).
+    narrator: { name: 'Ken Hackbarth (cloned)', eleven: { id: 'UjNdMHnAjJXQL1HGr4ry', model: 'eleven_multilingual_v2', speed: 0.9, gap: 1.1, clause: 0.5,
+      oneTake: true, settings: { stability: 0.7, similarity_boost: 0.8, style: 0, use_speaker_boost: true }, seed: 1107, loudness: -18 } },
     user: { name: 'Eric', eleven: { id: 'cjVigY5qzO86Huf0OWal', model: 'eleven_multilingual_v2', speed: 0.92 } },
     partner: { name: 'Charlie', eleven: { id: 'IKne3meq5aSn9XLyUdCD', model: 'eleven_multilingual_v2', speed: 0.92 } },
     barista: { name: 'River', eleven: { id: 'SAz9YHcvj6GT2YYXdXww', model: 'eleven_multilingual_v2', speed: 0.92 } },
@@ -338,7 +343,7 @@ export default {
     // ===== TO CAMERA 3: sounding like you =====
     narrate("The options sound like Marc because he has told the app about himself. He answers a set of questions at his own pace: his interests, what matters to him, his sense of humor, the people in his life, and the places he goes. For each person, he can say how he talks with them. For example, he's relaxed and brief with Ramon, and more careful with his doctor.",
       { card: { title: 'Sounding like you', lines: ['It speaks as him, not for him.'] } }),
-    narrate("He can also review a previous conversation and rewrite anything that wasn't how he'd say it. The more he does that for a particular person, the more the options sound like him with that person. And it won't make things up. If someone asks what Marc did last night, it won't invent an answer, and it won't answer trivia questions as though he knew the information. It speaks as him, not for him.",
+    narrate("He can also review a previous conversation and rewrite anything that wasn't how he'd say it. The more he does that for a particular person, the more the options sound like him with that person. And it won't make things up. If someone asks what Marc did last night, it won't invent an answer, and it won't answer trivia questions as though he knew the information. It speaks AS him, not FOR him.",
       { card: { title: 'Sounding like you', lines: ['Rewrite what didn’t sound like you.', 'It won’t invent your life, or answer trivia as though you knew it.'] } }),
 
     // ===== DEMO 3: where that comes from =====
