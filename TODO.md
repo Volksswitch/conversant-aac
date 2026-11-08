@@ -65,6 +65,30 @@ the one that quietly waits forever.
 
 ### iPhone: tapping a response says nothing and records nothing
 
+**Update November 8 2026, from three problem reports sent from the iPhone (version
+0.13.37).** Two causes found and fixed in the next version; one problem still open.
+
+- **Fixed: the device voice hung.** A holding phrase spoken while the microphone was open
+  never reported that it had finished, and the next sentence, started in the same instant
+  the stuck one was stopped, was dropped. Every device-voice phrase now has a time limit
+  (about twice normal speaking time), and nothing starts until 150 ms after a stop. A
+  give-up is counted as `device_voice_stuck` in the reports.
+- **Fixed: the listening tone came out over the user's reply.** On an iPhone or iPad the
+  tone now plays at the Listen tap and the microphone opens about half a second later.
+  Unchanged on every other device. Accepted cost: on those two devices, the first half
+  second of the partner's reply after an opener can be missed.
+- **Still open: Listen taps that "did not take".** The reports do not show it: every
+  Listen tap that reached the app worked first time. Two things seen instead: the iPhone's
+  own listening stopped by itself twice, and the first words took 20-25 seconds to appear
+  on both the iPhone's listening and Deepgram. Asked Ken whether the button stayed dark or
+  lit with nothing appearing, and whether he hears the tone when Listen turns on.
+- **Not yet verified on the iPhone.** Both fixes were checked in tests only.
+- **Decided (Ken, November 8 2026): an iPhone gets the iPad's recommendation.** Install it
+  as a Home Screen app and use a paid service for hearing, never the device's own. The
+  app's warning about Home Screen listening already shows on an iPhone. The documents say
+  nothing about iPhones yet; whatever is written for one must say this.
+
+
 **Raised November 1 2026, from Ken's remote test** on an iPhone 16 Pro, iOS 26.6.2,
 version 0.13.35, installed on the Home Screen, Deepgram hearing and voice. iPhone is not
 a supported platform; this was a first look.

@@ -1175,7 +1175,7 @@ export function setListenButtonState(listening) {
     // listen start, not on every restart. `capturing` still holds the PREVIOUS state
     // here (reassigned below). The on-screen half is the pulsing red Listen button
     // (.listening) set below — no screen-wide frame.
-    if (listening && !capturing) chime.playListenChime();
+    if (listening && !capturing) chime.onCaptureStarted();
 
     // Icon-only (Rule 4); the .listening (selected/red) state signals capture is
     // on (Rule 6 — a sticky action shown as a selected button).

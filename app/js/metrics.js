@@ -94,6 +94,9 @@ export const EV = {
     // The buttons
     COMMAND_BAR: 'command_bar',             // { button }
     PLACEHOLDER_SPOKEN: 'placeholder_spoken',
+    // The device's own voice never said it had finished a phrase, so the app gave up
+    // on it and moved on (Ken's iPhone, November 8 2026). Counted so a pattern shows.
+    DEVICE_VOICE_STUCK: 'device_voice_stuck',
 };
 
 // A duration is recorded as a timing (samples, so a median is possible) as well as a

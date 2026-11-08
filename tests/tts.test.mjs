@@ -179,3 +179,44 @@ test('speak() announces the display words and gives the voice the respelling', a
     assert.equal(heard.at(-1), 'Volksswitch');
     assert.equal(spokenTexts.at(-1), 'Folks-switch');
 });
+
+// Ken's iPhone, November 8 2026. The device voice hung on a holding phrase (no end
+// was ever reported), and the next sentence, started in the same instant as the stuck
+// one was stopped, was dropped.
+test('a device-voice phrase that never finishes is given up on, and the next one is said', async () => {
+    const synth = window.speechSynthesis;
+    const realSpeak = synth.speak;
+    let stuckReported = 0;
+    tts.onDeviceVoiceStuck(() => { stuckReported++; });
+    // A phrase the engine accepts and never finishes.
+    synth.speak = function (u) { this.speaking = true; spokenTexts.push(u.text); };
+    resetSpoken();
+    const t0 = Date.now();
+    try {
+        await tts.speak('Hi');   // 2 characters, so the limit is 2.24 s
+    } finally {
+        synth.speak = realSpeak;
+    }
+    const waited = Date.now() - t0;
+    assert.ok(waited >= tts.stuckLimitMs('Hi') - 50, `gave up too early (${waited} ms)`);
+    assert.equal(stuckReported, 1, 'the give-up is counted');
+    assert.equal(tts.isSpeaking(), false, 'the app no longer thinks it is talking');
+    // The next phrase is said, after the short gap that follows a cancel.
+    await tts.speak('Next one');
+    assert.equal(spokenTexts.at(-1), 'Next one');
+    tts.onDeviceVoiceStuck(null);
+});
+
+test('nothing new starts in the same instant as a cancel', async () => {
+    resetSpoken();
+    tts.cancel();
+    const p = tts.speak('After a cancel');
+    assert.equal(spokenTexts.length, 0, 'not handed to the engine in the same instant');
+    await p;
+    assert.equal(spokenTexts.at(-1), 'After a cancel');
+});
+
+test('the time limit is generous: about twice normal speaking time', () => {
+    // A 60-character sentence takes about 4 seconds to say.
+    assert.ok(tts.stuckLimitMs('x'.repeat(60)) >= 8000);
+});

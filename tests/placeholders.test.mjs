@@ -829,7 +829,8 @@ test('CR-127: every request for cards sends a moved partner turn once', () => {
 
 test('CR-128-130: goodbye listening starts a new turn, partner-led practice counts, cancel restores a closing', () => {
     const oc = appSource.slice(appSource.indexOf('function offerClosings'));
-    assert.ok(oc.indexOf('metrics.turnBoundary()') < oc.indexOf('stt.startListening()'));
+    assert.ok(oc.indexOf('stt.startListening(') > 0);
+    assert.ok(oc.indexOf('metrics.turnBoundary()') < oc.indexOf('stt.startListening('));
     const ap = appSource.slice(appSource.indexOf('async function advancePracticePartner'));
     assert.ok(ap.indexOf('noteConversationStarted()') < ap.indexOf('++generationToken'));
     assert.match(appSource, /engine\.restorePhase\(\{ phase: back\.phase, mode: back\.mode \}\)/);

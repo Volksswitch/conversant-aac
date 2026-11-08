@@ -109,3 +109,24 @@ test('auto-resume ON: a start that could not sound does not use up the conversat
         chime.resetConversation();
     }
 });
+
+// Ken's iPhone, November 8 2026: on an iPhone or iPad the tone is played before the
+// microphone opens. The start of capture that follows must not play it a second time.
+test('a tone played before the microphone opens is not played again when capture starts', () => {
+    chime.setOncePerConversation(false);
+    chime.playBeforeListening();
+    assert.equal(chime.onCaptureStarted(), false, 'already played before the mic opened');
+    assert.equal(chime.onCaptureStarted(), true, 'the next ordinary start chimes as usual');
+});
+
+test('without the before-the-mic step, capture start chimes exactly as before', () => {
+    chime.setOncePerConversation(false);
+    assert.equal(chime.onCaptureStarted(), true);
+    assert.equal(chime.onCaptureStarted(), true);
+});
+
+test('the before-the-mic step obeys the once-per-conversation rule', () => {
+    chime.setOncePerConversation(true);
+    chime.onCaptureStarted();            // the conversation's one tone
+    assert.equal(chime.playBeforeListening(), 0, 'no tone, so no wait before the mic');
+});

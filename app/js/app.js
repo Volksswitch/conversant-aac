@@ -928,6 +928,9 @@ function initApp() {
     tts.onFallbackToBrowser((reason) => {
         storage.logError('voice', `Paid voice unavailable, used this device's voice instead: ${reason}`);
     });
+    // Counted, not shown: the app has already moved on, so there is nothing for the
+    // user to do, but a run of these in a report says the device voice is hanging.
+    tts.onDeviceVoiceStuck(() => metrics.event(metrics.EV.DEVICE_VOICE_STUCK));
 
     llm.onUsage((usage) => storage.addUsageTokens(usage));
 
@@ -2170,7 +2173,15 @@ function toggleListening() {
 // partner's words. The next silence checkpoint overwrites the pending entry with the
 // combined text, which is exactly what an uninterrupted pause already does.
 function resumePartnerCapture() {
-    stt.resumeListening();
+    stt.resumeListening({ delayMs: toneBeforeMic() });
+}
+
+// On an iPhone or iPad the listening tone is played BEFORE the microphone opens, and
+// the microphone waits for it (see chime.playBeforeListening): played afterwards, the
+// device held the tone back and let it out over the user's next reply. Everywhere else
+// this returns 0 and the tone plays when listening begins, exactly as before.
+function toneBeforeMic() {
+    return platform.isIOS() ? chime.playBeforeListening() : 0;
 }
 
 // Begin a new partner-capture session with a cleared transcript and options.
@@ -2198,7 +2209,7 @@ function startFreshListening() {
     // if this conversation's log already exists. Fire-and-forget (needs a granted
     // data folder; a no-op without one).
     storage.startConversationLog();
-    stt.startListening();
+    stt.startListening({ delayMs: toneBeforeMic() });
 }
 
 
@@ -2680,7 +2691,7 @@ function offerClosings() {
         metrics.turnBoundary();
         metrics.event(metrics.EV.LISTEN, { auto: true, status: 'start' });
         pendingPartnerHistoryIdx = -1;
-        stt.startListening();
+        stt.startListening({ delayMs: toneBeforeMic() });
     }
     const snap = engine.showClosings();
     ui.showEngineState(snap);

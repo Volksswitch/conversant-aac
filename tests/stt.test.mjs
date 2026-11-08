@@ -601,3 +601,26 @@ test('unsettled words are kept when the app goes to the background', async () =>
     assert.equal(stt.getCurrentTranscript(), 'I was going to the store later');
     stt.stopListening();
 });
+
+// Ken's iPhone, November 8 2026: on an iPhone or iPad the listening tone plays before
+// the microphone opens, so the microphone waits for it. A Stop during that wait must
+// cancel the open, or the microphone would come on while the app is speaking.
+test('a delayed open waits, and reports listening at once', async () => {
+    stt.startListening({ delayMs: 60 });
+    assert.equal(rec._started, false, 'the microphone is not open yet');
+    assert.equal(statuses.at(-1), 'listening', 'the button lights at once, as before');
+    await sleep(100);
+    assert.equal(rec._started, true, 'it opens once the tone has finished');
+});
+
+test('a stop during the wait cancels the delayed open', async () => {
+    stt.startListening({ delayMs: 60 });
+    stt.stopListening();
+    await sleep(100);
+    assert.equal(rec._started, false, 'the microphone never opened');
+});
+
+test('with no delay the microphone opens at once, as it always did', () => {
+    stt.startListening();
+    assert.equal(rec._started, true);
+});

@@ -33,7 +33,7 @@ export function isEnabled() { return enabled; }
 export function setOncePerConversation(on) { oncePerConversation = !!on; }
 
 // Called when a conversation starts or ends, so the next one chimes again.
-export function resetConversation() { playedThisConversation = false; }
+export function resetConversation() { playedThisConversation = false; handledAtOpen = false; }
 
 // Play the "now listening" cue: two short ascending notes — friendly and
 // unmistakable, distinct from the app's TTS. Called on capture start.
@@ -70,8 +70,38 @@ export function playListenChime() {
         playNote(t,        660, 0.20);  // E5
         playNote(t + 0.17, 880, 0.26);  // A5
         playedThisConversation = true;
+        lastSounded = true;
     } catch { /* audio unavailable — silent, never blocks capture */ }
     return true;
+}
+
+// ⚠ ON AN iPHONE OR iPAD THE TONE MUST FINISH BEFORE THE MICROPHONE OPENS (Ken's
+// iPhone, November 8 2026). Played the moment listening began, the tone was held back
+// by the device while the microphone had the sound, and came out when the microphone
+// closed - which is the instant the user taps a response option, so it played over the
+// first words of every reply. So on those devices the app plays the tone at the Listen
+// tap and opens the microphone CHIME_MS later. Everywhere else nothing changes: the
+// tone still plays when listening begins.
+export const CHIME_MS = 550;   // the two notes end at about 0.45 s, plus a margin
+let lastSounded = false;
+let handledAtOpen = false;
+
+/** Play the tone now, before the microphone opens. Returns how long to wait before
+ *  opening it: CHIME_MS if the tone sounded, 0 if it did not (turned off, already
+ *  played this conversation, or no audio). Either way the start of capture that
+ *  follows does not play it a second time. */
+export function playBeforeListening() {
+    handledAtOpen = true;
+    lastSounded = false;
+    playListenChime();
+    return lastSounded ? CHIME_MS : 0;
+}
+
+/** Capture has just started (the Listen button lit). Plays the tone unless it was
+ *  already played before the microphone opened. Returns whether it was allowed. */
+export function onCaptureStarted() {
+    if (handledAtOpen) { handledAtOpen = false; return false; }
+    return playListenChime();
 }
 
 // Bring the audio context up while a real user gesture is in hand, so the chime

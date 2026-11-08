@@ -301,11 +301,44 @@ function findVoice(voiceURI) {
     return synth.getVoices().find(v => v.voiceURI === uri) || null;
 }
 
+// ⚠ TWO iPHONE FAULTS IN THE DEVICE VOICE, found together (Ken's iPhone testing,
+// November 8 2026). A holding phrase started while the microphone was open never
+// reported that it had finished, so the app waited the full 8 seconds before it would
+// close the microphone. Then the user tapped a response option and NOTHING WAS SAID:
+// to start it, the app stopped the stuck phrase and spoke the new one in the same
+// instant, and the iPhone drops a sentence started that way. The second tap worked.
+//
+// (1) A GAP AFTER A CANCEL. Nothing new starts until CANCEL_GAP_MS after the last
+//     cancel. It costs nothing on the ordinary path, where there was nothing to cancel.
+// (2) A TIME LIMIT ON EVERY PHRASE. If a phrase has not reported its end well after
+//     it should have, it is treated as finished, so a stuck phrase cannot hold the
+//     microphone open, hold back the next sentence, or tell the echo filter the app is
+//     still talking. Deliberately generous (about twice normal speaking time, timed
+//     from when the sound actually starts): firing early is the opposite failure,
+//     where the app takes its own speech for the other person's.
+const CANCEL_GAP_MS = 150;
+const STUCK_BASE_MS = 2000;
+const STUCK_PER_CHAR_MS = 120;
+let lastSynthCancel = -Infinity;
+let onStuck = null;
+/** Called when the device voice is given up on (for the counts; never shown). */
+export function onDeviceVoiceStuck(cb) { onStuck = typeof cb === 'function' ? cb : null; }
+
+function cancelSynth() {
+    try { synth.cancel(); } catch { /* nothing to cancel */ }
+    lastSynthCancel = Date.now();
+}
+
+/** How long a phrase may run before it counts as stuck. Exported for the tests. */
+export function stuckLimitMs(text) {
+    return STUCK_BASE_MS + STUCK_PER_CHAR_MS * String(text || '').length;
+}
+
 // The browser's own voice. Kept as its own function because it is BOTH one of the
 // two providers and the fallback for the other one.
 function speakBuiltin(text, opts, myToken) {
     return new Promise((resolve) => {
-        if (synth.speaking) synth.cancel();
+        if (synth.speaking || synth.pending) cancelSynth();
         const utterance = new SpeechSynthesisUtterance(text);
         const voice = findVoice(opts.voiceURI);
         // Assigning a voice the engine rejects throws. It must not escape: this
@@ -317,7 +350,12 @@ function speakBuiltin(text, opts, myToken) {
         try {
             if (voice) utterance.voice = voice;
         } catch { /* fall through with the engine's default voice */ }
+        let done = false;
+        let watchdog = null;
         const finish = () => {
+            if (done) return;
+            done = true;
+            clearTimeout(watchdog);
             // Only report the end if no newer speak()/cancel() superseded this
             // utterance — otherwise we'd report "not speaking" mid-utterance.
             if (myToken === speakToken && speaking) {
@@ -326,15 +364,36 @@ function speakBuiltin(text, opts, myToken) {
             }
             resolve();
         };
+        const arm = () => {
+            clearTimeout(watchdog);
+            watchdog = setTimeout(() => {
+                if (done) return;
+                // Clear it out of the engine too, or a phrase that was only queued could
+                // play much later, out of nowhere. Only while it is still the current
+                // utterance: a newer one owns the engine now.
+                if (myToken === speakToken) cancelSynth();
+                try { if (onStuck) onStuck(text); } catch { /* counting must not break speech */ }
+                finish();
+            }, stuckLimitMs(text));
+        };
         utterance.onend = finish;
         utterance.onerror = finish;
-        // Same reasoning: if the engine refuses the utterance outright, report the
-        // end rather than leaving the speaking state latched on.
-        try {
-            synth.speak(utterance);
-        } catch {
-            finish();
-        }
+        utterance.onstart = arm;   // timed from when the sound actually begins
+        const start = () => {
+            // Superseded while waiting out the gap: say nothing.
+            if (myToken !== speakToken) { finish(); return; }
+            try { if (synth.paused) synth.resume(); } catch { /* not paused */ }
+            arm();
+            // Same reasoning: if the engine refuses the utterance outright, report the
+            // end rather than leaving the speaking state latched on.
+            try {
+                synth.speak(utterance);
+            } catch {
+                finish();
+            }
+        };
+        const wait = lastSynthCancel + CANCEL_GAP_MS - Date.now();
+        if (wait > 0) setTimeout(start, wait); else start();
     });
 }
 
@@ -444,7 +503,7 @@ function pronounce(text) {
 
 export function cancel() {
     speakToken++; // invalidate any pending utterance's finish handler
-    synth.cancel();
+    cancelSynth();
     // EVERY constructed backend, not just the current one: the provider can change
     // while an utterance is still playing, and a cancel that reached only the new
     // backend would leave the old one talking with nothing able to stop it.

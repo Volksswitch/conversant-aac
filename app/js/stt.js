@@ -781,9 +781,32 @@ function suspendSource() {
     try { recognition.stop(); } catch { /* not running */ }
 }
 
-function openSource() {
+// Bumped by every open and every stop, so a delayed open (below) that has been
+// overtaken does nothing.
+let openToken = 0;
+
+function openSource(delayMs = 0) {
     listeningIntent = true;
     suspendedForHidden = false;   // a deliberate (re)start clears any backgrounded state
+    const mine = ++openToken;
+    // ⚠ A DELAYED OPEN, for the listening tone on an iPhone or iPad (see
+    // chime.playBeforeListening): the tone has to finish before the microphone takes
+    // the sound. The intent is set NOW, so the app counts as listening and a Stop tap
+    // during the wait cancels the open rather than starting a second one. The built-in
+    // recognizer reports 'listening' now too, exactly as it did when it opened at once;
+    // a paid source still reports it itself once it is really up.
+    if (delayMs > 0) {
+        if (!externalSource && onStatusChange) onStatusChange('listening');
+        setTimeout(() => {
+            if (mine !== openToken || !listeningIntent || suspendedForHidden) return;
+            reallyOpen(true);
+        }, delayMs);
+        return;
+    }
+    reallyOpen(false);
+}
+
+function reallyOpen(alreadyReported) {
     // Counted for the paid services too, so a report can say how long they took to hear
     // anything (CR-160).
     noteListen('sessions');
@@ -799,14 +822,15 @@ function openSource() {
         return;
     }
     try { recognition.start(); } catch { /* already started */ }
-    if (onStatusChange) onStatusChange('listening');
+    if (!alreadyReported && onStatusChange) onStatusChange('listening');
 }
 
-// Begin a NEW partner turn: whatever was captured before is gone.
-export function startListening() {
+// Begin a NEW partner turn: whatever was captured before is gone. `delayMs` holds the
+// microphone back that long (the listening tone on an iPhone or iPad).
+export function startListening({ delayMs = 0 } = {}) {
     if (!recognition && !externalSource) return;
     resetTranscript();
-    openSource();
+    openSource(delayMs);
 }
 
 // Reopen the microphone on a turn that is STILL IN PROGRESS, keeping what the
@@ -824,14 +848,15 @@ export function startListening() {
 // response, asks for a pardon, or ends the conversation — never at a microphone
 // toggle. Each of those paths already calls resetTranscript() explicitly, so they
 // are unaffected by this split.
-export function resumeListening() {
+export function resumeListening({ delayMs = 0 } = {}) {
     if (!recognition && !externalSource) return;
-    openSource();
+    openSource(delayMs);
 }
 
 export function stopListening() {
     if (!recognition && !externalSource) return;
     listeningIntent = false;
+    openToken++;                  // a delayed open still waiting must not happen
     suspendedForHidden = false;   // a deliberate stop outranks a backgrounded suspend
     openedAt = 0;                 // the run is over; the next Listen starts a new clock
     clearSilenceTimer();
