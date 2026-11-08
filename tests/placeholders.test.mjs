@@ -1234,3 +1234,28 @@ test('a pardon at rest is spoken but not recorded', () => {
     assert.doesNotMatch(branch, /logSpokenUserTurn|engine\.pardon/);
     assert.ok(rest < body.indexOf('logSpokenUserTurn('), 'and it comes before anything is recorded');
 });
+
+// Ken's iPhone, November 8 2026: he added his key from the start-up notice, closed
+// Settings, and was asked for the key again. Both ways of closing Settings must leave
+// the notice once a key is set.
+test('closing Settings with a key set leaves the API-key notice, by either route', () => {
+    const calls = appSource.match(/leaveKeyNoticeIfAnswered\(\);/g) || [];
+    assert.ok(calls.length >= 2, 'the Close button and Escape both check');
+    const fn = appSource.slice(appSource.indexOf('function leaveKeyNoticeIfAnswered'));
+    assert.ok(fn.indexOf('loadApiKey') < fn.indexOf('finishStart()'));
+});
+
+// Ken, November 8 2026: the voice list read as an error when it sat below all five
+// services. Each one now sits directly under its own service's choice.
+test('each speaking-voice list sits directly under its own service choice', () => {
+    const html = readFileSync(new URL('../app/index.html', import.meta.url), 'utf8');
+    const pairs = { builtin: 'builtinVoiceRow', azure: 'azureVoiceRow', google: 'googleVoiceRow',
+        deepgram: 'auraRow', elevenlabs: 'elevenlabsVoiceRow' };
+    for (const [value, row] of Object.entries(pairs)) {
+        const radio = html.indexOf(`name="ttsProvider" value="${value}"`);
+        const after = html.slice(radio);
+        const nextRadio = after.indexOf('name="ttsProvider"', 10);
+        const rowAt = after.indexOf(`id="${row}"`);
+        assert.ok(rowAt > 0 && (nextRadio < 0 || rowAt < nextRadio), `${row} follows the ${value} choice`);
+    }
+});

@@ -3602,6 +3602,9 @@ dialog select {
    the same reason as the key rows: an id list only hides the rows somebody listed, and
    a new service's picker would otherwise stay on screen next to the one in use. */
 .voice-row[hidden] { display: none; }
+/* A voice list sitting under its service's choice (Ken, November 8 2026) is indented
+   so it reads as belonging to that choice rather than as the next item in the list. */
+.radio-row > .voice-row { margin-left: 1.75rem; margin-bottom: 0.4rem; }
 
 /* ⚠ THE ANTHROPIC KEY ROW HAS NO RULES OF ITS OWN, and used to have five. It is the
    same control as the five paid-service rows above — a key field, "Paste", "Test" —

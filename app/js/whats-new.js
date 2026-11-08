@@ -23,6 +23,8 @@ import * as platform from './platform.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.13.38": [
+    "On the Speech tab, the voice list and its Test button now appear right under the speech service you chose, instead of below all of them.",
+    "If the app asks for an API key when you start it, adding the key in Settings and closing Settings now takes you straight into the app. Before, it asked for the key again.",
     {
       "for": "ipad",
       "note": "When you use the iPad's own voice, a response you tap is now said on the first tap. Before, a holding phrase could get stuck, and the next thing you tapped was lost."

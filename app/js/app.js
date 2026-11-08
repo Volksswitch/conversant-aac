@@ -898,6 +898,7 @@ function initApp() {
         keyboard.hideKeyboard();
         hostExpressPanel(false);   // Escape must return the panel to the dock too
         refreshPhraseAudio();
+        leaveKeyNoticeIfAnswered();
     });
     // Release number with the build appended (Ken, July 30 2026) — "0.5.99 ·
     // 9e73383". A bug report needs the exact code, not just the version: several
@@ -2079,6 +2080,16 @@ function afterListeningNotice() {
     } else {
         finishStart();
     }
+}
+
+// The API-key notice sends the user to Settings to add a key. Closing Settings with a
+// key now set means the notice has been answered, so go on into the app rather than
+// show the same request again (Ken's iPhone, November 8 2026: he added the key, closed
+// Settings and was asked for it again). Without a key it stays, so Close still works.
+function leaveKeyNoticeIfAnswered() {
+    const prompt = document.getElementById('apiKeyPrompt');
+    if (!prompt || prompt.hidden) return;
+    if ((storage.loadApiKey() || '').trim()) finishStart();
 }
 
 // Leave the pre-start sequence and enter the conversation: hide the start block and
@@ -10018,6 +10029,7 @@ function openSettings() {
         resetSpokenHelp();
         dialog.close();
         refreshPhraseAudio();
+        leaveKeyNoticeIfAnswered();
     };
 }
 

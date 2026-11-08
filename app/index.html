@@ -616,59 +616,60 @@
                          better ones does not make them reachable from a web app. -->
                     <div class="setting-group" data-help="yourVoice">
                         <label>Your speaking voice</label>
+                        <!-- Each service's voice list and Test button sit directly under that
+                             service's choice, and only the chosen one is shown, so the voice
+                             always appears under the service it belongs to (Ken, November 8
+                             2026: with the list below all five, it read as an error). -->
                         <div class="radio-row" role="radiogroup" aria-label="Your speaking voice">
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="builtin"> This device's voices (free)</label>
+                            <div id="builtinVoiceRow" class="voice-row">
+                                <label for="voiceSelect">Voice</label>
+                                <select id="voiceSelect"></select>
+                                <!-- This device's joke voices are hidden by default: on an
+                                     iPad they are 19 of the 68 on offer, so they are mostly
+                                     a longer scroll on the way to a real voice. Reversible,
+                                     because someone may actually want Whisper. -->
+                                <label class="checkbox-label"><input type="checkbox" id="showNoveltyVoicesInput"> Show this device's joke voices (Bahh, Boing, Zarvox…)</label>
+                                <div class="profiles-row profiles-actions">
+                                    <button id="testVoiceBtn" type="button" class="voice-test-btn">Test</button>
+                                </div>
+                            </div>
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="azure"> Azure voice (paid)</label>
+                            <div id="azureVoiceRow" class="voice-row" hidden>
+                                <label for="azureVoiceSelect">Azure voice</label>
+                                <select id="azureVoiceSelect"></select>
+                                <div class="profiles-row profiles-actions">
+                                    <button id="testAzureVoiceBtn" type="button" class="voice-test-btn">Test</button>
+                                </div>
+                                <p id="azureVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
+                            </div>
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="google"> Google Cloud voice (paid)</label>
+                            <div id="googleVoiceRow" class="voice-row" hidden>
+                                <label for="googleVoiceSelect">Google Cloud voice</label>
+                                <select id="googleVoiceSelect"></select>
+                                <div class="profiles-row profiles-actions">
+                                    <button id="testGoogleVoiceBtn" type="button" class="voice-test-btn">Test</button>
+                                </div>
+                                <p id="googleVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
+                            </div>
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="deepgram"> Deepgram voice (paid)</label>
+                            <div id="auraRow" class="voice-row" hidden>
+                                <label for="auraVoiceSelect">Deepgram voice</label>
+                                <select id="auraVoiceSelect"></select>
+                                <div class="profiles-row profiles-actions">
+                                    <button id="testAuraVoiceBtn" type="button" class="voice-test-btn">Test</button>
+                                </div>
+                                <p id="auraVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
+                            </div>
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="elevenlabs"> ElevenLabs voice (paid)</label>
-                        </div>
-                        <!-- Only the picker for the chosen backend is shown. Showing
-                             both at once is what made the voice settings read as
-                             duplicated. -->
-                        <div id="builtinVoiceRow" class="voice-row">
-                            <label for="voiceSelect">Voice</label>
-                            <select id="voiceSelect"></select>
-                            <!-- This device's joke voices are hidden by default: on an
-                                 iPad they are 19 of the 68 on offer, so they are mostly
-                                 a longer scroll on the way to a real voice. Reversible,
-                                 because someone may actually want Whisper. -->
-                            <label class="checkbox-label"><input type="checkbox" id="showNoveltyVoicesInput"> Show this device's joke voices (Bahh, Boing, Zarvox…)</label>
-                            <div class="profiles-row profiles-actions">
-                                <button id="testVoiceBtn" type="button" class="voice-test-btn">Test</button>
+                            <div id="elevenlabsVoiceRow" class="voice-row" hidden>
+                                <label for="elevenlabsVoiceSelect">ElevenLabs voice</label>
+                                <select id="elevenlabsVoiceSelect"></select>
+                                <div class="profiles-row profiles-actions">
+                                    <button id="testElevenlabsVoiceBtn" type="button" class="voice-test-btn">Test</button>
+                                </div>
+                                <p id="elevenlabsVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                             </div>
-                        </div>
-                        <div id="auraRow" class="voice-row" hidden>
-                            <label for="auraVoiceSelect">Deepgram voice</label>
-                            <select id="auraVoiceSelect"></select>
-                            <div class="profiles-row profiles-actions">
-                                <button id="testAuraVoiceBtn" type="button" class="voice-test-btn">Test</button>
-                            </div>
-                            <p id="auraVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
-                        </div>
-                        <div id="azureVoiceRow" class="voice-row" hidden>
-                            <label for="azureVoiceSelect">Azure voice</label>
-                            <select id="azureVoiceSelect"></select>
-                            <div class="profiles-row profiles-actions">
-                                <button id="testAzureVoiceBtn" type="button" class="voice-test-btn">Test</button>
-                            </div>
-                            <p id="azureVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
-                        </div>
-                        <div id="googleVoiceRow" class="voice-row" hidden>
-                            <label for="googleVoiceSelect">Google Cloud voice</label>
-                            <select id="googleVoiceSelect"></select>
-                            <div class="profiles-row profiles-actions">
-                                <button id="testGoogleVoiceBtn" type="button" class="voice-test-btn">Test</button>
-                            </div>
-                            <p id="googleVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
-                        </div>
-                        <div id="elevenlabsVoiceRow" class="voice-row" hidden>
-                            <label for="elevenlabsVoiceSelect">ElevenLabs voice</label>
-                            <select id="elevenlabsVoiceSelect"></select>
-                            <div class="profiles-row profiles-actions">
-                                <button id="testElevenlabsVoiceBtn" type="button" class="voice-test-btn">Test</button>
-                            </div>
-                            <p id="elevenlabsVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
                     </div>
                     <div class="setting-group" data-help="practicePartnerVoice">
