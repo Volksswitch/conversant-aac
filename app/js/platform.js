@@ -118,12 +118,16 @@ export function iosBrowserShell() {
  * warn-don't-block note at the top of this file).
  */
 
-// Shared by both measured-unreliable cases. Phrased as an invitation to try,
-// because the button is live: the user finds out in ten seconds, and if Safari has
-// improved they get listening rather than a refusal citing a stale measurement.
-const IOS_TRY_ANYWAY =
-    'On the iPad we tested, listening started but never heard anything. Try it — ' +
-    'if nothing appears when the other person speaks, open Conversant in Safari instead.';
+// Says "iPhone or iPad" because both get it (Ken, November 8 2026). The Home Screen
+// remedy points at a paid service rather than at Safari: installing to the Home Screen
+// is the recommended way to run it on both (Ken, October 11 and November 8 2026). The
+// button stays live either way (warn, never block), so the user may still try it.
+const IOS_HOME_SCREEN_REMEDY =
+    'On an iPhone or iPad installed this way, the device\'s own listening sometimes hears nothing. ' +
+    'Add an Azure Speech key (the recommended service) in Settings, under Speech, and choose it ' +
+    'for hearing the other person.';
+const IOS_SHELL_REMEDY =
+    'Open Conversant in Safari instead, and add it to your Home Screen from there.';
 
 export function speechRecognitionSupport() {
     const apiPresent = typeof window !== 'undefined' &&
@@ -135,7 +139,7 @@ export function speechRecognitionSupport() {
             apiPresent: false,
             reason: 'This browser has no speech recognition.',
             remedy: isIOS()
-                ? 'Use Safari on this iPad.'
+                ? 'Use Safari.'
                 : 'Use Microsoft Edge or Google Chrome.',
         };
     }
@@ -175,7 +179,7 @@ export function speechRecognitionSupport() {
                 usable: false,
                 apiPresent: true,
                 reason: 'Listening may not work when the app is opened from the Home Screen.',
-                remedy: IOS_TRY_ANYWAY,
+                remedy: IOS_HOME_SCREEN_REMEDY,
             };
         }
         // Measured: same silent failure in the Chrome and Edge wrappers, which
@@ -185,8 +189,8 @@ export function speechRecognitionSupport() {
             return {
                 usable: false,
                 apiPresent: true,
-                reason: `Listening may not work in ${shell} on iPad.`,
-                remedy: IOS_TRY_ANYWAY,
+                reason: `Listening may not work in ${shell} on an iPhone or iPad.`,
+                remedy: IOS_SHELL_REMEDY,
             };
         }
         return { usable: true, apiPresent: true, reason: '', remedy: '' };

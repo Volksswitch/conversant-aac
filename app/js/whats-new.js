@@ -22,12 +22,18 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.39": [
+    {
+      "for": "ipad",
+      "note": "When the app is installed on the Home Screen of an iPad or iPhone, its warning about listening now suggests adding a paid service for hearing the other person, instead of suggesting you open it in Safari."
+    }
+  ],
   "0.13.38": [
     "On the Speech tab, the voice list and its Test button now appear right under the speech service you chose, instead of below all of them.",
     "If the app asks for an API key when you start it, adding the key in Settings and closing Settings now takes you straight into the app. Before, it asked for the key again.",
     {
       "for": "ipad",
-      "note": "When you use the iPad's own voice, a response you tap is now said on the first tap. Before, a holding phrase could get stuck, and the next thing you tapped was lost."
+      "note": "When you use the device's own voice, a response you tap is now said on the first tap. Before, a holding phrase could get stuck, and the next thing you tapped was lost."
     },
     {
       "for": "ipad",
@@ -913,12 +919,12 @@ export const PLATFORMS = { IPAD: 'ipad', COMPUTER: 'computer', ANDROID: 'android
 // tablet, Chromebook or Mac" is how a person says it and no amount of joining
 // produces that. With three platforms each line names the two it is not.
 const OTHER_PLATFORM_NOTE = {
-    computer: 'There were also improvements for people using Conversant AAC on an iPad, '
+    computer: 'There were also improvements for people using Conversant AAC on an iPad or iPhone, '
         + 'or on an Android phone or tablet.',
     ipad: 'There were also improvements for people using Conversant AAC on a Windows '
         + 'tablet, Chromebook or Mac, or on an Android phone or tablet.',
     android: 'There were also improvements for people using Conversant AAC on a Windows '
-        + 'tablet, Chromebook or Mac, or on an iPad.',
+        + 'tablet, Chromebook or Mac, or on an iPad or iPhone.',
 };
 
 const noteText = (n) => (typeof n === 'string' ? n : (n && n.note) || '');

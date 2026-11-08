@@ -78,6 +78,9 @@ There is one branch: `main`. There is no separate `dev` or release branch.
   silence. Ask: *could someone on the other platform notice this at all?* A data folder
   is a computer thing; the Home Screen is an iPad thing; nearly everything else is
   shared. Never write "Chromium" or "WebKit" — the reader is a user or a supporter.
+  **`### On an iPad` notes reach iPhones too** (the app cannot tell them apart), so word
+  them for both: "this device" or "your iPad or iPhone", never "the iPad" alone (Ken,
+  November 8 2026).
 - The app announces its own new release: after the app auto-updates itself, the
   bundled "What's new" notes (generated from `CHANGELOG.md`) are shown in-app. See
   the "What's new" section of `CLAUDE.md`.

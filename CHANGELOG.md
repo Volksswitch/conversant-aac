@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+### On an iPad
+- When the app is installed on the Home Screen of an iPad or iPhone, its warning about listening now suggests adding a paid service for hearing the other person, instead of suggesting you open it in Safari.
+
 ## Version 0.13.38
 
 ### Everyone
@@ -33,7 +36,7 @@ forgetting to tag one is only ever noise, never silence.
 - If the app asks for an API key when you start it, adding the key in Settings and closing Settings now takes you straight into the app. Before, it asked for the key again.
 
 ### On an iPad
-- When you use the iPad's own voice, a response you tap is now said on the first tap. Before, a holding phrase could get stuck, and the next thing you tapped was lost.
+- When you use the device's own voice, a response you tap is now said on the first tap. Before, a holding phrase could get stuck, and the next thing you tapped was lost.
 - The listening tone now plays when you tap Listen, and the microphone opens just after it. Before, the tone could come out over the first words of your next reply.
 
 ## Version 0.13.37

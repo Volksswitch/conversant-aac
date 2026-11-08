@@ -104,7 +104,21 @@ test('iPad Home Screen app: warned, but the recognizer is still there to try', a
     // the app warns and lets the user try instead of disabling the button.
     assert.equal(s.apiPresent, true);
     assert.match(s.reason, /may not work/, 'phrased as a caution, not a verdict');
-    assert.match(s.remedy, /Try it/);
+    // Points at a paid service, not at Safari: the Home Screen app is the recommended
+    // way to run it on an iPhone or iPad (Ken, October 11 and November 8 2026).
+    assert.match(s.remedy, /Azure Speech key/);
+});
+
+// Ken's iPhone, November 8 2026: an iPhone is treated exactly like an iPad, so the
+// messages must not name the iPad alone.
+test('an iPhone Home Screen app gets the same verdict, and no message says iPad alone', async () => {
+    const ua = 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Mobile/15E148 Safari/604.1';
+    const p = await loadPlatform({ ua, touch: true, standalone: true });
+    assert.equal(p.isIOS(), true);
+    const s = p.speechRecognitionSupport();
+    assert.equal(s.usable, false);
+    assert.equal(s.apiPresent, true);
+    for (const text of [s.reason, s.remedy]) assert.doesNotMatch(text, /(?<!iPhone or )\biPad\b/);
 });
 
 for (const [name, ua] of [['Chrome', UA.iosChrome], ['Edge', UA.iosEdge]]) {
