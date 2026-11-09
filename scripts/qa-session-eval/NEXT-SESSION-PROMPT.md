@@ -21,7 +21,7 @@ What is built (all of it currently hangs off a PLACE):
 
 Open now:
 1. **REDESIGN DECIDED AND BUILT (November 9 2026), see CLAUDE.md: a TOPIC is its own Context-band dimension (documents + note), replacing `place.talk`; the AUDIENCE is a group entry in the "who" (partner) dimension.** Full reasoning in CLAUDE.md. Still to ask Ken, one at a time: (a) DECIDED: each topic has its own Flex list, looked up first, standing alone; (b) DECIDED: a topic switches off at End conversation, like a partner; (c) DECIDED: a topic means taking questions only; "talking about it" is a separate future project (TODO.md). The topic rebuild is IN PROGRESS: see the task list in the conversation, or CLAUDE.md for the decisions.
-2. Stressing "as" and "for" in the tagline: Claude recommended trying the existing "Words the voice gets wrong" list first (entry: "as the user, not for them" -> "AS the user, not FOR them"; checked to change only that exact phrase). Awaiting Ken.
+2. SETTLED (Ken): the tagline stress is Ken's own entry in his "Words the voice gets wrong" list, nothing to build. Earlier note: Claude recommended trying the existing "Words the voice gets wrong" list first (entry: "as the user, not for them" -> "AS the user, not FOR them"; checked to change only that exact phrase). Awaiting Ken.
 
 How to work (unchanged):
 - One question at a time, with a recommendation, before building the parts a decision touches. Put options in the reply as plain text, never in the question widget.
