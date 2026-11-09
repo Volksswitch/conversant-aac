@@ -37,6 +37,11 @@ the one that quietly waits forever.
 
 ## Open
 
+### Question sessions: nothing checks the total size of a topic's documents
+- **Raised:** 2026-11-09 - Ken asked how much material a topic can hold. Each document is capped at about 65,000 words (400,000 characters) and a topic at 20 documents, but nothing adds them up. Twenty long documents (about 1.3 million words) would be more than the AI can read in one request (about a million tokens, roughly 700,000 words), and every question would fail with an ordinary "couldn't get answers" error rather than saying why.
+- **What is wanted:** a check on the topic's form that adds up the words in the documents checked, says when the total is too large, and ideally shows the running total so a presenter can see how much each question sends. Also measure the wait and the cost at about 30,000-50,000 words, which is beyond the 22,000 words tested.
+- **Why not now:** realistic sets (a paper, a web page, a pamphlet, some notes) are a small fraction of the ceiling. Ken asked about the limits, not for a change.
+
 ### Switch access: proposal waiting on Ken's review
 - **Raised:** 2026-11-03 - Ken asked for research and a proposal on switch control, with attention to speed, trimming what gets scanned, and a more powerful Express Panel.
 - **What is wanted:** Ken reviews `Documents/Conversant AAC Switch Access Proposal.docx` and settles the six decisions in its section 10. The device checks in its section 8 come first, and need to know which switches and interfaces are on hand.
