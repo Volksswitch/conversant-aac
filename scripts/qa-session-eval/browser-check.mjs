@@ -52,7 +52,9 @@ function stubs() {
             const talk = /THE MATERIAL \(chosen by the speaker/.test(system);
             const n = window.__requests.push({ talk, system, messages: body.messages });
             const reply = talk
-                ? { unclear_words: [], answers: [
+                // A question with "covered" in it gets a word to ask about, as the real
+                // AI returns for "Is this covered by Medicaid?".
+                ? { unclear_words: /covered/.test(JSON.stringify(body.messages)) && !/they said/.test(JSON.stringify(body.messages)) ? ['covered'] : [], answers: [
                     { label: `Short ${n}`, kind: 'short', text: `Short answer number ${n}.` },
                     { label: `Angle A ${n}`, kind: 'angle', text: `First deeper answer number ${n}.` },
                     { label: `Angle B ${n}`, kind: 'angle', text: `Second deeper answer number ${n}.` },
@@ -129,6 +131,9 @@ try {
         const ep = await import('/js/express-panel.js');
         const m = ep.getModel();
         ep.setBand('context', [...m.context, { type: 'place', name: 'At my talk', placeId: id }]);
+        // One row of Flex band, where the "What do you mean by...?" buttons go.
+        const m2 = ep.getModel();
+        ep.setModel({ ...m2, sizes: { ...m2.sizes, shape: 'rows', flexRows: 1 } });
         return id;
     });
     check(!!placeId, 'set up a talk place with one document');
@@ -214,6 +219,38 @@ try {
     check(/How does the device know/.test(reqs[2].system), 'the earlier question is listed as already answered');
     check((await cards()).length === 4, 'four answers for the next question');
 
+    // 6b. A question with a vague word: a "What do you mean by...?" button appears at
+    //     the end of the Flex band; tapping it says it, keeps the answers up, reopens
+    //     the microphone, and the explanation is answered with the question it explains.
+    // (The microphone is still on from the last question; speak an answer first, as a
+    // presenter would, then Listen for the next question.)
+    await page.click('#responseOptions .response-card:not(.response-card-empty)');
+    await pace(1200);
+    await page.click('#listenBtn');
+    await pace(800);
+    await page.evaluate(() => window.__mic.hear('Is this covered by Medicaid?'));
+    await page.waitForFunction(() => window.__requests.length >= 4, { timeout: 8000 });
+    await pace(800);
+    const clarify = await page.$('#expressPanel .ep-btn::-p-text(What do you mean by)');
+    check(!!clarify, 'a "What do you mean by...?" button appears');
+    const inFlex = clarify && await clarify.evaluate((b) => !!(b.closest('.ep-btn') || b).className.match(/ep-band-flex/));
+    check(inFlex, 'and it is in the Flex band');
+    if (clarify) {
+        await clarify.click();
+        await pace(1500);
+        check((await page.evaluate(() => window.__spoken)).some((t) => /What do you mean by "covered"\?/.test(t)), 'tapping it says the question');
+        check(await page.evaluate(() => window.__mic.isOn()), 'and the microphone reopens for the explanation');
+        check((await cards()).length === 4, 'the answers stay up while they explain');
+        check(!(await page.$('#expressPanel .ep-btn::-p-text(What do you mean by)')), 'the button goes once it is asked');
+        await page.evaluate(() => window.__mic.hear('I mean paid for by Medicaid.'));
+        await page.waitForFunction(() => window.__requests.length >= 5, { timeout: 8000 });
+        await pace(800);
+        reqs = await requests();
+        const sent = JSON.stringify(reqs[4].messages);
+        check(reqs[4].talk && /covered by Medicaid/.test(sent) && /paid for by Medicaid/.test(sent),
+            'the explanation is answered together with the question it explains');
+    }
+
     // 7. Switch the place off: ordinary suggestions again.
     await page.click('#responseOptions .response-card:not(.response-card-empty)');
     await pace(1200);
@@ -222,10 +259,10 @@ try {
     await page.click('#listenBtn');
     await pace(800);
     await page.evaluate(() => window.__mic.hear('How was your weekend?'));
-    await page.waitForFunction(() => window.__requests.length >= 4, { timeout: 8000 });
+    await page.waitForFunction(() => window.__requests.length >= 6, { timeout: 8000 });
     await pace(800);
     reqs = await requests();
-    check(!reqs[3].talk, 'with the place off, the question gets ordinary suggestions');
+    check(!reqs[5].talk, 'with the place off, the question gets ordinary suggestions');
     shown = await cards();
     check(shown.some((c) => /Everyday reply/.test(c.label)), 'the ordinary cards are on screen');
 } finally {

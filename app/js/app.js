@@ -245,6 +245,12 @@ let activePlace = null;
 //                 instead of repeating a point (rule 8)
 let talkQuestion = '';
 let talkSaid = [];
+//   talkUnclear   words in the question too vague to answer without asking, offered as
+//                 "What do you mean by...?" buttons at the end of the Flex band
+//   talkClarify   set once one is asked: { question, word }, so the explanation that
+//                 follows is answered together with the question it explains
+let talkUnclear = [];
+let talkClarify = null;
 
 // The GOALS switched on for this conversation - goal key -> which list it came from.
 //
@@ -2208,7 +2214,7 @@ function toneBeforeMic() {
 }
 
 // Begin a new partner-capture session with a cleared transcript and options.
-function startFreshListening() {
+function startFreshListening(opts = {}) {
     // A new partner turn. Anything still on offer was never taken — which is the
     // measure the saved conversations can never show — and the checkpoint count for
     // the turn just ended is closed off.
@@ -2222,12 +2228,16 @@ function startFreshListening() {
     setOfferedRange(null);
     clearTurnSteering();
     dropHeldForComposer();
-    talkQuestion = '';       // at a talk: the next question, so the last one's answers go
+    // At a talk: the next question, so the last one's answers go - unless this is
+    // listening for the explanation of a word the user asked about, where the answers
+    // stay up until the new ones replace them.
+    if (!opts.keepCards) { talkQuestion = ''; talkClarify = null; }
+    talkUnclear = [];
     pendingPartnerHistoryIdx = -1;   // fresh partner turn — not yet promoted to history
     generationToken++;
     ui.setLiveTranscript('');
     ui.setTranscriptState('idle');
-    clearPalette();
+    if (!opts.keepCards) clearPalette();
     // Create the transcript file as soon as we enter Listen mode, so it exists and
     // mirrors the conversation pane from the very start (Ken). Idempotent — a no-op
     // if this conversation's log already exists. Fire-and-forget (needs a granted
@@ -2262,6 +2272,45 @@ function failureEvent(err) {
 // Places takes effect at the next question.
 function activeTalk() {
     return activePlace && activePlace.placeId ? places.talkFor(activePlace.placeId) : null;
+}
+
+// The question to answer. After the user asked what a word meant, what the person says
+// next is the explanation, not a new question, so it is answered together with the
+// question it explains.
+function talkQuestionFor(heard) {
+    if (!talkClarify) return heard;
+    return `${talkClarify.question}
+
+(Asked what they meant by "${talkClarify.word}", they said: "${heard}")`;
+}
+
+// The "What do you mean by...?" buttons for the question on screen. Never in Settings,
+// where the panel is being edited, and never when the place is not a talk.
+function clarifyButtons() {
+    if (expressPanelInSettings || !activeTalk() || !talkUnclear.length) return [];
+    return talkUnclear.map((word, i) => ({
+        type: 'phrase', id: `clarify-${i}`, clarify: true, word,
+        text: `What do you mean by "${word}"?`,
+    }));
+}
+
+// A "What do you mean by...?" button: say it, record it, and listen for the answer
+// while the answers stay up.
+async function handleClarify(item) {
+    noteUserAction('clarify');
+    abortPlaceholders();
+    generationToken++;
+    const question = talkQuestion || heardPartnerText();
+    ui.setStatus('Speaking...');
+    if (!(await speakUserStatement(item.text))) return;
+    logSpokenUserTurn(item.text);   // the question first, then what the user asked
+    finalizePendingPartnerTurn();
+    talkClarify = { question, word: item.word };
+    talkUnclear = [];
+    renderExpressPanel();
+    manualListenArmed = true;
+    startFreshListening({ keepCards: true });
+    ui.setStatus('Listening for what they meant...');
 }
 
 // Who the audience is, for pitching the answers: the person's name and "anything worth
@@ -2324,6 +2373,8 @@ async function generateTalkAnswers(question, opts = {}) {
         ui.showEngineState(snap);
         lastPalette = snap.palette;
         talkQuestion = question;
+        talkUnclear = result.unclearWords || [];
+        renderExpressPanel();   // the "What do you mean by...?" buttons, if any
         currentStatic = { kind: null, full: [] };   // New 4 asks again, it does not page
         setOfferedChoices([]);
         setOfferedRange(null);
@@ -2413,7 +2464,7 @@ async function generateOptions(partnerText) {
     // At a talk, the question gets four answers from the talk's documents instead.
     if (activeTalk()) {
         clearTurnSteering();
-        if (await generateTalkAnswers(partnerText, { token, ingest: true, reason: 'reprompt',
+        if (await generateTalkAnswers(talkQuestionFor(partnerText), { token, ingest: true, reason: 'reprompt',
             placeholderEpoch: pEpoch })) return;
         if (token !== generationToken) return;
     }
@@ -3571,6 +3622,8 @@ function practiceResumeOrIdle() {
 async function terminateConversation() {
     talkQuestion = '';
     talkSaid = [];   // a new conversation has said nothing yet
+    talkUnclear = [];
+    talkClarify = null;
     conversationEpoch++;
     stopExpressAudio({ abort: true });
     placeholders.stop();
@@ -5296,7 +5349,8 @@ function drawExpressPanel() {
         && (expressPaging.band === expressBands.BAND.CONTEXT || storage.loadExpressMoreScope() === 'panel')) {
         resetExpressPaging();
     }
-    const composed = composedPanel();
+    // At a talk, the "What do you mean by...?" buttons lie over the end of the Flex band.
+    const composed = expressBands.overlayFlexEnd(composedPanel(), clarifyButtons());
     primeExpressAudio(composed.items);
     ui.renderExpressPanel(expressLayoutRows(), composed.items, {
         fillText: expressPanelInSettings ? undefined : (t) => fillText(t),
@@ -5715,6 +5769,8 @@ async function handleTogglePlace(item) {
     if (editedInSettings(item)) return;
     activePlace = (activePlace && activePlace.id === item.id) ? null : item;
     talkSaid = [];   // what was said at one talk is not "already said" at another
+    talkUnclear = [];
+    talkClarify = null;
     // Same rule as the partner's, for the same reason: "pick up my prescription"
     // stops being the goal the moment the user says they are somewhere else.
     dropGoalsFrom('place');
@@ -6299,6 +6355,7 @@ function initSliderSteppers() {
 // committed to history (Ken — "anything spoken is part of the conversation").
 // Routed through the shared speak-as-a-turn path.
 async function handleSpeakExpressItem(phrase) {
+    if (phrase && phrase.clarify) return handleClarify(phrase);
     if (editedInSettings(phrase)) return;
     // A phrase with no words can never speak or take the floor (CR-041).
     if (!String(phrase.text || '').trim() && !String(phrase.speak || '').trim()) return;

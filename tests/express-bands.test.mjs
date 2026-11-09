@@ -486,3 +486,24 @@ test('rows mode keeps the Context floor when Flex takes every other row', () => 
         assert.ok(plan.contextN >= 4, `flexRows ${flexRows}: context ${plan.contextN}`);
     }
 });
+
+// Question sessions (November 9 2026): "What do you mean by...?" buttons at the END of
+// the Flex band, covering what is there for one question and moving nothing.
+test('transient buttons cover the end of the Flex band and nothing else', async () => {
+    const { overlayFlexEnd, BAND } = await import('../app/js/express-bands.js');
+    const composed = {
+        items: ['a1', 'a2', 'c1', 'f1', 'f2', 'f3'],
+        bands: [BAND.ALWAYS, BAND.ALWAYS, BAND.CONTEXT, BAND.FLEX, BAND.FLEX, BAND.FLEX],
+        more: [{ index: 5, band: BAND.FLEX, label: 'More' }, { index: 1, band: BAND.ALWAYS, label: 'More' }],
+    };
+    const out = overlayFlexEnd(composed, ['X', 'Y']);
+    assert.deepEqual(out.items, ['a1', 'a2', 'c1', 'f1', 'X', 'Y']);
+    assert.deepEqual(out.more.map((m) => m.index), [1], 'a More button under them is covered, others stay');
+    assert.deepEqual(composed.items, ['a1', 'a2', 'c1', 'f1', 'f2', 'f3'], 'the original is untouched');
+    // More buttons than positions: the first ones show.
+    assert.deepEqual(overlayFlexEnd(composed, ['P', 'Q', 'R', 'S']).items.slice(3), ['P', 'Q', 'R']);
+    // No Flex band: nowhere to go, nothing changes.
+    const noFlex = { items: ['a'], bands: [BAND.ALWAYS], more: [] };
+    assert.equal(overlayFlexEnd(noFlex, ['X']), noFlex);
+    assert.equal(overlayFlexEnd(composed, []), composed);
+});

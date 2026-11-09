@@ -20,6 +20,7 @@ import * as wv from './worldview.js';
 import * as rel from './relationships.js';
 import * as places from './places.js';
 import * as sourceMaterial from './source-material.js';
+import { SHAPE } from './express-bands.js';
 import { readDocumentFile } from './document-reader.js';
 import * as expressPanel from './express-panel.js';
 import * as voiceProfile from './voice.js';
@@ -1739,7 +1740,19 @@ function buildTalkEditor(saved, opts = {}) {
                 renderOffer();
             } }));
     };
-    onBox.addEventListener('change', () => { draft.on = onBox.checked; renderOffer(); onChange(); });
+    // The "What do you mean by...?" buttons appear at the end of the Flex band, and the
+    // band starts with no rows. Said here rather than resized for the user (Ken, November
+    // 9 2026), and only while the talk is on and the band is empty.
+    const flexNote = el('p', { class: 'wv-talk-empty' });
+    const renderFlexNote = () => {
+        const sz = expressPanel.getModel().sizes || {};
+        const hasFlex = sz.shape === SHAPE.ROWS ? (sz.flexRows || 0) > 0 : (sz.flex || 0) > 0;
+        flexNote.textContent = draft.on && !hasFlex
+            ? 'Your Express Panel has no Flex band, so the "What do you mean by...?" buttons have nowhere to appear. You can give the Flex band a row on the Express Panel tab.'
+            : '';
+        flexNote.hidden = !flexNote.textContent;
+    };
+    onBox.addEventListener('change', () => { draft.on = onBox.checked; renderOffer(); renderFlexNote(); onChange(); });
 
     // The documents.
     const docList = el('div', { class: 'wv-talk-docs' });
@@ -1870,7 +1883,7 @@ function buildTalkEditor(saved, opts = {}) {
             el('span', { class: 'wv-disclosure-title', text: 'Questions after a talk' }),
         ]),
         el('div', { class: 'wv-talk-body' }, [
-            onRow, offer,
+            onRow, offer, flexNote,
             el('div', { class: 'wv-talk-heading', text: 'Documents the answers come from' }),
             docList,
             el('div', { class: 'wv-talk-add' }, [addFile, pasteOpen, fileIn]),
@@ -1879,6 +1892,7 @@ function buildTalkEditor(saved, opts = {}) {
     ]);
     if (draft.on || draft.sources.length) node.open = true;
     renderOffer();
+    renderFlexNote();
     renderDocs();
 
     return {

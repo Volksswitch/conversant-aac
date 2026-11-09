@@ -24,6 +24,7 @@ import * as platform from './platform.js';
 const RELEASE_NOTES = {
   "0.13.39": [
     "You can now take questions after a talk. In About Me, open My Places, edit a place such as \"At my talk\", and open \"Questions after a talk\". Switch it on, add the documents your talk draws on (pick a PDF, or paste text), and say how you relate to the material. When you tap that place on the Express Panel, each question you hear gets four answers drawn from your documents: a short one first, then three that go deeper. After you speak one, the answers stay on screen so you can pick another to say more, and tapping Listen clears them for the next question. The documents are kept in a new \"sources\" folder inside your data folder.",
+    "At a talk, if a question hangs on a word that could mean several things, such as \"covered\", a \"What do you mean by...?\" button appears at the end of the Flex band. Tapping it asks, and the answers that follow take their explanation into account. It needs a Flex band with at least one row.",
     {
       "for": "ipad",
       "note": "When the app is installed on the Home Screen of an iPad or iPhone, its warning about listening now suggests adding a paid service for hearing the other person, instead of suggesting you open it in Safari."

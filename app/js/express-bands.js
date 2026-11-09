@@ -409,6 +409,31 @@ export function composePanel(layoutRows, model = {}, situation = {}) {
 }
 
 /**
+ * Lay transient buttons over the END of the Flex band, for one question (Ken, November
+ * 9 2026: the "What do you mean by...?" buttons at a talk go at the end of the Flex
+ * band). They SPEAK, so they belong with the phrases, and they cover the band's last
+ * positions the way the partner's choices cover the Context band's: nothing under them
+ * moves or is lost, it is simply not drawn until they go. A More button they land on is
+ * covered too, and comes back with the rest.
+ *
+ * With no Flex band there is nowhere to put them, and none are shown - the talk's setup
+ * section says so. With more of them than Flex positions, the first ones are shown.
+ */
+export function overlayFlexEnd(composed, extra) {
+    const list = (extra || []).filter(Boolean);
+    if (!list.length || !composed) return composed;
+    const flexIdx = [];
+    (composed.bands || []).forEach((b, i) => { if (b === BAND.FLEX) flexIdx.push(i); });
+    if (!flexIdx.length) return composed;
+    const shown = list.slice(0, flexIdx.length);
+    const cells = flexIdx.slice(flexIdx.length - shown.length);
+    const items = composed.items.slice();
+    cells.forEach((cell, k) => { items[cell] = shown[k]; });
+    const covered = new Set(cells);
+    return { ...composed, items, more: (composed.more || []).filter((m) => !covered.has(m.index)), overlaid: cells };
+}
+
+/**
  * Switched-on buttons first, everything else in the user's own order. Stable, so a
  * button switched off goes straight back to where it was in the priority.
  */
