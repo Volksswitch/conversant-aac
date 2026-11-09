@@ -20,7 +20,7 @@ What is built (all of it currently hangs off a PLACE):
 - Checks: `npm test` (1,455 pass) and `node scripts/qa-session-eval/browser-check.mjs` (43 checks, the real app in a headless browser with a stand-in AI and microphone). Run both after any change to this path.
 
 Open now:
-1. **Ken's redesign (November 9 2026): TOPIC as its own dimension, not a place.** "These topic-focused conversations warrant their own dimension - topic... independent of place... no address and GPS will never be applicable. I can talk about Conversant at a conference, in a Zoom call, with a colleague." And: the audience (SLP/OT vs. academic) is probably not a person but "a way to nudge the AI to tailor its responses" - either a topic-based goal in the Flex band, or something like (but not the same as) a Feeling in the Context band. Claude's recommendation is in the conversation; awaiting Ken's decision.
+1. **REDESIGN DECIDED (November 9 2026), NOT BUILT: a TOPIC is its own Context-band dimension (documents + note), replacing `place.talk`; the AUDIENCE is a group entry in the "who" (partner) dimension.** Full reasoning in CLAUDE.md. Still to ask Ken, one at a time: (a) do topics get their own Flex phrase lists, and where do they rank (Claude's lean: a list per topic, looked up first, no topic-plus-who combinations); (b) does a topic stay on after End conversation like a place, or clear like a partner; (c) "taking questions" (four answers) versus "conversation" (everyday cards informed by the documents).
 2. Stressing "as" and "for" in the tagline: Claude recommended trying the existing "Words the voice gets wrong" list first (entry: "as the user, not for them" -> "AS the user, not FOR them"; checked to change only that exact phrase). Awaiting Ken.
 
 How to work (unchanged):
