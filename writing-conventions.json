@@ -519,6 +519,10 @@
       "flags": "g"
     },
     {
+      "source": "Modelling noise-resilient single-switch scanning systems",
+      "flags": "g"
+    },
+    {
       "source": "\\bprogramm(?:ing|ed|er|ers)\\b",
       "flags": "gi"
     },

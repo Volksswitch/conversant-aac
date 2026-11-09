@@ -4422,6 +4422,18 @@ stricter still, so the AI will not put facts about the world into the user's mou
 direction** until the live-model testing below has actually been done — the honest
 position today is that we have not measured it.
 
+## Switch access - Ken's review of the proposal (November 9 2026), DECIDED in part, nothing built
+
+The proposal is `Documents/Conversant AAC Switch Access Proposal.docx`; the prototype is `prototypes/switch-access.html`. What Ken settled in review:
+
+- **Scan by REGIONS, in this order:** response options with "New 4", the Express Panel without "In my own words", "In my own words", the Command Bar, then back to the options. A press enters a region; the highlight stays in it after a choice until a signal sends it out. Ken: moving between regions is quicker than moving between buttons, and "New 4" belongs with the options it replaces.
+- **When new options arrive, the WHOLE response options region is highlighted for the reading time**, and a press then enters it; otherwise the scan moves on.
+- **"Topic" is a reserved word in the app** (the Context-band kind for question sessions), so the proposal's buttons holding a saved word are **Reframe buttons**: a saved Reframe, one turn only, Flex band.
+- **How-to-reply buttons ("Keep it short", "Say no") are GOALS**, not a new kind (Ken). The cost, stated once: a goal stays on until switched off.
+- **Dropped:** offering to keep a typed sentence as a button (Ken: low need), and a panel button that presses a Command Bar button.
+- **Prototype inputs (Ken):** left mouse button = switch 1 (one-switch setups), left and right = two switches.
+- **Every "one study" in a document names the study and cites a numbered source** (Ken's rule for this document; apply it to any document that cites research).
+
 ## Open Questions (remaining)
 
 - **TO DO — user-selectable COLOR SCHEMES for visual impairment (Ken asked September 3 2026 after a therapist asked whether the app supports it; the outline layer was pulled out and BUILT first, see UI Layout Rule 22; the schemes themselves are NOT built).** Do it in two further passes, in this order.

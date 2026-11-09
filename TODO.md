@@ -42,10 +42,11 @@ the one that quietly waits forever.
 - **What is wanted:** a check on the topic's form that adds up the words in the documents checked, says when the total is too large, and ideally shows the running total so a presenter can see how much each question sends. Also measure the wait and the cost at about 30,000-50,000 words, which is beyond the 22,000 words tested.
 - **Why not now:** realistic sets (a paper, a web page, a pamphlet, some notes) are a small fraction of the ceiling. Ken asked about the limits, not for a change.
 
-### Switch access: proposal waiting on Ken's review
-- **Raised:** 2026-11-03 - Ken asked for research and a proposal on switch control, with attention to speed, trimming what gets scanned, and a more powerful Express Panel.
-- **What is wanted:** Ken reviews `Documents/Conversant AAC Switch Access Proposal.docx` and settles the six decisions in its section 10. The device checks in its section 8 come first, and need to know which switches and interfaces are on hand.
-- **Why not now:** nothing is built or decided until the review. Decisions go in `CLAUDE.md` once made.
+### Switch access: try the prototype with the therapists, then settle section 10
+- **Raised:** 2026-11-03 - Ken asked for research and a proposal on switch control. **Reviewed 2026-11-09:** Ken's 28 comments were acted on (scanning by regions in his order, Reframe buttons in place of "topic buttons", "direction buttons" folded into goals, numbered sources) and he asked for a web page prototype, now `prototypes/switch-access.html` (left mouse button = switch 1, right = switch 2; eight examples plus settings).
+- **What is wanted:** (1) Ken and the therapists try the prototype; (2) Ken settles the six decisions in section 10 of `Documents/Conversant AAC Switch Access Proposal.docx`, three of which (how to leave a region, holding new options, Reframe buttons) the prototype is meant to inform; (3) the device checks in section 8, which need to know which switches and interfaces are on hand; (4) Ken suggested recognizing the partner's voice sooner for switch users, who otherwise scan to the partner button in every conversation.
+- **How the therapists get the prototype:** not decided. It is one self-contained file that can be emailed, or it could be published to the website; ask Ken.
+- **Why not now:** nothing is built until the decisions are made and face-to-face conversation is reliable (the proposal's recommendation). Decisions go in `CLAUDE.md` once made.
 
 ### Stale statements found while writing the FAQ
 - **Raised:** 2026-11-03 - while checking the FAQ against the documents. Ken asked for these to stay on the list. The FAQ already avoids each of them, but the published pages still say them.

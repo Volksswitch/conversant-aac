@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Switch Access Prototype</title>
+<!--
+  Conversant AAC - switch access prototype (Ken, November 9 2026).
+
+  A self-contained mock of the conversation screen that can be scanned with one or two
+  switches, so Ken and the speech and language therapists can try the ideas in
+  "Conversant AAC Switch Access Proposal.docx" before anything is built.
+
+  Inputs (Ken: "use the left mouse button as a single switch setup and the left and
+  right mouse buttons as a two-switch setup"): inside the screen area, the LEFT mouse
+  button is switch 1 and the RIGHT mouse button is switch 2. Space and Enter do the
+  same, because the common switch interfaces send those keys. The settings panel is
+  outside the screen area and takes ordinary clicks.
+
+  Nothing here talks to an AI. Every set of response options is canned, and "the AI"
+  is a fixed wait. The point is the scanning, not the suggestions.
+-->
+<style>
+  :root {
+    --bg: #eef1f4; --surface: #ffffff; --ink: #1a2733; --ink-muted: #4a5763;
+    --edge: #5c6b78; --edge-faint: #b9c2ca; --hl: #ffb300; --hl-ring: #1a2733;
+    --held: #2e7d32; --rest: #6a1b9a;
+    --pref: #2e7d32; --dis: #a86300; --init: #1565c0; --rep: #6a1b9a;
+    --flex-rf: #fff4d6; --flex-goal: #e3f3e6; --ctx: #e8edf2; --on: #1f4e79;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: var(--bg); color: var(--ink); }
+  header { padding: 12px 16px 4px; }
+  header h1 { margin: 0 0 4px; font-size: 22px; }
+  header p { margin: 0 0 6px; color: var(--ink-muted); font-size: 14px; max-width: 1100px; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; padding: 8px 16px 16px; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  /* The device screen. Every press inside it is a switch press. */
+  #screen { background: var(--surface); border: 3px solid #2c3e50; border-radius: 10px; padding: 10px; user-select: none;
+            -webkit-user-select: none; touch-action: none; cursor: default; }
+  #screen:focus { outline: 3px dashed var(--edge); outline-offset: 3px; }
+  .status { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--ink-muted); margin-bottom: 6px; min-height: 18px; }
+  .status b { color: var(--ink); }
+  #pane { height: 96px; overflow-y: auto; border: 1px solid var(--edge-faint); border-radius: 6px; padding: 6px 8px; font-size: 14px; margin-bottom: 8px; }
+  #pane .p { color: #37474f; } #pane .u { color: #0d47a1; text-align: right; } #pane .n { color: var(--ink-muted); font-style: italic; font-size: 12px; }
+
+  .region { position: relative; border: 2px solid transparent; border-radius: 8px; padding: 12px 6px 6px; margin-bottom: 10px; }
+  .region .tag { position: absolute; top: -9px; left: 10px; background: var(--surface); padding: 0 4px; font-size: 11px; color: var(--ink-muted); }
+  .row { display: flex; gap: 6px; margin-bottom: 6px; border: 2px solid transparent; border-radius: 6px; padding: 2px; }
+  .row:last-child { margin-bottom: 0; }
+  .cell { flex: 1 1 0; min-width: 0; border: 1px solid var(--edge); border-radius: 5px; background: var(--surface); min-height: 44px; font-size: 14px;
+          display: flex; align-items: center; justify-content: center; text-align: center; padding: 3px; line-height: 1.15; position: relative; }
+  .cell.blank { border: 1px dashed var(--edge-faint); background: transparent; }
+  .opt { min-height: 78px; border-left-width: 6px; font-size: 15px; }
+  .opt.s0 { border-left-color: var(--pref); } .opt.s1 { border-left-color: var(--dis); } .opt.s2 { border-left-color: var(--init); } .opt.s3 { border-left-color: var(--rep); }
+  .opt.waiting { color: var(--ink-muted); font-style: italic; }
+  .opt.empty { color: transparent; border-style: dashed; border-color: var(--edge-faint); }
+  #new4 { flex: 0 0 86px; min-height: 78px; font-weight: bold; }
+  .cell.rf { background: var(--flex-rf); } .cell.goal { background: var(--flex-goal); } .cell.ctx { background: var(--ctx); }
+  .cell.more { background: #37474f; color: #fff; font-weight: bold; }
+  .cell.on { background: var(--on); color: #fff; font-weight: bold; }
+  .cell .kind { position: absolute; top: 1px; left: 4px; font-size: 10px; color: var(--ink-muted); }
+  .cell.on .kind { color: #dfe8f1; }
+  .leave { flex: 0 0 70px; border-style: dotted; font-size: 13px; color: var(--ink-muted); }
+  .hidden { display: none !important; }
+
+  .lower { display: flex; gap: 8px; }
+  #r2 { flex: 1 1 0; min-width: 0; }
+  #r3 { flex: 0 0 150px; display: flex; }
+  #imow { min-height: 100%; font-weight: bold; }
+  #kbd .cell { min-height: 40px; font-size: 16px; }
+  #compose { border: 1px solid var(--edge); border-radius: 6px; min-height: 34px; padding: 6px 8px; font-size: 16px; margin-bottom: 6px; background: #fbfbfb; }
+  #compose:empty::before { content: "Typed words appear here"; color: var(--ink-faint, #8a96a1); }
+
+  /* The highlight. Thick and two-toned so it shows on any fill. */
+  .hl { outline: 5px solid var(--hl) !important; outline-offset: 1px; box-shadow: 0 0 0 9px var(--hl-ring); z-index: 2; }
+  .region.hl, .row.hl { outline-offset: 2px; }
+  .held { outline: 5px solid var(--held) !important; outline-offset: 1px; box-shadow: 0 0 0 9px #a5d6a7; }
+  .resting { outline: 5px dashed var(--rest) !important; outline-offset: 2px; }
+
+  #counts { font-variant-numeric: tabular-nums; }
+  .pressflash { animation: pf .25s; } @keyframes pf { from { background: #fff3c4; } }
+
+  /* Settings panel: ordinary clicks. */
+  #panel { background: var(--surface); border: 1px solid var(--edge-faint); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+  #panel h2 { font-size: 16px; margin: 10px 0 6px; }
+  #panel h2:first-child { margin-top: 0; }
+  #panel label { display: block; margin: 3px 0; }
+  #panel .field { margin-bottom: 8px; }
+  #panel .field > span { display: block; font-weight: bold; margin-bottom: 2px; }
+  #panel select, #panel input[type=number] { font-size: 14px; padding: 3px; }
+  #panel button { font-size: 14px; padding: 6px 8px; margin: 2px 0; width: 100%; text-align: left; cursor: pointer;
+                  border: 1px solid var(--edge); border-radius: 5px; background: #f7f9fb; }
+  #panel button.on { background: var(--on); color: #fff; }
+  .note { font-size: 12px; color: var(--ink-muted); }
+  #log { margin: 0 16px 20px; background: var(--surface); border: 1px solid var(--edge-faint); border-radius: 8px; padding: 8px 12px; font-size: 14px; }
+  #log h2 { font-size: 16px; margin: 0 0 6px; }
+  #log table { border-collapse: collapse; width: 100%; }
+  #log td, #log th { border-bottom: 1px solid #e3e7eb; padding: 3px 6px; text-align: left; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Conversant switch access prototype</h1>
+  <p><b>Inside the screen area, the left mouse button is switch 1 and the right mouse button is switch 2.</b> Space and Enter do the same. Pick an example on the right, or change the settings. Nothing here uses the real AI: the partner and the response options are made up, and the AI's reply is a fixed wait.</p>
+</header>
+
+<div class="layout">
+  <div id="screen" tabindex="0" aria-label="Simulated Conversant screen. Left mouse button is switch 1, right mouse button is switch 2.">
+    <div class="status"><span id="where">&nbsp;</span><span id="counts">Stops 0 · Presses 0 · 0.0 s</span></div>
+    <div id="pane"></div>
+
+    <div class="region" id="r1"><span class="tag">1 · Response options</span>
+      <div class="row" id="optrow">
+        <div class="cell opt s0" id="opt0"></div><div class="cell opt s1" id="opt1"></div>
+        <div class="cell opt s2" id="opt2"></div><div class="cell opt s3" id="opt3"></div>
+        <div class="cell" id="new4">New 4</div>
+        <div class="cell leave" id="leave-r1">Leave</div>
+      </div>
+    </div>
+
+    <div class="lower" id="convLower">
+      <div class="region" id="r2"><span class="tag">2 · Express Panel</span><div id="panelRows"></div></div>
+      <div class="region" id="r3"><span class="tag">3</span><div class="cell" id="imow">In my own words</div></div>
+    </div>
+
+    <div class="region hidden" id="kbdArea"><span class="tag">In my own words · keyboard</span>
+      <div id="compose"></div>
+      <div id="kbd"></div>
+    </div>
+
+    <div class="region" id="r4"><span class="tag">4 · Command Bar</span>
+      <div class="row" id="cmdrow"></div>
+    </div>
+  </div>
+
+  <div id="panel">
+    <h2>Examples</h2>
+    <div id="presets"></div>
+
+    <h2>Settings</h2>
+    <div class="field"><span>How the scan moves</span>
+      <label><input type="radio" name="pattern" value="regions"> By region: options, Express Panel, In my own words, Command Bar</label>
+      <label><input type="radio" name="pattern" value="items"> One button at a time (the first draft)</label></div>
+    <div class="field"><span>Scan method</span>
+      <label><input type="radio" name="method" value="auto"> Automatic: the highlight moves by itself</label>
+      <label><input type="radio" name="method" value="step"> Step: left button moves, right button chooses</label>
+      <label><input type="radio" name="method" value="inverse"> Inverse: hold the left button to move, let go to choose</label></div>
+    <div class="field"><span>Seconds per stop</span><input type="number" id="speed" min="0.3" max="3" step="0.1"></div>
+    <div class="field"><span>Reading time for new options (seconds)</span><input type="number" id="reading" min="0" max="15" step="0.5"></div>
+    <div class="field"><span>Leaving a region</span>
+      <label><input type="radio" name="exit" value="pass"> After one pass with no press</label>
+      <label><input type="radio" name="exit" value="leave"> A “Leave” stop at the end</label>
+      <label><input type="radio" name="exit" value="switch2"> The right button (second switch)</label></div>
+    <div class="field"><span>Passes with no press before resting</span>
+      <select id="rest"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="0">Never rest</option></select></div>
+    <div class="field"><span>Stray presses</span>
+      <label>Act on <select id="actOn"><option value="press">press</option><option value="release">release</option></select></label>
+      <label>Ignore presses shorter than <select id="minMs"><option value="0">0</option><option value="100">0.1 s</option><option value="250">0.25 s</option><option value="500">0.5 s</option></select></label>
+      <label>Ignore repeats within <select id="repeatMs"><option value="0">0</option><option value="300">0.3 s</option><option value="600">0.6 s</option><option value="1000">1 s</option></select></label></div>
+    <div class="field"><span>One press or two</span>
+      <label><input type="checkbox" id="twoPress"> Two presses to speak</label>
+      <label>Time for the second press <select id="secondMs"><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option><option value="4000">4 s</option></select></label></div>
+    <div class="field"><span>Express Panel</span>
+      <label><input type="radio" name="size" value="small"> Small: about 6 buttons a row</label>
+      <label><input type="radio" name="size" value="full"> Full: 10 buttons a row</label>
+      <label><input type="checkbox" id="situationFirst"> Scan the partner’s and place’s row first</label>
+      <label>Scan “More” <select id="moreFirst"><option value="last">last in its row</option><option value="first">first in its row</option></select></label></div>
+    <div class="field"><span>New options during a scan</span>
+      <label><input type="radio" name="newopts" value="hold"> Hold them until the highlight leaves the options</label>
+      <label><input type="radio" name="newopts" value="replace"> Show them at once and start over</label></div>
+    <div class="field"><span>Response options show</span>
+      <label><input type="radio" name="labels" value="full"> Full wording</label>
+      <label><input type="radio" name="labels" value="short"> Short labels</label></div>
+    <div class="field"><span>The partner</span>
+      <label><input type="checkbox" id="autoPartner"> Replies by itself after you speak</label>
+      <label><input type="checkbox" id="chatty"> Keeps talking (newer options every 8 s)</label>
+      <label>AI wait <select id="aiWait"><option value="1500">1.5 s</option><option value="3000">3 s</option><option value="5000">5 s</option></select></label></div>
+    <div class="field"><span>Sound</span>
+      <label><input type="checkbox" id="cue"> Say each stop aloud</label>
+      <label><input type="checkbox" id="aloud"> Say chosen words aloud</label></div>
+    <button id="nextTurn">The partner says something new</button>
+    <button id="restart">Start over</button>
+    <p class="note">Settings take effect at once and restart the scan. Partner, place and feeling buttons only light up here; in the app they also refresh the options.</p>
+  </div>
+</div>
+
+<div id="log"><h2>What was said, and what it cost</h2>
+  <table><thead><tr><th>Said</th><th>Stops</th><th>Presses</th><th>Seconds</th><th>Setup</th></tr></thead><tbody id="logBody"></tbody></table>
+  <p class="note">Counting starts when a set of options appears, or after the previous thing was said, and stops when something is spoken.</p>
+</div>
+
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+
+// ---------------------------------------------------------------- made-up content
+const TURNS = [
+  { partner: 'Do you want to come to dinner on Friday?', sets: [
+    [['Sure, I’d love to come!', 'Yes, love to'], ['Friday’s hard for me, I have therapy.', 'Friday’s hard'], ['What are you making?', 'What’s for dinner?'], ['Sorry, did you say Friday?', 'Friday?']],
+    [['That sounds great, count me in.', 'Count me in'], ['Could we do Saturday instead?', 'Saturday instead?'], ['Who else is coming?', 'Who’s coming?'], ['Sorry, which Friday?', 'Which Friday?']] ] },
+  { partner: 'How’s your shoulder doing these days?', sets: [
+    [['A lot better, thanks for asking.', 'Better, thanks'], ['Still pretty sore, to be honest.', 'Still sore'], ['The exercises are helping. How’s your back?', 'How’s your back?'], ['Sorry, my shoulder?', 'My shoulder?']],
+    [['It’s getting there, slowly.', 'Getting there'], ['Not great this week.', 'Not great'], ['I see the therapist again Monday.', 'Therapist Monday'], ['Sorry, what did you ask?', 'What was that?']] ] },
+  { partner: 'Have you heard from Tyler lately?', sets: [
+    [['Yes, he called me yesterday.', 'He called'], ['No, not for a while.', 'Not lately'], ['Why, is something going on?', 'Something up?'], ['Sorry, heard from who?', 'From who?']],
+    [['We texted last week.', 'Texted last week'], ['I keep meaning to call him.', 'Meaning to call'], ['Have you talked to him?', 'Have you?'], ['Sorry, Tyler?', 'Tyler?']] ] },
+  { partner: 'So what have you been up to?', sets: [
+    [['Not much, just taking it easy.', 'Taking it easy'], ['Honestly, it’s been a rough week.', 'Rough week'], ['I started a new game. What about you?', 'What about you?'], ['Sorry, since when?', 'Since when?']],
+    [['Working on my exercises mostly.', 'Exercises'], ['Too much, I need a break.', 'Need a break'], ['Did you see the game Sunday?', 'The game?'], ['Sorry, what did you say?', 'What was that?']] ] },
+];
+const REFRAMES = {
+  'Tyler': [['Tyler and I are going to a game soon.', 'Game with Tyler'], ['I haven’t seen Tyler in ages.', 'Haven’t seen Tyler'], ['Have you talked to Tyler?', 'Talked to Tyler?'], ['Tyler said to say hi.', 'Tyler says hi']],
+  'therapy': [['I can’t make it, I have therapy.', 'Have therapy'], ['Therapy is going well.', 'Going well'], ['Therapy wiped me out today.', 'Wiped out'], ['Can we talk after my therapy?', 'After therapy?']],
+  'my shoulder': [['My shoulder is much better.', 'Shoulder better'], ['My shoulder still hurts.', 'Still hurts'], ['Can you help me with my jacket? My shoulder hurts.', 'Help with jacket?'], ['The doctor wants to check my shoulder again.', 'Doctor check']],
+};
+const SAY_NO = [['No, thanks.', 'No, thanks'], ['I’d rather not, sorry.', 'Rather not'], ['Not this time.', 'Not this time'], ['Can I think about it?', 'Think about it?']];
+const ALWAYS = ['Yes', 'No', 'Thank you', 'I need help', 'Maybe', 'I don’t know', 'Hi!', 'Bye!', 'Please', 'Wait a minute', 'That’s funny', 'I agree', 'Good idea', 'Love you', 'Excuse me', 'Sounds good'];
+const FLEX = [
+  { label: 'Tyler', kind: 'rf' }, { label: 'therapy', kind: 'rf' }, { label: 'my shoulder', kind: 'rf' },
+  { label: 'Keep it short', kind: 'goal' }, { label: 'Say no', kind: 'goal' }, { label: 'I’m so tired today.', kind: 'phrase' },
+];
+const CONTEXT = [
+  { label: 'Mom', kind: 'partner' }, { label: 'Devon', kind: 'partner' }, { label: 'At home', kind: 'place' },
+  { label: 'At the clinic', kind: 'place' }, { label: 'Tired', kind: 'feeling' }, { label: 'Happy', kind: 'feeling' },
+];
+const COMMANDS = ['Listen', 'Start', 'End', 'Repeat', 'Hold on', 'Ask to repeat', 'Wrap up', 'Don’t save', 'Settings'];
+const KBD = [
+  ['Speak', 'Reframe', 'Delete', 'Cancel'],
+  ['␣', 'e', 't', 'a', 'o', 'i', 'n'],
+  ['s', 'h', 'r', 'd', 'l', 'u', 'c'],
+  ['m', 'w', 'f', 'g', 'y', 'p', 'b'],
+  ['v', 'k', 'j', 'x', 'q', 'z', '.', '?'],
+];
+
+// ---------------------------------------------------------------- settings and examples
+const DEFAULTS = { pattern: 'regions', method: 'auto', speed: 1, reading: 4, exit: 'pass', rest: 2, actOn: 'press', minMs: 0, repeatMs: 300,
+  twoPress: false, secondMs: 2000, size: 'small', situationFirst: false, moreFirst: 'last', newopts: 'hold', labels: 'full',
+  autoPartner: true, chatty: false, aiWait: 3000, cue: false, aloud: false };
+const PRESETS = [
+  ['1. One switch, by region', { pattern: 'regions', method: 'auto', exit: 'pass' }],
+  ['2. One switch, one button at a time', { pattern: 'items', method: 'auto' }],
+  ['3. One switch, by region, with a “Leave” stop', { pattern: 'regions', method: 'auto', exit: 'leave' }],
+  ['4. Two switches, step scanning', { pattern: 'regions', method: 'step', exit: 'pass' }],
+  ['5. Two switches, right button leaves a region', { pattern: 'regions', method: 'auto', exit: 'switch2' }],
+  ['6. One switch, inverse (hold and let go)', { pattern: 'regions', method: 'inverse', exit: 'pass' }],
+  ['7. Full Express Panel, by region', { pattern: 'regions', method: 'auto', size: 'full' }],
+  ['8. Talkative partner, short labels', { pattern: 'regions', method: 'auto', chatty: true, labels: 'short' }],
+];
+let cfg = { ...DEFAULTS };
+let presetName = PRESETS[0][0];
+
+function readSettings() {
+  const radio = (n) => (document.querySelector(`input[name=${n}]:checked`) || {}).value;
+  cfg.pattern = radio('pattern'); cfg.method = radio('method'); cfg.exit = radio('exit'); cfg.size = radio('size');
+  cfg.newopts = radio('newopts'); cfg.labels = radio('labels');
+  cfg.speed = Math.max(0.3, Number($('speed').value) || 1); cfg.reading = Math.max(0, Number($('reading').value) || 0);
+  cfg.rest = Number($('rest').value); cfg.actOn = $('actOn').value; cfg.minMs = Number($('minMs').value); cfg.repeatMs = Number($('repeatMs').value);
+  cfg.twoPress = $('twoPress').checked; cfg.secondMs = Number($('secondMs').value);
+  cfg.situationFirst = $('situationFirst').checked; cfg.moreFirst = $('moreFirst').value;
+  cfg.autoPartner = $('autoPartner').checked; cfg.chatty = $('chatty').checked; cfg.aiWait = Number($('aiWait').value);
+  cfg.cue = $('cue').checked; cfg.aloud = $('aloud').checked;
+}
+function writeSettings() {
+  const setRadio = (n, v) => { const el = document.querySelector(`input[name=${n}][value="${v}"]`); if (el) el.checked = true; };
+  ['pattern', 'method', 'exit', 'size', 'newopts', 'labels'].forEach((n) => setRadio(n, cfg[n]));
+  $('speed').value = cfg.speed; $('reading').value = cfg.reading; $('rest').value = String(cfg.rest);
+  $('actOn').value = cfg.actOn; $('minMs').value = String(cfg.minMs); $('repeatMs').value = String(cfg.repeatMs);
+  $('twoPress').checked = cfg.twoPress; $('secondMs').value = String(cfg.secondMs);
+  $('situationFirst').checked = cfg.situationFirst; $('moreFirst').value = cfg.moreFirst;
+  $('autoPartner').checked = cfg.autoPartner; $('chatty').checked = cfg.chatty; $('aiWait').value = String(cfg.aiWait);
+  $('cue').checked = cfg.cue; $('aloud').checked = cfg.aloud;
+}
+function setupLabel() {
+  const m = { auto: 'automatic', step: 'step', inverse: 'inverse' }[cfg.method];
+  const p = cfg.pattern === 'regions' ? 'regions' : 'one at a time';
+  return `${m}, ${p}, ${cfg.speed} s/stop, ${cfg.size} panel`;
+}
+
+// ---------------------------------------------------------------- app state
+const A = {
+  turn: -1, variant: 0, options: [], waitingAI: false, reframes: [], goals: new Set(),
+  partner: null, place: null, feeling: null, alwaysPage: 0, mode: 'conv', typed: '', lastSaid: '',
+};
+let pending = null;            // a newer set held back while the user is in the options
+let aiTimer = null, partnerTimer = null, chattyTimer = null;
+
+function sayAloud(text) {
+  if (!cfg.aloud || !('speechSynthesis' in window)) return;
+  speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+}
+function cueAloud(text) {
+  if (!cfg.cue || !('speechSynthesis' in window)) return;
+  speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = 1.3; speechSynthesis.speak(u);
+}
+function paneLine(cls, text) {
+  const d = document.createElement('div'); d.className = cls; d.textContent = text; $('pane').appendChild(d);
+  $('pane').scrollTop = $('pane').scrollHeight;
+}
+
+// ---------------------------------------------------------------- rendering
+function renderOptions() {
+  for (let i = 0; i < 4; i++) {
+    const el = $('opt' + i);
+    el.classList.remove('waiting', 'empty');
+    if (A.waitingAI) { el.textContent = i === 0 ? 'Getting new options…' : ''; el.classList.add('waiting'); }
+    else if (!A.options.length) { el.textContent = '.'; el.classList.add('empty'); }
+    else el.textContent = cfg.labels === 'short' ? A.options[i][1] : A.options[i][0];
+  }
+  $('leave-r1').classList.toggle('hidden', !(cfg.pattern === 'regions' && cfg.exit === 'leave'));
+}
+
+// The Express Panel as rows of cells. Visual order never changes; scan order may.
+function panelRows() {
+  const cols = cfg.size === 'small' ? 6 : 10;
+  const rows = [];
+  if (cfg.size === 'small') {
+    const per = cols - 1;                    // the last position is "More"
+    const pages = Math.ceil(ALWAYS.length / per);
+    const page = A.alwaysPage % pages;
+    const cells = ALWAYS.slice(page * per, page * per + per).map((t) => ({ label: t, kind: 'phrase' }));
+    while (cells.length < per) cells.push({ kind: 'blank' });
+    cells.push({ label: page === pages - 1 ? 'Close' : 'More', kind: 'more' });
+    rows.push({ band: 'always', cells });
+  } else {
+    for (let r = 0; r < 2; r++) {
+      const cells = ALWAYS.slice(r * cols, r * cols + cols).map((t) => ({ label: t, kind: 'phrase' }));
+      while (cells.length < cols) cells.push({ kind: 'blank' });
+      rows.push({ band: 'always', cells });
+    }
+  }
+  const pad = (list) => { const c = list.map((x) => ({ ...x })); while (c.length < cols) c.push({ kind: 'blank' }); return c; };
+  rows.push({ band: 'flex', cells: pad(FLEX) });
+  rows.push({ band: 'context', cells: pad(CONTEXT) });
+  return rows;
+}
+function isOn(cell) {
+  if (cell.kind === 'goal') return A.goals.has(cell.label);
+  if (cell.kind === 'partner') return A.partner === cell.label;
+  if (cell.kind === 'place') return A.place === cell.label;
+  if (cell.kind === 'feeling') return A.feeling === cell.label;
+  return false;
+}
+const KIND_TAG = { rf: 'Reframe', goal: 'Goal', partner: 'Who', place: 'Where', feeling: 'Feeling' };
+function renderPanel() {
+  const host = $('panelRows'); host.textContent = '';
+  panelRows().forEach((row, r) => {
+    const rowEl = document.createElement('div'); rowEl.className = 'row'; rowEl.id = 'row' + r;
+    row.cells.forEach((cell, c) => {
+      const el = document.createElement('div'); el.id = `c${r}_${c}`;
+      el.className = 'cell' + (cell.kind === 'blank' ? ' blank' : '') + (cell.kind === 'rf' ? ' rf' : '') + (cell.kind === 'goal' ? ' goal' : '')
+        + (['partner', 'place', 'feeling'].includes(cell.kind) ? ' ctx' : '') + (cell.kind === 'more' ? ' more' : '') + (isOn(cell) ? ' on' : '');
+      if (cell.kind !== 'blank') {
+        if (KIND_TAG[cell.kind]) { const k = document.createElement('span'); k.className = 'kind'; k.textContent = KIND_TAG[cell.kind]; el.appendChild(k); }
+        el.appendChild(document.createTextNode(cell.label));
+      }
+      rowEl.appendChild(el);
+    });
+    host.appendChild(rowEl);
+  });
+  if (cfg.pattern === 'regions' && cfg.exit === 'leave') {
+    const lr = document.createElement('div'); lr.className = 'row';
+    const l = document.createElement('div'); l.className = 'cell leave'; l.id = 'leave-r2'; l.textContent = 'Leave';
+    lr.appendChild(l); host.appendChild(lr);
+  }
+}
+function renderCommands() {
+  const row = $('cmdrow'); row.textContent = '';
+  COMMANDS.forEach((t, i) => { const el = document.createElement('div'); el.className = 'cell'; el.id = 'cmd' + i; el.textContent = t; row.appendChild(el); });
+  if (cfg.pattern === 'regions' && cfg.exit === 'leave') { const l = document.createElement('div'); l.className = 'cell leave'; l.id = 'leave-r4'; l.textContent = 'Leave'; row.appendChild(l); }
+}
+function renderKbd() {
+  $('compose').textContent = A.typed;
+  const host = $('kbd'); host.textContent = '';
+  KBD.forEach((keys, r) => {
+    const rowEl = document.createElement('div'); rowEl.className = 'row'; rowEl.id = 'krow' + r;
+    keys.forEach((k, c) => { const el = document.createElement('div'); el.className = 'cell'; el.id = `k${r}_${c}`; el.textContent = k; rowEl.appendChild(el); });
+    host.appendChild(rowEl);
+  });
+}
+function renderAll() {
+  renderOptions(); renderPanel(); renderCommands();
+  const kbd = A.mode === 'kbd';
+  $('kbdArea').classList.toggle('hidden', !kbd); $('convLower').classList.toggle('hidden', kbd);
+  if (kbd) renderKbd();
+  $('r3').querySelector('.tag').textContent = cfg.pattern === 'regions' ? '3' : '';
+}
+
+// ---------------------------------------------------------------- the scan tree
+// A node is a stop. A group holds stops inside it; an item does something.
+const leaveNode = (id) => ({ id, label: 'Leave', leave: true });
+function optionNodes() {
+  const n = A.options.map((o, i) => ({ id: 'opt' + i, label: cfg.labels === 'short' ? o[1] : o[0], speaks: true, act: () => sayOption(i) }));
+  return n;
+}
+const new4Node = () => ({ id: 'new4', label: 'New 4', act: () => { A.variant++; requestOptions('New 4'); return 'handled'; } });
+function cellNode(row, r, c) {
+  const cell = row.cells[c];
+  const id = `c${r}_${c}`;
+  if (cell.kind === 'phrase') return { id, label: cell.label, speaks: true, act: () => speakUser(cell.label, 'Express Panel') };
+  if (cell.kind === 'more') return { id, label: cell.label, act: () => { A.alwaysPage++; renderPanel(); return 'stay'; } };
+  if (cell.kind === 'rf') return { id, label: cell.label, act: () => { A.reframes.push(cell.label); paneLine('n', `Reframe: ${A.reframes.join(' + ')}`); requestOptions('Reframe'); return 'handled'; } };
+  if (cell.kind === 'goal') return { id, label: cell.label, act: () => {
+    if (A.goals.has(cell.label)) { A.goals.delete(cell.label); renderPanel(); return 'stay'; }
+    A.goals.add(cell.label); paneLine('n', `Goal on: ${cell.label}`); requestOptions('Goal'); return 'handled'; } };
+  if (['partner', 'place', 'feeling'].includes(cell.kind)) return { id, label: cell.label, act: () => {
+    A[cell.kind] = A[cell.kind] === cell.label ? null : cell.label; renderPanel(); return 'stay'; } };
+  return null;
+}
+function rowNode(row, r) {
+  return { id: 'row' + r, label: rowLabel(row), group: true, exitByPass: true,
+    kids: () => {
+      const rows = panelRows(); const rr = rows[r];
+      let order = rr.cells.map((_, c) => c).filter((c) => rr.cells[c].kind !== 'blank');
+      if (cfg.moreFirst === 'first') { const m = order.filter((c) => rr.cells[c].kind === 'more'); order = m.concat(order.filter((c) => rr.cells[c].kind !== 'more')); }
+      return order.map((c) => cellNode(rr, r, c)).filter(Boolean);
+    } };
+}
+function rowLabel(row) { return { always: 'Always row', flex: 'Partner and place row', context: 'Who, where, feeling' }[row.band]; }
+function panelRowNodes() {
+  const rows = panelRows();
+  let idx = rows.map((_, r) => r);
+  if (cfg.situationFirst) { const f = idx.filter((r) => rows[r].band === 'flex'); idx = f.concat(idx.filter((r) => rows[r].band !== 'flex')); }
+  return idx.map((r) => rowNode(rows[r], r));
+}
+const imowNode = () => ({ id: 'imow', label: 'In my own words', act: () => { openKeyboard(); return 'handled'; } });
+function commandNodes() {
+  return COMMANDS.map((t, i) => ({ id: 'cmd' + i, label: t, speaks: ['Repeat', 'Hold on', 'Ask to repeat'].includes(t), act: () => command(t) }));
+}
+
+function rootRegions() {
+  const nodes = [];
+  if (A.options.length || A.waitingAI) nodes.push({ id: 'r1', label: 'Response options', group: true, key: 'R1', exitByPass: cfg.exit === 'pass',
+    kids: () => [...optionNodes(), new4Node(), ...(cfg.exit === 'leave' ? [leaveNode('leave-r1')] : [])] });
+  nodes.push({ id: 'r2', label: 'Express Panel', group: true, key: 'R2', exitByPass: cfg.exit === 'pass',
+    kids: () => [...panelRowNodes(), ...(cfg.exit === 'leave' ? [leaveNode('leave-r2')] : [])] });
+  nodes.push({ ...imowNode(), id: 'imow', regionId: 'r3' });
+  nodes.push({ id: 'r4', label: 'Command Bar', group: true, key: 'R4', exitByPass: cfg.exit === 'pass',
+    kids: () => [...commandNodes(), ...(cfg.exit === 'leave' ? [leaveNode('leave-r4')] : [])] });
+  return nodes;
+}
+// The first draft: the four options one at a time, then the Express Panel rows,
+// then New 4, the Context row with In my own words, and the Command Bar.
+function rootItems() {
+  const rows = panelRows();
+  const nodes = [...optionNodes()];
+  rows.forEach((row, r) => { if (row.band !== 'context') nodes.push(rowNode(row, r)); });
+  if (A.options.length) nodes.push(new4Node());
+  nodes.push(imowNode());
+  rows.forEach((row, r) => { if (row.band === 'context') nodes.push(rowNode(row, r)); });
+  nodes.push({ id: 'cmdrow', label: 'Command Bar', group: true, exitByPass: true, kids: commandNodes });
+  return nodes;
+}
+function rootKeyboard() {
+  return KBD.map((keys, r) => ({ id: 'krow' + r, label: r === 0 ? 'Speak, Reframe, Delete, Cancel' : keys.join(' '), group: true, exitByPass: true,
+    kids: () => keys.map((k, c) => ({ id: `k${r}_${c}`, label: k === '␣' ? 'space' : k, act: () => key(k) })) }));
+}
+function rootBuild() { return A.mode === 'kbd' ? rootKeyboard() : (cfg.pattern === 'regions' ? rootRegions() : rootItems()); }
+
+// ---------------------------------------------------------------- the scanner
+const S = { stack: [], resting: false, timer: null, held: null, holdTimer: null, reading: false };
+const M = { t0: performance.now(), stops: 0, presses: 0 };
+function topL() { return S.stack[S.stack.length - 1]; }
+function cur() { const L = topL(); return L ? L.nodes[L.idx] : null; }
+function mkLevel(build, key, exitByPass) { return { build, nodes: build(), idx: 0, passes: 0, key, exitByPass }; }
+
+function resetScan(opts = {}) {
+  clearTimeout(S.timer); clearTimeout(S.holdTimer); S.held = null; S.resting = false;
+  S.stack = [mkLevel(rootBuild, 'root', false)];
+  S.reading = !!opts.reading;
+  draw(); schedule();
+}
+function draw() {
+  document.querySelectorAll('.hl, .held, .resting').forEach((e) => e.classList.remove('hl', 'held', 'resting'));
+  const n = cur(); if (!n) return;
+  const el = $(n.regionId || n.id) || $(n.id);
+  if (el) el.classList.add(S.held ? 'held' : (S.resting ? 'resting' : 'hl'));
+  const path = S.stack.slice(1).map((L, i) => S.stack[i].nodes[S.stack[i].idx].label);
+  let where = (path.length ? path.join(' › ') + ' › ' : '') + n.label;
+  if (S.resting) where = 'Resting. Press to start the scan again.';
+  if (S.held) where = 'Press again to speak: ' + n.label;
+  if (A.waitingAI && n.id === 'r1') where = 'Waiting for the AI…';
+  $('where').textContent = where;
+}
+function updateCounts() {
+  $('counts').textContent = `Stops ${M.stops} · Presses ${M.presses} · ${((performance.now() - M.t0) / 1000).toFixed(1)} s`;
+}
+setInterval(updateCounts, 200);
+function resetMeter() { M.t0 = performance.now(); M.stops = 0; M.presses = 0; updateCounts(); }
+
+function schedule() {
+  clearTimeout(S.timer);
+  if (cfg.method !== 'auto' || S.resting || S.held) return;
+  if (A.waitingAI && cur() && cur().id === 'r1') return;      // parked on the options while the AI works
+  const ms = (S.reading ? cfg.reading : cfg.speed) * 1000;
+  S.reading = false;
+  S.timer = setTimeout(() => { advance(); schedule(); }, ms);
+}
+function advance() {
+  const L = topL(); if (!L || S.resting) return;
+  M.stops++;
+  L.idx++;
+  if (L.idx >= L.nodes.length) {
+    L.idx = 0; L.passes++;
+    if (passComplete(L)) return;
+  }
+  // One-at-a-time: leaving the options lets a held set through.
+  if (cfg.pattern === 'items' && S.stack.length === 1 && pending && L.idx >= A.options.length) applyPending(false);
+  draw(); cueAloud(cur() ? cur().label : '');
+}
+// Returns true when it has already redrawn.
+function passComplete(L) {
+  if (L.key === 'R1' && pending) { applyPending(true); }
+  if (S.stack.length > 1 && L.exitByPass) { popLevel(true); return true; }
+  if (S.stack.length === 1) {
+    if (cfg.pattern === 'items' && pending) applyPending(false);
+    if (cfg.rest > 0 && L.passes >= cfg.rest && cfg.method === 'auto') { S.resting = true; L.idx = 0; draw(); clearTimeout(S.timer); return true; }
+  }
+  return false;
+}
+function popLevel(advanceParent) {
+  const L = S.stack.pop();
+  if (L.key === 'R1' && pending) applyPending(false);
+  const P = topL();
+  P.nodes = P.build();
+  const ids = P.nodes.map((n) => n.id);
+  // Keep the parent on the group just left, then step past it.
+  const fromId = L.fromId; let i = ids.indexOf(fromId); if (i < 0) i = Math.min(P.idx, P.nodes.length - 1);
+  P.idx = i;
+  if (advanceParent) { P.idx = (P.idx + 1) % P.nodes.length; M.stops++; }
+  draw(); cueAloud(cur() ? cur().label : '');
+}
+function leaveToRoot() {
+  if (S.stack.length < 2) return;
+  while (S.stack.length > 2) S.stack.pop();
+  popLevel(true); schedule();
+}
+
+function choose() {
+  const n = cur(); if (!n) return;
+  if (S.resting) { S.resting = false; topL().passes = 0; draw(); schedule(); return; }
+  if (A.waitingAI && n.id === 'r1') return;
+  if (S.held) { const h = S.held; S.held = null; clearTimeout(S.holdTimer); run(h); return; }
+  if (n.leave) { popLevel(true); schedule(); return; }
+  if (n.group) {
+    const lvl = mkLevel(n.kids, n.key || 'group', n.exitByPass); lvl.fromId = n.id;
+    if (!lvl.nodes.length) return;
+    S.stack.push(lvl); draw(); cueAloud(cur().label); schedule(); return;
+  }
+  if (n.speaks && cfg.twoPress) {
+    S.held = n; draw(); clearTimeout(S.timer);
+    S.holdTimer = setTimeout(() => { S.held = null; draw(); schedule(); }, cfg.secondMs);
+    return;
+  }
+  run(n);
+}
+function run(n) {
+  const r = n.act ? n.act() : null;
+  if (r === 'handled') return;                 // the action reset the scan itself
+  afterAction(r === 'stay');
+}
+// After a choice the highlight stays in its region (regions) or goes back to the
+// start (one at a time). In a row, it goes back to the rows of that region.
+function afterAction() {
+  if (cfg.pattern === 'items' || A.mode === 'kbd') {
+    if (A.mode === 'kbd' && S.stack.length > 1) { const L = S.stack.pop(); const P = topL(); P.idx = 0; }
+    if (cfg.pattern === 'items' && A.mode !== 'kbd') { resetScan(); return; }
+    draw(); schedule(); return;
+  }
+  if (S.stack.length > 2) { S.stack.pop(); }
+  const L = topL(); L.nodes = L.build(); L.idx = 0; L.passes = 0;
+  if (!L.nodes.length) { resetScan(); return; }
+  draw(); schedule();
+}
+
+// ---------------------------------------------------------------- switches
+const sw = { 1: { down: false, t: 0, minTimer: null }, 2: { down: false, t: 0, minTimer: null } };
+let lastAccept = -1e9, inverseTimer = null;
+function rawDown(n) {
+  const s = sw[n]; if (s.down) return; s.down = true; s.t = performance.now();
+  if (cfg.method === 'inverse' && n === 1) { inverseDown(); return; }
+  if (cfg.actOn === 'press') {
+    if (cfg.minMs > 0) s.minTimer = setTimeout(() => { if (s.down) accept(n); }, cfg.minMs);
+    else accept(n);
+  }
+}
+function rawUp(n) {
+  const s = sw[n]; if (!s.down) return; s.down = false; clearTimeout(s.minTimer);
+  if (cfg.method === 'inverse' && n === 1) { inverseUp(); return; }
+  if (cfg.actOn === 'release' && performance.now() - s.t >= cfg.minMs) accept(n);
+}
+function accept(n) {
+  const now = performance.now();
+  if (now - lastAccept < cfg.repeatMs) return;
+  lastAccept = now;
+  $('screen').classList.remove('pressflash'); void $('screen').offsetWidth; $('screen').classList.add('pressflash');
+  M.presses++;
+  if (cfg.method === 'step') { if (n === 1) { if (S.resting) { choose(); return; } advance(); } else choose(); return; }
+  // automatic
+  if (n === 2) { if (cfg.exit === 'switch2' && !S.held) leaveToRoot(); else choose(); return; }
+  choose();
+}
+function inverseDown() {
+  if (S.held || S.resting) return;
+  clearInterval(inverseTimer);
+  inverseTimer = setInterval(() => advance(), cfg.speed * 1000);
+}
+function inverseUp() {
+  clearInterval(inverseTimer);
+  const now = performance.now(); if (now - lastAccept < cfg.repeatMs) return; lastAccept = now;
+  M.presses++; choose();
+}
+const screenEl = $('screen');
+screenEl.addEventListener('contextmenu', (e) => e.preventDefault());
+screenEl.addEventListener('pointerdown', (e) => { e.preventDefault(); screenEl.focus(); if (e.button === 0) rawDown(1); else if (e.button === 2) rawDown(2); });
+window.addEventListener('pointerup', (e) => { if (e.button === 0) rawUp(1); else if (e.button === 2) rawUp(2); });
+document.addEventListener('keydown', (e) => {
+  if (e.target.closest && e.target.closest('#panel')) return;
+  if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) rawDown(1); }
+  else if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); if (!e.repeat) rawDown(2); }
+});
+document.addEventListener('keyup', (e) => {
+  if (e.target.closest && e.target.closest('#panel')) return;
+  if (e.code === 'Space') rawUp(1); else if (e.code === 'Enter' || e.code === 'NumpadEnter') rawUp(2);
+});
+
+// ---------------------------------------------------------------- conversation
+function compute() {
+  const t = TURNS[A.turn % TURNS.length];
+  let set = t.sets[A.variant % t.sets.length];
+  if (A.reframes.length) set = REFRAMES[A.reframes[A.reframes.length - 1]] || reframeTyped(A.reframes[A.reframes.length - 1]);
+  if (A.goals.has('Say no')) set = SAY_NO;
+  if (A.goals.has('Keep it short')) set = set.map(([, s]) => [s, s]);
+  return set;
+}
+function reframeTyped(words) {
+  return [[`I wanted to tell you about ${words}.`, `About ${words}`], [`I’d rather not talk about ${words}.`, 'Rather not'],
+          [`What do you think about ${words}?`, 'What do you think?'], [`Did you hear about ${words}?`, 'Did you hear?']];
+}
+function requestOptions(reason) {
+  clearTimeout(aiTimer); pending = null;
+  A.options = []; A.waitingAI = true; renderOptions();
+  if (A.mode !== 'kbd') { resetScan(); }
+  aiTimer = setTimeout(() => { A.waitingAI = false; showOptions(compute()); }, cfg.aiWait);
+}
+// New options arriving. If the user is choosing among the current ones and the
+// setting says hold, they wait.
+function showOptions(set, fromPartner) {
+  const inOptions = cfg.pattern === 'regions' ? S.stack.some((L) => L.key === 'R1')
+                                              : (S.stack.length === 1 && topL().idx < A.options.length) || (S.held && /^opt/.test(S.held.id));
+  if (fromPartner && cfg.newopts === 'hold' && A.options.length && inOptions) { pending = set; paneLine('n', 'Newer options are waiting.'); return; }
+  A.options = set; renderOptions();
+  if (!fromPartner) resetMeter();
+  if (A.mode === 'kbd') return;
+  resetScan({ reading: true });
+}
+function applyPending(restartInside) {
+  if (!pending) return;
+  A.options = pending; pending = null; renderOptions();
+  paneLine('n', 'Newer options shown.');
+  if (restartInside) { const L = S.stack.find((x) => x.key === 'R1'); if (L) { L.nodes = L.build(); L.idx = 0; } }
+}
+function nextTurn() {
+  clearTimeout(partnerTimer);
+  A.turn++; A.variant = 0; A.reframes = []; pending = null;
+  paneLine('p', 'Partner: ' + TURNS[A.turn % TURNS.length].partner);
+  sayAloud(TURNS[A.turn % TURNS.length].partner);
+  requestOptions('partner');
+}
+function userSpoke(text, how) {
+  const secs = ((performance.now() - M.t0) / 1000).toFixed(1);
+  A.lastSaid = text;
+  paneLine('u', text); sayAloud(text);
+  const tr = document.createElement('tr');
+  [text, M.stops, M.presses, secs, `${setupLabel()} (${how})`].forEach((v) => { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
+  $('logBody').prepend(tr);
+  resetMeter();
+}
+function sayOption(i) {
+  const o = A.options[i];
+  userSpoke(o[0], 'response option');
+  endTurn(); return 'handled';
+}
+function speakUser(text, how) {
+  userSpoke(text, how);
+  if (A.options.length) { endTurn(); return 'handled'; }
+  return 'stay';
+}
+function endTurn() {
+  clearTimeout(aiTimer); A.options = []; A.waitingAI = false; pending = null; A.reframes = [];
+  renderOptions(); resetScan();
+  if (cfg.autoPartner) partnerTimer = setTimeout(nextTurn, 2500);
+}
+function command(t) {
+  if (t === 'Repeat') { if (A.lastSaid) { paneLine('u', A.lastSaid); sayAloud(A.lastSaid); } return 'stay'; }
+  if (t === 'Hold on') { paneLine('u', 'Hold on, I’m thinking.'); sayAloud('Hold on, I’m thinking.'); return 'stay'; }
+  if (t === 'Ask to repeat') { userSpoke('Sorry, could you say that again?', 'Command Bar'); return 'stay'; }
+  paneLine('n', `“${t}” pressed. (Not part of this prototype.)`); return 'stay';
+}
+function openKeyboard() { A.mode = 'kbd'; A.typed = ''; renderAll(); resetScan(); }
+function closeKeyboard() { A.mode = 'conv'; renderAll(); resetScan(); }
+function key(k) {
+  if (k === 'Cancel') { closeKeyboard(); return 'handled'; }
+  if (k === 'Delete') { A.typed = A.typed.slice(0, -1); $('compose').textContent = A.typed; return 'stay'; }
+  if (k === 'Speak') { const t = A.typed.trim(); A.mode = 'conv'; renderAll(); if (t) { userSpoke(t, 'typed'); if (A.options.length) { endTurn(); return 'handled'; } } resetScan(); return 'handled'; }
+  if (k === 'Reframe') { const t = A.typed.trim(); A.mode = 'conv'; renderAll(); if (t) { A.reframes.push(t); paneLine('n', 'Reframe: ' + t); requestOptions('Reframe'); } else resetScan(); return 'handled'; }
+  A.typed += k === '␣' ? ' ' : k; $('compose').textContent = A.typed; return 'stay';
+}
+
+// Talkative partner: newer options every 8 seconds while a set is showing.
+chattyTimer = setInterval(() => {
+  if (!cfg.chatty || !A.options.length || A.waitingAI || A.mode === 'kbd') return;
+  A.variant++; paneLine('p', 'Partner: (adds a little more)');
+  showOptions(compute(), true);
+}, 8000);
+
+// ---------------------------------------------------------------- wiring
+function applyPreset(name, over) {
+  cfg = { ...DEFAULTS, ...over }; presetName = name; writeSettings(); restart();
+  document.querySelectorAll('#presets button').forEach((b) => b.classList.toggle('on', b.textContent === name));
+}
+PRESETS.forEach(([name, over]) => {
+  const b = document.createElement('button'); b.textContent = name; b.addEventListener('click', () => applyPreset(name, over)); $('presets').appendChild(b);
+});
+$('panel').addEventListener('change', () => { readSettings(); renderAll(); resetScan(); document.querySelectorAll('#presets button').forEach((b) => b.classList.remove('on')); });
+$('nextTurn').addEventListener('click', () => { if (A.mode === 'kbd') closeKeyboard(); nextTurn(); screenEl.focus(); });
+$('restart').addEventListener('click', () => { restart(); screenEl.focus(); });
+function restart() {
+  clearTimeout(aiTimer); clearTimeout(partnerTimer); pending = null;
+  Object.assign(A, { turn: -1, variant: 0, options: [], waitingAI: false, reframes: [], goals: new Set(), partner: null, place: null, feeling: null, alwaysPage: 0, mode: 'conv', typed: '', lastSaid: '' });
+  $('pane').textContent = ''; renderAll(); resetMeter(); nextTurn();
+}
+applyPreset(PRESETS[0][0], PRESETS[0][1]);
+screenEl.focus();
+</script>
+</body>
+</html>
