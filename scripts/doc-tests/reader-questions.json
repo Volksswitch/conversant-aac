@@ -1,0 +1,181 @@
+{
+  "_README": "Questions for the reader check (scripts/doc-tests/reader-check.mjs). A fresh AI reads a document and answers these from it alone; its answers are compared with the correct ones here. A wrong answer points at a passage a person could misread too. Each correct answer must be TRUE OF THE APP, checked against the code, not copied from a document. When the app changes, change the answer here in the same pass. 'docs' lists name fragments of the documents a question applies to; '*' means every document checked. 'mustCover' true means the document is expected to answer it, so 'not covered' is reported as a gap.",
+  "documents": [
+    "Product Overview",
+    "User Manual (Windows Chromebook Mac)",
+    "User Manual (iPad)",
+    "User Manual (Android)"
+  ],
+  "questions": [
+    {
+      "id": "no-internet",
+      "docs": [
+        "*"
+      ],
+      "mustCover": true,
+      "q": "If the device has no internet connection at all, what still works and what stops?",
+      "a": "The AI's suggested responses stop, and the app can't hear the other person, because speech recognition needs the internet; so their words don't appear on screen. The user can still speak with the Express Panel phrases and by typing in \"In my own words\"."
+    },
+    {
+      "id": "ai-down",
+      "docs": [
+        "*"
+      ],
+      "mustCover": true,
+      "q": "If the internet works but the AI provider can't be reached or the AI key is missing, what still works?",
+      "a": "Everything except the AI's suggested responses: the user still sees what the other person said, and can speak with the Express Panel and by typing in \"In my own words\"."
+    },
+    {
+      "id": "ranked",
+      "docs": [
+        "*"
+      ],
+      "mustCover": true,
+      "q": "Are the response options ranked, with the best or most likely one shown first?",
+      "a": "No. The four options are four different kinds of reply, each always in the same place on screen. The position says which kind of reply it is, not how good it is, and none is the default."
+    },
+    {
+      "id": "four-kinds",
+      "docs": [
+        "*"
+      ],
+      "mustCover": true,
+      "q": "What are the different kinds of response option the app offers?",
+      "a": "Four kinds: an agreeable, natural answer; a polite way to decline or disagree, with a reason; a reply that takes the conversation in a new direction; and a reply that asks for clarification. A setting can show two of each kind, eight in all."
+    },
+    {
+      "id": "spoken-without-tap",
+      "docs": [
+        "*"
+      ],
+      "mustCover": true,
+      "q": "Does the app ever say anything aloud without the user tapping it first?",
+      "a": "Yes, but only short holding phrases such as \"I'm thinking about that\", spoken automatically after the other person finishes to show the user is working on a reply. The user controls their timing and number, including none. Nothing the AI suggests is spoken until the user taps it."
+    },
+    {
+      "id": "learns-from-picks",
+      "docs": [
+        "*"
+      ],
+      "mustCover": false,
+      "q": "Does the app use the replies the user picks as examples of how the user talks?",
+      "a": "No. It only notes how long the picked replies tend to be. Examples of how the user talks come from sentences the user typed themselves and from rewrites the user makes in Conversation Review."
+    },
+    {
+      "id": "data-location",
+      "docs": [
+        "*"
+      ],
+      "mustCover": true,
+      "q": "Where is the user's personal information stored, and is any of it kept on a server run by the project?",
+      "a": "On the user's own device; the project runs no server and keeps nothing. Information leaves the device only to the services the app uses: the AI provider when suggestions are written, the speech services in use, and an optional weekly report that carries counts and timings but no words."
+    },
+    {
+      "id": "partner-speech",
+      "docs": [
+        "*"
+      ],
+      "mustCover": true,
+      "q": "Does what the other person says leave the device?",
+      "a": "Yes. Their speech goes to a speech recognition service to be turned into text (the browser's own, which on a computer sends it to Google or Microsoft, or a paid one the user chose), and the text goes to the AI provider when suggestions are written. No recording of the audio is kept.",
+      "aByDoc": {
+        "User Manual (iPad)": "Yes. Their speech goes to a speech recognition service to be turned into text (Safari's own hearing, or a paid one the user chose), and the text goes to the AI provider when suggestions are written. No recording of the audio is kept.",
+        "User Manual (Android)": "Yes. Their speech goes to the paid speech recognition service the user chose, and the text goes to the AI provider when suggestions are written. No recording of the audio is kept."
+      }
+    },
+    {
+      "id": "audio-kept",
+      "docs": [
+        "*"
+      ],
+      "mustCover": false,
+      "q": "Does the app keep a recording of the conversation's audio?",
+      "a": "No. It keeps a written record of the conversation, and the user can choose not to save a conversation at all."
+    },
+    {
+      "id": "who-pays",
+      "docs": [
+        "*"
+      ],
+      "mustCover": true,
+      "q": "Who pays for the AI, and does the app itself cost anything?",
+      "a": "The app is free. The user sets up their own account with an AI provider, enters their own key, and pays the provider directly for what they use."
+    },
+    {
+      "id": "switch-scanning",
+      "docs": [
+        "*"
+      ],
+      "mustCover": true,
+      "q": "Can someone use the app with switch scanning?",
+      "a": "Not yet. The app needs the user to point directly at the screen."
+    },
+    {
+      "id": "eye-gaze",
+      "docs": [
+        "*"
+      ],
+      "mustCover": false,
+      "q": "Can someone use the app with eye gaze?",
+      "a": "Yes on a computer, when the eye-gaze system moves the pointer and selects by dwelling, the way a mouse would. It hasn't been tried on an iPad or an Android device."
+    },
+    {
+      "id": "who-for",
+      "docs": [
+        "Product Overview"
+      ],
+      "mustCover": true,
+      "q": "Who is the app designed for at present?",
+      "a": "Adults, 18 or older with legal capacity, who can read and who point directly at the screen."
+    },
+    {
+      "id": "world-facts",
+      "docs": [
+        "*"
+      ],
+      "mustCover": false,
+      "q": "If the other person asks a general knowledge question, will the suggestions answer it with facts?",
+      "a": "No. The suggestions don't supply facts about the world the user hasn't given the app; they offer ways to say the user doesn't know or to turn the question back. The exceptions are subjects the user listed as ones they know a lot about, and facts the user types and hands to the AI with Reframe."
+    },
+    {
+      "id": "type-own",
+      "docs": [
+        "*"
+      ],
+      "mustCover": true,
+      "q": "Can the user say something none of the suggestions offer?",
+      "a": "Yes. They type it in \"In my own words\" and the device speaks it. They can also hand typed words to the AI with Reframe to get new suggestions built around them."
+    },
+    {
+      "id": "paid-hearing",
+      "docs": [
+        "*"
+      ],
+      "mustCover": true,
+      "q": "Does the user need a paid speech service for the app to hear the other person?",
+      "a": "Not on Windows, a Chromebook or a Mac, or on an iPad in the Safari browser: the browser's own hearing is free there. On Android, and on an iPad when Conversant is installed on the Home Screen, a paid speech service is needed to hear the other person.",
+      "aByDoc": {
+        "User Manual (Windows Chromebook Mac)": "No. On a Windows computer, Chromebook or Mac the browser's own hearing is free. A paid service is optional.",
+        "User Manual (iPad)": "Not in the Safari browser, where the iPad's own hearing is free. When Conversant is installed on the Home Screen, a paid speech service is needed to hear the other person.",
+        "User Manual (Android)": "Yes. On Android a paid speech service is needed to hear the other person."
+      }
+    },
+    {
+      "id": "devices",
+      "docs": [
+        "Product Overview"
+      ],
+      "mustCover": true,
+      "q": "What devices does the app run on?",
+      "a": "Windows, Chromebook and Mac computers (in Chrome or Edge), iPads, and Android devices."
+    }
+  ],
+  "scopes": {
+    "Product Overview": "An overview of the whole app for readers who don't use it. It covers every device.",
+    "User Manual (Windows Chromebook Mac)": "A manual for someone using Conversant on a Windows computer, Chromebook or Mac. Leaving out iPads and Android is correct, not a gap.",
+    "User Manual (iPad)": "A manual for someone using Conversant on an iPad. Leaving out computers and Android is correct, not a gap.",
+    "User Manual (Android)": "A manual for someone using Conversant on an Android device. Leaving out computers and iPads is correct, not a gap."
+  },
+  "_scopes": "What each document is for, given to the checker so that leaving out other devices is not reported as a gap. A manual may also carry short, clearly marked beta-test notes (for example, that the project pays for a tester's AI account); the checker is told those are correct.",
+  "_aByDoc": "Optional per-question 'aByDoc' gives the correct answer for one document where the general answer covers devices that document doesn't."
+}

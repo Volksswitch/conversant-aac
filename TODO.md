@@ -64,10 +64,16 @@ the one that quietly waits forever.
   5. **Clarifying buttons:** decide where "What do you mean by X?" buttons go. They speak, so not the Context band; the Flex band is the likely place.
 - **Why not now:** the mode is not built. These are decided when it is.
 
-### "sync docs" could look for sentences a reader would misread
-- **Raised:** 2026-11-08 - Ken, after the question-session test showed the AI misreading the Product Overview (offline behavior, ranked options, picked replies used as examples). *"The same misunderstanding could happen with the reader/user."*
-- **What is wanted:** a step in "sync docs" that hands the document to a fresh AI as a reader, asks it a fixed set of questions about how the app works, and compares its answers with the facts. A wrong answer points at the passage that misled it. The question-session test is a working prototype of this: three of its wrong answers each traced to one passage.
-- **Why not now:** Ken's go-ahead on cost and scope. Each check is a few cents per document; the work is writing the questions and their correct answers, which must be kept in step with the app.
+### Reader check findings waiting on a decision (first run, November 8 2026)
+- **Raised:** 2026-11-08 - the new reader check (`scripts/doc-tests/reader-check.mjs`, now step 3c of "sync docs").
+- **What is wanted:** decide and fix, after confirming each against the app:
+  1. **Product Overview:** "It uses what the user tells it, and the replies they pick, to word its response options more the way they would" still says picked replies are used as examples. They are only measured for length.
+  2. **Product Overview:** the glossary says opening the Composition Pane speaks a holding phrase automatically. The app does not start one when the pane opens; it lets one already running carry on. And "Nothing is said without their intervention" contradicts the holding phrases.
+  3. **Product Overview, "Private by Design":** says nothing goes to an outside server except the AI, leaving out the speech services (already item 2 of the stale-statements list).
+  4. **Android and Windows manuals:** "The four options always appear in the same order" led the reader to invent a ranking rule ("the first option is always the one that settles the matter"). Say position shows the kind of reply, not how good it is.
+  5. **Android manual:** describing the built-in hearing's faults right after saying a paid service is needed led the reader to think the built-in hearing is a free option to try first.
+  6. **All three manuals:** the no-internet passages don't say the other person's words stop appearing, and don't mention typing in "In my own words" as still working.
+- **Why not now:** found while building the check; Ken decides whether to fix now or at the next "sync docs".
 
 ### PIN or password when the app extends to younger users
 - **Raised:** 2026-11-03 - Ken, on the Your Security and Privacy document: a PIN or password is still an issue for younger users.
