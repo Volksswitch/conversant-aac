@@ -65,6 +65,11 @@ the one that quietly waits forever.
   6. **Source-material library (Ken, 2026-11-09):** one folder of documents, each kept once; places and people point to sets of them, so a newer version reaches everything at once. Adding documents DECIDED and the folder built (2026-11-09: pick a PDF, read by the app with Mozilla's PDF reader, or paste text). Where a talk is set up DECIDED and built (2026-11-09, on the place: documents, note and audience). Still to design: a person pointing to documents. Ken also raised pointing a doctor at past test results; that is everyday conversation, not a question session, and needs its own rules (what is sent to the AI, which honesty rules apply).
 - **Why not now:** the mode is not built. These are decided when it is.
 
+### "Talking about it": everyday conversation drawing on the user's own writing
+- **Raised:** 2026-11-09 - Ken, while topics were being designed: "talking about it" with a colleague "may be a very different beast where humor, snarkiness, and some mild dishonesty may be natural components. It may also require other, less formal/structured sources like notes, emails, postings", and may be better done by searching the user's writing (RAG).
+- **What is wanted:** everyday suggestions that can draw on a large, informal collection of the user's writing, found by search rather than sent whole. Design section 9 ("Later Work on a General Collection") covers the search, its cost and the devices. Settle first, as Ken's call: where "mild dishonesty" stops (joking and obvious exaggeration vs. a claim the listener would believe). Then a test like the November question-session tests: speed, quality, and whether tone comes through from the voice layer.
+- **Why not now:** a topic was kept to taking questions so the ATIA work could finish; this needs an on-device meaning model, building on a laptop, choosing which emails to include (other people's words), and dating old writing.
+
 ### PIN or password when the app extends to younger users
 - **Raised:** 2026-11-03 - Ken, on the Your Security and Privacy document: a PIN or password is still an issue for younger users.
 - **What is wanted:** decide how settings and the profile are protected for a younger user, and who holds the PIN or password. It connects to guardian approval, which the per-partner vulgarity setting also needs.
