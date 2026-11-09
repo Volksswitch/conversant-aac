@@ -128,3 +128,6 @@ Videos/.published/
 .elevenlabs-key
 .elevenlabs-key.*
 *elevenlabs*key*
+
+# Recordings and transcripts of Ken's talks: they hold audience members' voices
+scripts/qa-session-eval/sample QA*
