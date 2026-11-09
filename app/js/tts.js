@@ -89,6 +89,27 @@ export function paidVoiceInfo() {
     return { provider, voice: models[provider], variant: backend.variant ? backend.variant() : '', backend };
 }
 
+/**
+ * Fetch a sentence AHEAD of saying it, so it plays without a wait (November 9 2026).
+ * A talk answer is spoken one sentence at a time so it can be paused, and on a paid
+ * voice each sentence is a separate request: measured from here, Azure took 0.4 to 1.0
+ * seconds per sentence, which is a gap the listener hears. Fetching the next sentence
+ * while the current one plays hides it. Uses the same fetch-without-playing step that
+ * keeps fixed phrases ready, which leaves the result ready in the voice's own memory.
+ *
+ * Does nothing on the device's own voice, which needs no fetch. Never throws: a
+ * sentence that is not ready is simply fetched when it is said, as before. Deepgram
+ * gains nothing (its one connection takes one sentence at a time) and loses nothing.
+ */
+export async function prepare(text) {
+    try {
+        const info = paidVoiceInfo();
+        const said = pronounce(text || '').trim();
+        if (!info || !said) return;
+        await info.backend.fetchForStore(said, info.voice);
+    } catch { /* fetched when said instead */ }
+}
+
 /** The words exactly as the voice is given them, after any "How to say it" respelling. */
 export function spokenForm(text) { return pronounce(text); }
 

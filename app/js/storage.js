@@ -3057,7 +3057,7 @@ export async function finalizePartnerTurn(handle, { rawTranscript, cleanedTransc
     await flushLog();
 }
 
-export async function logUserResponse({ selectedText, spokenText = null, ttsUsed = null, selectedIndex, allOptions, selectedSlot = null, source = null, decideMs = null, partner = null, feeling = null, place = null, goals = null, audio = null }) {
+export async function logUserResponse({ selectedText, spokenText = null, ttsUsed = null, selectedIndex, allOptions, selectedSlot = null, source = null, decideMs = null, partner = null, feeling = null, place = null, goals = null, audio = null, paused = null }) {
     if (!conversationSaving) return; // private conversation — nothing is written
     // Start the log lazily if this user turn is the FIRST turn of the conversation
     // — an opener (Start conversation) or an Express-panel phrase takes the floor
@@ -3146,6 +3146,10 @@ export async function logUserResponse({ selectedText, spokenText = null, ttsUsed
         // true when the user cut it short with a second tap. selectedText carries what
         // the AI was told ("played a sound: ..."), so a replay can find the clip here.
         audio,
+        // A TALK ANSWER SPOKEN IN PARTS (November 9 2026): true when the user paused it
+        // partway, so its LAST sentence was cut off. The rest, when continued, is its
+        // own turn starting again from that sentence. null otherwise.
+        paused: paused ? true : null,
     });
     await flushLog();
 }

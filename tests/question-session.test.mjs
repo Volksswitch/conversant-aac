@@ -168,3 +168,14 @@ test('the cached block is unchanged by New 4 and Reframe', () => {
     const b = qs.buildAnswerRequest({ question: 'Q?', material: MATERIAL, avoid: ['x'], steer: 'y' });
     assert.equal(a.system[0].text, b.system[0].text);
 });
+
+test('an answer splits into sentences that rejoin to the whole answer', () => {
+    const text = 'Rate is real. But Dr. Jefferson found people uneasy after about a second! So what helps? Holding the floor.';
+    const parts = qs.splitSentences(text);
+    assert.ok(parts.length >= 3, `expected several sentences, got ${parts.length}`);
+    assert.equal(parts.join(' '), text, 'no word is lost or changed');
+    assert.ok(parts.every((p) => p.split(/\s+/).length >= 3 || p === parts[parts.length - 1]),
+        'a fragment of one or two words is joined to the next');
+    assert.deepEqual(qs.splitSentences(''), []);
+    assert.deepEqual(qs.splitSentences('One sentence only'), ['One sentence only']);
+});

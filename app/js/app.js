@@ -1012,7 +1012,12 @@ function initApp() {
         exempt: (el) => el.classList.contains('ep-undefined')
             || (el.classList.contains('ep-audio') && el.classList.contains('ep-on')),   // stopping a sound
     });
-    tapGuard.addRule('#responseOptions .response-card[data-index]');
+    // Pausing a talk answer that is playing is always ONE tap, like stopping a sound:
+    // it cannot say anything and has to work now. Continuing it speaks, so it follows
+    // the setting like any other card.
+    tapGuard.addRule('#responseOptions .response-card[data-index]', {
+        exempt: (el) => el.classList.contains('response-card-speaking'),
+    });
     // The error box's Try again replaces what is in the response area (CR-196).
     tapGuard.addRule('#responseOptions .response-error-retry');
     tapGuard.addRule('#transcriptLog [data-turn]', {
@@ -2231,7 +2236,7 @@ function startFreshListening(opts = {}) {
     // At a talk: the next question, so the last one's answers go - unless this is
     // listening for the explanation of a word the user asked about, where the answers
     // stay up until the new ones replace them.
-    if (!opts.keepCards) { talkQuestion = ''; talkClarify = null; }
+    if (!opts.keepCards) { talkQuestion = ''; talkClarify = null; dropPausedAnswer(); }
     talkUnclear = [];
     pendingPartnerHistoryIdx = -1;   // fresh partner turn — not yet promoted to history
     generationToken++;
@@ -2677,7 +2682,127 @@ async function generateOptions(partnerText) {
 
 // A response from the palette was selected. Repair-of-self operations act on the
 // user's own last utterance; everything else is a normal SPP / opener / closer.
+/*
+ * A TALK ANSWER IS SPOKEN ONE SENTENCE AT A TIME, AND A TAP PAUSES IT (Ken, November 9
+ * 2026). First tap speaks it; a tap while it is speaking pauses it at once (always one
+ * tap, like stopping a sound); a tap on the paused card continues it from the START of
+ * the sentence it was in, so the user can correct or clarify something in between and
+ * then carry on. Picking another answer, or Listen for the next question, drops it.
+ *
+ * WHY SENTENCE BY SENTENCE: it is the only way to know, on every voice, which sentence
+ * was playing when the tap came. The device voice cannot hold a paused sentence while
+ * something else is said, so continuing means saying it again, and the start of the
+ * interrupted sentence is also where a listener follows best. The cost is a short beat
+ * between sentences on a paid voice while each is fetched.
+ *
+ * Each run is recorded as its own turn, with `paused` set when it was cut off, so the
+ * saved conversation shows what was actually said, in order.
+ */
+let answerPlay = null;   // { index, text, sentences, next, state: 'speaking'|'paused', run, raw, first }
+
+function markAnswerCard() {
+    document.querySelectorAll('#responseOptions .response-card-speaking, #responseOptions .response-card-paused')
+        .forEach((c) => c.classList.remove('response-card-speaking', 'response-card-paused'));
+    if (!answerPlay || !lastPalette[answerPlay.index] || lastPalette[answerPlay.index].text !== answerPlay.text) return;
+    const card = document.querySelector(`#responseOptions .response-card[data-index="${answerPlay.index}"]`);
+    if (card) card.classList.add(answerPlay.state === 'paused' ? 'response-card-paused' : 'response-card-speaking');
+}
+
+function dropPausedAnswer() {
+    answerPlay = null;
+    markAnswerCard();
+}
+
+function pauseAnswer() {
+    if (!answerPlay || answerPlay.state !== 'speaking') return;
+    answerPlay.state = 'paused';
+    noteUserAction('pause answer');
+    tts.cancel();
+    markAnswerCard();
+    ui.setStatus('Paused. Tap the answer again to carry on, or say something first.');
+}
+
+async function handleAnswerCard(response, index) {
+    // A tap on the answer that is playing pauses it; on the paused one, continues it.
+    if (answerPlay && answerPlay.index === index && answerPlay.text === response.text) {
+        if (answerPlay.state === 'speaking') { pauseAnswer(); return; }
+        if (answerPlay.state === 'paused') { await playAnswer(); return; }
+    }
+    // A different answer, or the same one finished: start it from the beginning.
+    if (answerPlay && answerPlay.state === 'speaking') tts.cancel();
+    answerPlay = null;
+    await preemptSound();
+    const shownAtTap = (shownCards.cards || []).slice();
+    const decideMs = noteUserAction('card', index);
+    metrics.paletteTaken({ slot: response.slot || null, index, decideMs });
+    placeholders.stop();
+    generationToken++;
+    ui.setPaletteBusy(false);
+    overlayClearLatch();
+    const raw = heardPartnerText();
+    if (!practiceMode) { stt.stopListening(); stt.resetTranscript(); }
+    currentPartnerText = '';
+    currentPartnerUncertain = [];
+    engine.selectResponse(response);
+    ui.showEngineState(engine.getSnapshot());
+    answerPlay = { index, text: response.text, sentences: qs.splitSentences(response.text), next: 0,
+        state: 'speaking', run: 0, raw, first: true, decideMs, shownAtTap };
+    await playAnswer();
+}
+
+async function playAnswer() {
+    const play = answerPlay;
+    if (!play) return;
+    play.state = 'speaking';
+    const run = ++play.run;
+    const from = play.next;
+    markAnswerCard();
+    ui.setStatus('Speaking... tap the answer to pause');
+    let cut = false;
+    for (let i = from; i < play.sentences.length; i++) {
+        play.next = i;
+        const speaking = speakUserStatement(play.sentences[i]);
+        const mine = statementSeq;   // speakUserStatement has just taken its number
+        // The next sentence is fetched while this one plays, so a paid voice does not
+        // leave a gap between them (see tts.prepare).
+        if (i + 1 < play.sentences.length) tts.prepare(play.sentences[i + 1]);
+        const ok = await speaking;
+        // Something else said while this was playing (an Express phrase, Say again...)
+        // cut it off: that is a pause too, so it can be continued afterwards.
+        if (answerPlay === play && play.run === run && play.state === 'speaking' && statementSeq !== mine) {
+            play.state = 'paused';
+        }
+        if (answerPlay !== play || play.run !== run || play.state !== 'speaking' || !ok) { cut = true; break; }
+        play.next = i + 1;
+    }
+    // What this run said: whole sentences, plus the one cut off by a pause.
+    const end = cut ? Math.min(play.next + 1, play.sentences.length) : play.sentences.length;
+    const said = play.sentences.slice(from, end).join(' ');
+    const stillOurs = answerPlay === play;
+    const paused = stillOurs && play.state === 'paused';
+    if (said) {
+        await commitExchange(play.first ? play.raw : '', said, play.index,
+            { decideMs: play.first ? play.decideMs : null, chosenFrom: play.shownAtTap, paused });
+        play.first = false;
+        talkSaid.push({ q: talkQuestion, a: said });
+        if (talkSaid.length > 30) talkSaid.shift();
+    }
+    if (!stillOurs) return;   // another answer, Listen, or End took over
+    if (paused) {
+        // The answers stay up, with this one marked, until it is continued or dropped.
+        markAnswerCard();
+        return;
+    }
+    // Finished. The answers stay on screen so the user can pick another to go deeper
+    // (Ken, November 8 2026); they are cleared when Listen is tapped for the next question.
+    answerPlay = null;
+    showPalette(lastPalette);
+    ui.setTranscriptState('idle');
+    ui.setStatus('Pick another answer to go deeper, or tap Listen for the next question');
+}
+
 async function handleResponseSelected(response, index) {
+    if (qs.isAnswerSlot(response.slot)) return handleAnswerCard(response, index);
     await preemptSound();   // a playing clip stops, and is recorded, first (CR-064)
     if (response.op) return handleRepairOfSelf(response, index);
 
@@ -2844,17 +2969,6 @@ async function handleResponseSelected(response, index) {
         // without waiting for the partner to reply; after a goodbye, re-offer them
         // (the partner may say bye back). Listening still resumes if armed (Ken).
         offerClosings();
-    } else if (qs.isAnswerSlot(response.slot) && lastPalette.length) {
-        // A TALK ANSWER STAYS ON SCREEN with the other three, so the user can pick a
-        // second one to go deeper (Ken, November 8 2026). This is the deliberate
-        // exception to CR-090 below: at a talk a second answer is the expected next
-        // move, not a stray tap. The answers are cleared when Listen is tapped for the
-        // next question, and listening does not restart by itself (autoResumeOn).
-        talkSaid.push({ q: talkQuestion, a: response.text });
-        if (talkSaid.length > 30) talkSaid.shift();
-        showPalette(lastPalette);
-        ui.setTranscriptState('idle');
-        ui.setStatus('Pick another answer to go deeper, or tap Listen for the next question');
     } else {
         // What was said has been said: the cards go back to empty outlines, so a stray
         // tap cannot speak a stale answer (CR-090). Listening may redraw them anyway.
@@ -3083,6 +3197,7 @@ async function commitExchange(raw, userText, index, opts = {}) {
         spokenText: opts.audio ? null : spokenFormFor(userText, spokenText),
         ttsUsed: opts.audio ? null : tts.lastVoiceUsed(),
         audio: opts.audio || null,
+        paused: opts.paused || null,
         selectedIndex: index,
         // Only a palette selection (index >= 0) has a meaningful "all options"
         // list; a free-composed utterance (index -1) was not picked from a
@@ -3620,14 +3735,16 @@ function practiceResumeOrIdle() {
 // CLEAR the conversation window (transcript history) and ALL cards, and reset the
 // engine to STANDBY. Shared by End conversation and Start conversation.
 async function terminateConversation() {
-    talkQuestion = '';
-    talkSaid = [];   // a new conversation has said nothing yet
-    talkUnclear = [];
-    talkClarify = null;
     conversationEpoch++;
     stopExpressAudio({ abort: true });
     placeholders.stop();
     tts.cancel();
+    // Question sessions: a new conversation has said nothing yet and pauses nothing.
+    answerPlay = null;
+    talkQuestion = '';
+    talkSaid = [];
+    talkUnclear = [];
+    talkClarify = null;
     // ⚠ THE TOUR IS DELIBERATELY NOT CLEARED HERE, and the first cut got this wrong.
     // This function is not "the conversation ended" — it is "wipe the conversation
     // state", and START conversation calls it too, which is step two of the tour. So
@@ -4732,7 +4849,10 @@ async function speakAsUserTurn(historyText, spokenText = historyText, source = '
     currentPartnerUncertain = [];
 
     ui.setStatus('Speaking...');
-    clearPalette();               // any AI palette shown is now stale
+    // At a talk the answers stay on screen until Listen is tapped (Ken, November 8 2026),
+    // and a PAUSED answer must stay to be continued after a correction said here.
+    const keepAnswers = activeTalk() && lastPalette.some((m) => qs.isAnswerSlot(m.slot));
+    if (!keepAnswers) clearPalette();   // any AI palette shown is now stale
     if (!(await speakUserStatement(spokenText, { display: historyText }))) return;
 
     // Append to the transcript AFTER speaking (Ken); now-playing stays suppressed

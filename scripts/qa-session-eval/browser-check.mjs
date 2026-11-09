@@ -57,7 +57,7 @@ function stubs() {
                 ? { unclear_words: /covered/.test(JSON.stringify(body.messages)) && !/they said/.test(JSON.stringify(body.messages)) ? ['covered'] : [], answers: [
                     { label: `Short ${n}`, kind: 'short', text: `Short answer number ${n}.` },
                     { label: `Angle A ${n}`, kind: 'angle', text: `First deeper answer number ${n}.` },
-                    { label: `Angle B ${n}`, kind: 'angle', text: `Second deeper answer number ${n}.` },
+                    { label: `Angle B ${n}`, kind: 'angle', text: `Second deeper answer number ${n}. It goes on to a second sentence. And then a third sentence.` },
                     { label: `Angle C ${n}`, kind: 'angle', text: `Third deeper answer number ${n}.` },
                 ] }
                 : { partner_action: 'QUESTION', turn_status: 'COMPLETE', is_repair_initiator: false,
@@ -79,12 +79,27 @@ function stubs() {
     };
     window.__spoken = [];
     if (window.speechSynthesis) {
+        // Like the real thing: a sentence ends by itself after a moment, or at once when
+        // cancelled. window.__holdSpeech keeps it going, so a pause can land mid-sentence.
+        let current = null;
+        const end = (utt) => {
+            if (utt.__done) return;
+            utt.__done = true;
+            if (current === utt) current = null;
+            utt.onend?.(new Event('end'));
+        };
         window.speechSynthesis.speak = (utt) => {
             window.__spoken.push(utt.text);
+            current = utt;
             setTimeout(() => utt.onstart?.(new Event('start')), 20);
-            setTimeout(() => utt.onend?.(new Event('end')), 200);
+            const finish = () => {
+                if (utt.__done) return;
+                if (window.__holdSpeech) { setTimeout(finish, 50); return; }
+                end(utt);
+            };
+            setTimeout(finish, 200);
         };
-        window.speechSynthesis.cancel = () => {};
+        window.speechSynthesis.cancel = () => { if (current) { const u = current; setTimeout(() => end(u), 0); } };
     }
     let live = null;
     class StandIn {
@@ -205,6 +220,46 @@ try {
     } else {
         check(false, 'found the Yes button on the Express Panel');
     }
+
+    // 5c. Pause and continue. The third card (three sentences) is tapped, paused during
+    //     its FIRST sentence, a correction is said, and a tap carries it on from the
+    //     start of that sentence to the end.
+    check((await cards()).length === 4, 'the answers are still up after the Express phrase');
+    await page.evaluate(() => { window.__holdSpeech = true; window.__spoken.length = 0; });
+    const card3 = () => page.$('#responseOptions .response-card[data-index="2"]');
+    await (await card3()).click();
+    await pace(400);
+    check(await (await card3()).evaluate((c) => c.classList.contains('response-card-speaking')), 'the playing answer is marked');
+    await (await card3()).click();
+    await pace(400);
+    check(await (await card3()).evaluate((c) => c.classList.contains('response-card-paused')), 'a second tap pauses it, and it is marked paused');
+    const no = await page.$('#expressPanel .ep-btn::-p-text(No)');
+    await no.click();
+    await page.evaluate(() => { window.__holdSpeech = false; });
+    await pace(1200);
+    check(!!(await card3()) && await (await card3()).evaluate((c) => c.classList.contains('response-card-paused')),
+        'saying a correction keeps the paused answer on screen');
+    await (await card3()).click();
+    await pace(2500);
+    const heard = await page.evaluate(() => window.__spoken.slice());
+    const firstSentence = heard.filter((t) => /^Second deeper answer number 2\.$/.test(t)).length;
+    check(firstSentence === 2, `continuing starts again from the interrupted sentence (said ${firstSentence} times)`);
+    check(heard.indexOf('No') > 0 && heard.indexOf('No') < heard.lastIndexOf('Second deeper answer number 2.'),
+        'the correction comes between the two parts');
+    check(heard.includes('It goes on to a second sentence.') && heard.includes('And then a third sentence.'),
+        'and it carries on to the end');
+    check(!(await (await card3()).evaluate((c) => c.classList.contains('response-card-paused') || c.classList.contains('response-card-speaking'))),
+        'once finished, the mark is gone and the answers stay up');
+    const turns = await page.evaluate(async () => {
+        const storage = await import('/js/storage.js');
+        const logs = await storage.listConversationLogs();
+        const all = logs.flatMap((l) => (l.data && l.data.exchanges) || []);
+        return all.filter((e) => /Second deeper answer number 2/.test(e.selectedText || ''))
+            .map((e) => ({ text: e.selectedText, paused: e.paused }));
+    });
+    check(turns.length === 2 && turns[0].paused === true && !turns[1].paused
+        && /third sentence/.test(turns[1].text) && !/third sentence/.test(turns[0].text),
+        `the saved conversation shows the paused part, then the rest (${JSON.stringify(turns)})`);
 
     // 6. Listen clears them; the next question gets new answers.
     await page.click('#listenBtn');

@@ -4155,6 +4155,12 @@ dialog label.radio-label.radio-disabled {
 
 .wv-disclosure-title { font-weight: 600; min-width: 0; }
 
+/* A talk answer that is playing (tap to pause) or paused (tap to carry on).
+   PAINT ONLY: an outline draws outside the layout, so no card moves and no keyguard
+   hole shifts. Solid while speaking, dashed while paused. */
+.response-card.response-card-speaking { outline: 4px solid var(--edge-strong); outline-offset: -4px; }
+.response-card.response-card-paused   { outline: 4px dashed var(--edge-strong); outline-offset: -4px; }
+
 /* A place's "Questions after a talk" section (November 9 2026). */
 .wv-talk-body { display: flex; flex-direction: column; gap: 0.5rem; }
 .wv-talk-heading { font-weight: 600; margin-top: 0.4rem; }

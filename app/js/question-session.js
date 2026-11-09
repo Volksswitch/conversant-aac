@@ -169,6 +169,37 @@ export function answersToResponses(answers) {
     }));
 }
 
+/**
+ * An answer split into the sentences it is spoken in (Ken, November 9 2026: a tap
+ * pauses an answer and a later tap continues it from the start of the sentence it was
+ * in). Speaking one sentence at a time is what tells the app exactly which sentence was
+ * playing, on every voice, with nothing estimated.
+ *
+ * Uses the browser's own sentence splitter where there is one, which knows that "Dr."
+ * does not end a sentence; otherwise a plain split after . ! or ? and a space. Never
+ * loses a word: the pieces joined back together are the whole answer.
+ */
+export function splitSentences(text) {
+    const t = String(text || '').trim();
+    if (!t) return [];
+    let parts = null;
+    try {
+        if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+            parts = [...new Intl.Segmenter('en', { granularity: 'sentence' }).segment(t)]
+                .map((s) => s.segment.trim()).filter(Boolean);
+        }
+    } catch { parts = null; }
+    if (!parts) parts = t.split(/(?<=[.!?]["”']?)\s+/).map((s) => s.trim()).filter(Boolean);
+    // A "sentence" of one or two words ("Yes." "No.") is joined to the next, so a
+    // pause never resumes on a fragment that makes no sense alone.
+    const out = [];
+    for (const p of parts) {
+        if (out.length && out[out.length - 1].split(/\s+/).length < 3) out[out.length - 1] += ` ${p}`;
+        else out.push(p);
+    }
+    return out;
+}
+
 /** True for a card that is a talk answer. */
 export function isAnswerSlot(slot) {
     return slot === 'ANSWER_SHORT' || slot === 'ANSWER';
