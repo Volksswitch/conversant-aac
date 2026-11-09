@@ -1,7 +1,8 @@
 """Publish the user-facing documents to volksswitch.org - the last step of "sync docs".
 
     python scripts/wordpress/publish-documents.py            # show what would change
-    python scripts/wordpress/publish-documents.py --apply    # do it
+    python scripts/wordpress/publish-documents.py --apply    # do it, and delete the old PDFs
+    python scripts/wordpress/publish-documents.py --apply --keep-old   # leave old PDFs
     python scripts/wordpress/publish-documents.py --apply --force   # ignore the dates
     python scripts/wordpress/publish-documents.py --apply --force --only "User Manual"
                                     # only documents whose file name contains the text
@@ -16,9 +17,12 @@ WHY CHANGE-DETECTION IS BY THE BYLINE DATE. The byline is updated on every sync,
 unchanged date means an unchanged document. Re-uploading everything each time would
 leave a new copy of every PDF in the media library per sync and change every link.
 
-WHY OLD PDFS ARE NOT DELETED. The media library has no bin: deleting an attachment is
-permanent, and permanent deletion is something this assistant does not do. Replaced
-attachments are listed at the end so Ken can delete them in WordPress if he wants.
+OLD PDFS ARE DELETED, LAST (Ken, November 8 2026: "These documents can always be
+regenerated from their backup equivalents"). Once the page points at the new copies and
+the list is saved, each replaced PDF is deleted through old_copies.py, which keeps any
+file the list still uses or any page or post still links to. Deleting media is
+permanent (the library has no bin), which is why it runs only after everything else
+has succeeded, and only with --apply. --keep-old leaves the old copies in place.
 
 ORDER MATTERS, and it is chosen so a failure can never leave the page half-updated:
 every upload happens first; the page is written once, at the end; the local list is
@@ -29,6 +33,7 @@ Credentials: .wordpress-credentials at the project root (git-ignored).
 import datetime, html, importlib.util, json, os, re, subprocess, sys
 
 from wp import ROOT, call
+from old_copies import delete_old
 
 LIST = os.path.join(os.path.dirname(__file__), 'user-documents.json')
 DOCS = os.path.join(ROOT, 'Documents')
@@ -131,8 +136,11 @@ def main():
         with open(LIST, 'w', encoding='utf-8', newline='\n') as f:
             json.dump(cfg, f, indent=2, ensure_ascii=False)
             f.write('\n')
-    for title, mid, url in replaced:
-        print(f'  OLD COPY LEFT IN MEDIA LIBRARY: {title} (id {mid}) {url}')
+    if replaced and apply and '--keep-old' not in sys.argv:
+        delete_old([mid for _, mid, _ in replaced], apply=True)
+    else:
+        for title, mid, url in replaced:
+            print(f'  OLD COPY LEFT IN MEDIA LIBRARY: {title} (id {mid}) {url}')
     if not plan:
         print('No documents changed.')
 
