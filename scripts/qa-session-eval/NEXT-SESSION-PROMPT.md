@@ -7,18 +7,19 @@ Read these first, in this order:
 4. `scripts/qa-session-eval/run.mjs`. Its INSTRUCTIONS block is the tested prototype prompt. Reuse it; don't rewrite it from scratch. `2026-11-08/results.md` shows what it produces.
 
 What's decided:
-- **Turning it on:** a place (such as "At my talk") switches the mode on and carries the talk's material. The audience's style comes from a People entry ("SLPs at my talk") switched on with it.
+- **Turning it on:** a place (such as "At my talk") switches the mode on and points to the talk's documents. The audience's style comes from a People entry ("SLPs at my talk") switched on with it.
 - **Four answers, always:** this ignores the two-per-category setting. The short answer comes first and sums up the other three; the next three go deeper on different parts.
 - **Short labels are suggested, not forced:** the mode suggests showing only short labels, but the user's "What a response card shows" setting still decides.
 - **Answers stay on screen after one is spoken**, so the user can go deeper. They are cleared when Listen is tapped for the next question, and auto-resume listening is off in this mode.
 - **The rules in the prototype prompt**, with no attempt to imitate the user's voice: content only from the material; "I don't know, and I haven't thought about it very much"; say which part of a question can't be answered; correct wrong assumptions; never comment on honesty; never claim to know the audience's work; don't repeat a point already spoken in the session; plain American English.
+- **Source material:** one source-material folder in the data folder, each document kept once. Places and people point to sets of documents, so a newer version reaches everything that uses it.
+- **Who "I" is:** each talk carries a short note on how the presenter relates to the material. Answers say "I" only in that role and describe the people the material describes in the third person; with no note, the presenter is assumed not to be one of them (rule 10 in the prototype prompt).
 - **Clarifying buttons:** the AI returns `unclear_words`, which become "What do you mean by X?" buttons. They are offered only for words too vague to answer without asking.
 
 Still open. Ask me about these before building the parts they touch, one question at a time, with your recommendation:
-- Pronouns: I'll give you examples of when an answer should say "my" and when "I".
 - Where the clarifying buttons go: probably the Flex band, since they speak.
 - How the user stops an answer partway through.
-- How the material is added on a computer and stored with the place, and how it reaches an iPad (data folder or backup).
+- How documents are added to the source-material folder on a computer, how they are chosen for a place or person, where the talk's note is written, and how it all reaches an iPad (data folder or backup).
 - Stressing "as" and "for" in the project's tagline when a paid voice speaks it.
 - A check on each answer after it is written. The AI still slips now and then; `scripts/qa-session-eval/british-check.mjs` is a start.
 

@@ -73,7 +73,7 @@ body("When an AAC user cannot participate fluidly in conversation, they lose far
 body("Here is what the research shows non-conversational AAC users actually lose:")
 
 doc.add_heading("Timing", level=2)
-body("Conversation is deeply time-sensitive. Meaning is not carried only by words — it is carried by when something is said. A spoken person can say “Wait — that’s not what I meant” at the exact moment a misunderstanding begins. An AAC user may need many seconds to produce the same correction. By that time, the moment has passed.")
+body("Conversation is deeply time-sensitive. Meaning is not carried only by words — it is carried by when something is said. A person who speaks can say “Wait — that’s not what I meant” at the exact moment a misunderstanding begins. An AAC user may need many seconds to produce the same correction. By that time, the moment has passed.")
 body("This affects jokes, corrections, emotional responses, quick questions, agreements, disagreements — any contribution that has to land at a specific moment to have its intended force. In conversation, late is often not merely late. Late can mean socially invisible.")
 
 doc.add_heading("Turn-Taking Power", level=2)

@@ -33,6 +33,13 @@ const AUDIENCES = {
     academic: 'Academic researchers in AAC and assistive technology. They know the research literature. Speak in a measured, precise way, name the published work the material cites where it is relevant, and be clear about what is a claim versus what has been measured.',
 };
 
+// Who the speaker is in relation to the material (Ken, November 9 2026). The material
+// describes a product and the people who use it; the speaker may or may not be one of
+// them, and the AI cannot tell which. In the app this is a short note stored with the
+// talk. Ken's own case: he leads the project and does not use the app himself.
+const SPEAKER = process.env.QS_SPEAKER
+    || "I founded Volksswitch, the nonprofit project that makes Conversant AAC, and I lead its design. I'm not an AAC user and I don't use Conversant myself.";
+
 const QUESTIONS = [
     ['direct', 'You said words per minute is the wrong thing to focus on. Can you say more about that? Most of us were trained to measure rate.'],
     ['direct', 'How does the device know what to suggest? Where does that come from?'],
@@ -89,8 +96,11 @@ Rules:
 7. Never claim to know about the audience's work, feelings or experience ("I know funding is a big part of your day"). You don't.
 8. Don't repeat a point already made in an earlier answer in this session (listed below the audience) unless the question asks about it again. Refer back briefly instead ("as I said a moment ago").
 9. No lead-ins like "Great question" and no closing summary. Answer, then stop.
+10. "I" AND "MY" MEAN THE SPEAKER, AND ONLY IN THE ROLE THE NOTE BELOW GIVES THEM. The material describes things (a product, the people who use it, a method, a condition) that the speaker may or may not be part of. Describe those in the third person: "the person using it", "their people", "their device". Never say the speaker uses, owns, has, or has done something the material describes unless the note says so. If the note doesn't say, assume the speaker is not one of the people the material describes.
 
-THE MATERIAL (the speaker's own writing):
+THE SPEAKER AND THIS MATERIAL: ${SPEAKER}
+
+THE MATERIAL (chosen by the speaker for this talk; not necessarily about the speaker):
 ${docs.map((d) => `=== ${d.name} ===\n${d.text}`).join('\n\n')}`;
 
 function words(s) {

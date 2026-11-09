@@ -54,14 +54,15 @@ the one that quietly waits forever.
   7. **Product Overview, "In your own words":** the heading, the paragraph under it, the feature list and the glossary still say "In your own words"; the app's button says "In my own words". (Items for the connection-drop sentence, picked replies, "first option" and not-ranked options were made November 8 2026; see DOC-SYNC.)
 - **Why not now:** Ken asked for them to be listed. Each changes a published page, and they fit the next "sync docs" pass.
 
-### Question sessions after a talk: open items from the November 8 2026 test
+### Question sessions after a talk: open items from the November 8-9 2026 tests
 - **Raised:** 2026-11-08 - Ken's comments on the October 11 question-session test, and the re-run (`scripts/qa-session-eval/2026-11-08/`).
 - **What is wanted:**
-  1. **Pronouns (waiting on Ken):** "my" when an answer speaks from the point of view of a Conversant user, "I" when from the presenter's. Needs one example from Ken of each before the instruction can be written.
-  2. **Eight-card setting: DECIDED (Ken, 2026-11-08)** - always four, cards show only the short label. Recorded in CLAUDE.md.
+  1. **Pronouns: DECIDED (Ken, 2026-11-09)** - an answer had said "a profile I've built about myself, my people, and my places", assuming the presenter uses Conversant. Ken doesn't, and the app can't tell from the material. Each talk carries a short note on how the presenter relates to the material; "I" only in that role, everyone the material describes in the third person, and with no note the presenter is assumed not to be one of them. Tested on four questions; recorded in CLAUDE.md and the design document (4.7).
+  2. **Eight-card setting: DECIDED (Ken, 2026-11-08)** - always four; showing only the short label is suggested, and the user's own setting decides. Recorded in CLAUDE.md.
   3. **Tagline emphasis:** Ken wants "as" and "for" stressed when the project's tagline ("speak as the user, not for them") is spoken - only in that phrase; everywhere else would be laughable (Ken). The paid voices can stress a word (Deepgram measurably stresses capitals; Azure takes emphasis markup); the device's own voices cannot.
-  4. **Check answers after they are written:** told plainly that self-commentary is formal and self-important, the AI stopped it, but runs vary (one run still flagged "client" as unclear after being told not to). The mode needs a check after the answer is written, not only instructions. `scripts/qa-session-eval/british-check.mjs` is the start of one.
+  4. **Check answers after they are written:** told plainly that self-commentary is formal and self-important, the AI stopped it, but runs vary (one run still flagged "client" as unclear after being told not to, and on November 9 a few answers said "I'll be careful here" and "I'd say plainly"). The mode needs a check after the answer is written, not only instructions. `scripts/qa-session-eval/british-check.mjs` is the start of one.
   5. **Clarifying buttons:** decide where "What do you mean by X?" buttons go. They speak, so not the Context band; the Flex band is the likely place.
+  6. **Source-material library (Ken, 2026-11-09):** one folder of documents, each kept once; places and people point to sets of them, so a newer version reaches everything at once. Still to design: adding documents on a computer, choosing which a place or person points to, where the talk's note is written. Ken also raised pointing a doctor at past test results; that is everyday conversation, not a question session, and needs its own rules (what is sent to the AI, which honesty rules apply).
 - **Why not now:** the mode is not built. These are decided when it is.
 
 ### PIN or password when the app extends to younger users
