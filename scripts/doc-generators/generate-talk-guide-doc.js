@@ -121,7 +121,7 @@ const doc = new Document({
             itemBold("A page of likely questions. ", "Write down the questions you expect, with a few lines on how you’d answer each. It’s often the most useful document you can add, because it says what you’d stress.", "docs"),
             itemBold("What people always ask about. ", "Cost, where to get it, who it’s for, what research there is. If the answer isn’t in a document, it can’t be offered.", "docs"),
             para("The app takes facts and ideas from your documents, not their wording. Answers are written the way you’d say them out loud, so a formal paper is fine to include."),
-            boldPara("Limits. ", "Each document can be up to about 65,000 words, and a topic can use up to 20 documents. A PDF made by scanning printed pages has no text in it, so copy the text from somewhere else and use “Paste text”. To use a web page, save it as a PDF or copy its text."),
+            boldPara("Limits. ", "Each document can be up to about 65,000 words, and a topic can use up to 20 documents. A PDF made by scanning printed pages has no text in it, so copy the text from somewhere else and use “Paste text”. To use a web page, save it as a PDF or copy its text. Slides need to be saved as a PDF too, or you can paste in your speaker notes."),
             para("Every question sends all of the topic’s documents to the AI, so more material makes every request bigger. Choose the documents that matter for this talk rather than everything you have."),
             emptyPara(),
 
