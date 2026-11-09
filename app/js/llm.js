@@ -726,6 +726,49 @@ export async function generateAnswers(opts = {}) {
     }
 }
 
+/*
+ * QUESTION SESSIONS: rewrite ONE talk answer that the word check flagged (Ken, November
+ * 9 2026: "word check, then rewrite"). A small request with no documents in it: it only
+ * rewords, so it is told to keep every fact and add none, and it never needs the
+ * material. Returns the rewritten text.
+ *
+ * slips: [{ kind, found }] from question-session.answerSlips.
+ */
+export const REWRITE_SCHEMA = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['text'],
+    properties: { text: { type: 'string' } },
+};
+
+export async function rewriteAnswer({ text, slips = [] } = {}) {
+    if (!apiKey) throw new Error('API key not set');
+    if (onRequest) { try { onRequest({ reason: 'rewrite answer' }); } catch { /* never break generation */ } }
+    const problems = slips.map((s) => `- ${s.kind}: "${s.found}"`).join('\n');
+    const system = `You fix the wording of one answer that a person's AAC device will speak aloud for them, to a question from the audience after their talk. A check found these problems in it:
+${problems}
+
+Change only what is needed to fix them. Keep every fact, figure, name and point, in the same order, at about the same length. Never add a fact or a claim. Keep it in the first person, in plain spoken American English with contractions. Do not comment on your own honesty, openness or manner of speaking, do not claim to know the audience's work or feelings, and do not open with a lead-in like "Great question". If it says "I haven't written about it", say "I don't know" instead. Where it uses a British word, use the American one.
+
+${SPEAKABLE}
+
+${NO_VULGARITY}
+
+Return the rewritten answer in "text".`;
+    const { text: reply, stopReason } = await askDetailed({
+        system,
+        messages: [{ role: 'user', content: String(text || '') }],
+        maxTokens: 800,
+        schema: REWRITE_SCHEMA,
+    });
+    let out;
+    try { out = JSON.parse(String(reply).trim()).text; } catch { out = null; }
+    if (typeof out !== 'string' || !out.trim()) {
+        throw Object.assign(new Error(`the rewrite could not be read (stop: ${stopReason || 'unknown'})`), { reply });
+    }
+    return out.trim();
+}
+
 export async function generatePartnerUtterance(scenario, conversationHistory = []) {
     if (!apiKey) throw new Error('API key not set');
 

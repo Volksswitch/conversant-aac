@@ -2339,6 +2339,49 @@ function talkAudienceText(personId) {
  *   ingest  true for a new or growing question: the engine records it as the partner's
  *           turn. False for New 4 and Reframe, which only replace the cards.
  */
+/*
+ * THE CHECK AFTER WRITING (Ken, November 9 2026: "word check, then rewrite"). Each
+ * answer is checked against a list of known slips (question-session.answerSlips); one
+ * that has any is rewritten by the AI in the background. The original stays on screen
+ * meanwhile, so the user never waits, and the rewrite replaces it only if it is better
+ * and the user has not already tapped that answer.
+ */
+let slipWords;   // the British word lists, loaded once; null when they could not be
+async function loadSlipWords() {
+    if (slipWords !== undefined) return slipWords;
+    try { slipWords = await (await fetch('./data/slip-words.json')).json(); }
+    catch { slipWords = null; }
+    return slipWords;
+}
+
+async function checkTalkAnswers(palette) {
+    const british = await loadSlipWords();
+    (palette || []).forEach((card) => {
+        const slips = qs.answerSlips(card.text, british);
+        if (!slips.length) return;
+        storage.logEvent('answer flagged', { slips: slips.map((x) => x.kind) });
+        llm.rewriteAnswer({ text: card.text, slips }).then((fixed) => {
+            if (!fixed || fixed === card.text) return;
+            if (qs.answerSlips(fixed, british).length >= slips.length) return;   // no better
+            const at = lastPalette.indexOf(card);
+            if (at < 0) return;                                        // replaced since (New 4, next question)
+            if (answerPlay && answerPlay.index === at) return;         // tapped: leave it alone
+            if (talkSaid.some((x) => x.a && card.text.startsWith(x.a.slice(0, 40)))) return;   // already said
+            const swapped = { ...card, text: fixed };
+            lastPalette = lastPalette.map((m, k) => (k === at ? swapped : m));
+            storage.logEvent('answer rewritten', { slips: slips.map((x) => x.kind) });
+            if (composerOpen) {
+                if (heldForComposer && heldForComposer.palette) {
+                    heldForComposer.palette = heldForComposer.palette.map((m) => (m === card ? swapped : m));
+                }
+                return;
+            }
+            showPalette(lastPalette);
+            markAnswerCard();
+        }).catch((err) => storage.logError('rewriteAnswer', err.message));
+    });
+}
+
 async function generateTalkAnswers(question, opts = {}) {
     const talk = activeTalk();
     if (!talk || !talk.sources.length || !question) return false;
@@ -2392,6 +2435,7 @@ async function generateTalkAnswers(question, opts = {}) {
         }
         ui.setTranscriptState('ready');
         ui.setStatus('Pick an answer');
+        checkTalkAnswers(snap.palette);   // the word check, and a rewrite of any it flags
         // The holding phrases were armed by the pause, as in everyday conversation;
         // this confirms or cancels them the same way generateOptions does.
         if (opts.placeholderEpoch !== undefined) {

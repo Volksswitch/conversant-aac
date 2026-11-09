@@ -200,6 +200,90 @@ export function splitSentences(text) {
     return out;
 }
 
+/*
+ * A CHECK ON EACH ANSWER AFTER IT IS WRITTEN (Ken, November 9 2026: "word check, then
+ * rewrite"). The tests showed the AI still slips now and then despite the rules, and
+ * runs vary, so instructions alone are not enough. This is the free half: a list of
+ * known slips, checked as each set of answers arrives. A flagged answer is then
+ * rewritten by the AI in the background (llm.rewriteAnswer); the original stays on
+ * screen meanwhile.
+ *
+ * Every entry here was seen in a real test run, or is a rule in the prompt stated as
+ * words. Keep it to forms with no innocent reading in an answer, or the check rewrites
+ * good answers and costs money for nothing. "Honestly" is included because rule 6 bans
+ * it outright ("never 'I honestly don't know'").
+ */
+// ⚠ NARROW ON PURPOSE, MEASURED (November 9 2026): run over the 129 real answers from the
+// November 8 and 9 tests, a bare "honest" caught "three things keep it honest" and "an
+// honest partner", and a "first option" rule caught the AI CORRECTLY saying "there's no
+// first option" (rule 3 working) and describing the article's own worry about the first
+// option. A rewrite there could remove a correct correction, so that rule was dropped.
+const SELF_TALK = [
+    /\bto be (?:honest|frank|clear|precise)\b/i,
+    /\bhonestly\b/i,
+    /\bthe honest (?:summary|answer|truth|version|picture)\b/i,
+    /\bin all honesty\b/i,
+    /\b(?:frankly|candidly)\b/i,
+    /\btruth be told\b/i,
+    /\bI(?:'ll| will| want to| should| need to| have to)? be (?:plain|careful|precise|clear|straight|direct|upfront)\b/i,
+    /\bI'd (?:say )?plainly\b/i,
+    /\blet me be (?:clear|plain|precise|careful|honest)\b/i,
+    /\bI'd rather tell you than guess\b/i,
+    /\bI take (?:it|that|this) seriously\b/i,
+];
+const AUDIENCE = [
+    /\bI know (?:how |that )?(?:you|your|funding|this is)\b/i,
+    /\bas (?:you|all of you|many of you) (?:all )?know\b/i,
+    /\bI'm sure (?:you|many of you)\b/i,
+];
+const LEAD_IN = [/^(?:that's an? )?(?:great|good|excellent|interesting) question\b/i];
+const NOT_WRITTEN = [/\bI haven't written about\b/i];
+
+const escapeRx = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+let britishCache = null;
+function britishMatchers(lists) {
+    if (!lists) return null;
+    if (britishCache && britishCache.lists === lists) return britishCache;
+    // Same matching as tests/american-spelling.test.mjs: a stem with its endings, and a
+    // stem ending in -e also without it ("practise" -> "practising").
+    const alts = (lists.words || []).flatMap(([b]) => (b.endsWith('e')
+        ? [`${escapeRx(b)}(?:s|d)?`, `${escapeRx(b.slice(0, -1))}(?:ing|ed|es)`]
+        : [`${escapeRx(b)}(?:s|es|d|ed|ing|ful|ly)?`]));
+    const phrases = (lists.phrases || []).map(([b]) => b.trim().split(/\s+/).map(escapeRx).join('\\s+'));
+    britishCache = {
+        lists,
+        word: alts.length ? new RegExp(`\\b(?:${alts.join('|')})\\b`, 'i') : null,
+        phrase: phrases.length ? new RegExp(`\\b(?:${phrases.join('|')})\\b`, 'i') : null,
+    };
+    return britishCache;
+}
+
+/**
+ * The known slips in one answer, as [{ kind, found }]. Empty for a clean answer.
+ * `british` is { words, phrases } from app/data/slip-words.json, or null to skip that
+ * part (the file could not be loaded).
+ */
+export function answerSlips(text, british = null) {
+    const t = String(text || '');
+    const out = [];
+    const scan = (kind, list) => {
+        for (const rx of list) {
+            const m = t.match(rx);
+            if (m) { out.push({ kind, found: m[0] }); return; }
+        }
+    };
+    scan('talks about its own honesty or manner', SELF_TALK);
+    scan('claims to know the audience', AUDIENCE);
+    scan('opens with a lead-in', LEAD_IN);
+    scan('says "I haven\'t written about it" instead of "I don\'t know"', NOT_WRITTEN);
+    const b = britishMatchers(british);
+    if (b) {
+        const m = (b.word && t.match(b.word)) || (b.phrase && t.match(b.phrase));
+        if (m) out.push({ kind: 'uses British wording', found: m[0] });
+    }
+    return out;
+}
+
 /** True for a card that is a talk answer. */
 export function isAnswerSlot(slot) {
     return slot === 'ANSWER_SHORT' || slot === 'ANSWER';

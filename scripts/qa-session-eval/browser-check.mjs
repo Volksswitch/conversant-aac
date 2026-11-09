@@ -49,6 +49,14 @@ function stubs() {
         if (u.startsWith('https://api.anthropic.com/v1/messages')) {
             const body = JSON.parse(init.body);
             const system = Array.isArray(body.system) ? body.system.map((b) => b.text).join('\n') : String(body.system);
+            // A rewrite of one flagged answer: answered here and kept apart, so the
+            // numbering of the answer requests below is unchanged.
+            if (/You fix the wording of one answer/.test(system)) {
+                (window.__rewrites = window.__rewrites || []).push(body.messages[0].content);
+                return new Response(JSON.stringify({ content: [{ type: 'text', text: JSON.stringify({ text: 'Rewritten without the slip.' }) }],
+                    stop_reason: 'end_turn', usage: { input_tokens: 10, output_tokens: 10 } }),
+                    { status: 200, headers: { 'content-type': 'application/json' } });
+            }
             const talk = /THE MATERIAL \(chosen by the speaker/.test(system);
             const n = window.__requests.push({ talk, system, messages: body.messages });
             const reply = talk
@@ -58,7 +66,7 @@ function stubs() {
                     { label: `Short ${n}`, kind: 'short', text: `Short answer number ${n}.` },
                     { label: `Angle A ${n}`, kind: 'angle', text: `First deeper answer number ${n}.` },
                     { label: `Angle B ${n}`, kind: 'angle', text: `Second deeper answer number ${n}. It goes on to a second sentence. And then a third sentence.` },
-                    { label: `Angle C ${n}`, kind: 'angle', text: `Third deeper answer number ${n}.` },
+                    { label: `Angle C ${n}`, kind: 'angle', text: n === 1 ? 'Third deeper answer number 1. The honest summary is that it is short.' : `Third deeper answer number ${n}.` },
                 ] }
                 : { partner_action: 'QUESTION', turn_status: 'COMPLETE', is_repair_initiator: false,
                     offered_options: [], offered_range: null, missing_facts: [], missing_other: [], heard_uncertain: [],
@@ -182,6 +190,15 @@ try {
     check(shown.length === 4, `four answers on screen (saw ${shown.length})`);
     check(/slot-preferred/.test(shown[0]?.cls) && shown.slice(1).every((c) => /slot-initiative/.test(c.cls)),
         'the short answer is first and green, the deeper three blue');
+    // The fourth answer carries a slip ("The honest summary is..."): the word check
+    // flags it and the rewrite replaces it on screen.
+    await page.waitForFunction(() => (window.__rewrites || []).length >= 1, { timeout: 8000 }).catch(() => {});
+    await pace(600);
+    check((await page.evaluate(() => (window.__rewrites || []).slice()))[0]?.includes('honest summary'),
+        'the word check sends the flagged answer to be rewritten');
+    shown = await cards();
+    check(/Rewritten without the slip/.test(shown[3]?.label || ''), 'the rewrite replaces it on screen');
+    check(!(await page.evaluate(() => (window.__rewrites || []).length > 1)), 'only the flagged answer is rewritten');
 
     // 4. Speak the short answer: the answers stay, listening does not restart.
     await page.click('#responseOptions .response-card:not(.response-card-empty)');

@@ -122,6 +122,7 @@ const SHELL = [
   './js/metrics.js',
   './data/words.json',
   './data/pricing.json',
+  './data/slip-words.json',
   './data/worldview-questions.json',
   './manifest.webmanifest',
   './icons/icon-192.png',

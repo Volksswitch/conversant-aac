@@ -179,3 +179,60 @@ test('an answer splits into sentences that rejoin to the whole answer', () => {
     assert.deepEqual(qs.splitSentences(''), []);
     assert.deepEqual(qs.splitSentences('One sentence only'), ['One sentence only']);
 });
+
+// THE CHECK AFTER WRITING. Every "caught" line below is a slip seen in a real test run
+// (scripts/qa-session-eval/2026-11-08 and 2026-11-09) or a rule in the prompt.
+const SLIP_WORDS = JSON.parse(readFileSync(new URL('../app/data/slip-words.json', import.meta.url), 'utf8'));
+
+test('the word check catches the slips seen in the tests', () => {
+    const caught = [
+        'The honest summary is that nobody has measured it.',
+        "I'll be careful here, because the material only goes so far.",
+        "I'd say plainly that it is not finished.",
+        'I honestly don\'t know.',
+        'I know funding is a huge part of your day.',
+        "Great question. It comes from three places.",
+        "I haven't written about Medicaid.",
+        'It changes the colour of the cards.',
+        'You tick the box in Settings.',
+    ];
+    for (const t of caught) assert.ok(qs.answerSlips(t, SLIP_WORDS).length, `should be caught: ${t}`);
+});
+
+test('the word check leaves ordinary answers alone', () => {
+    const clean = [
+        "I don't know, and I haven't thought about it very much.",
+        "I'm sorry, I don't know what it costs.",
+        'The best option for a family is to try it with the device voice first.',
+        'The four options are different kinds of reply, and none of them is ranked.',
+        "There's no first option to grab for speed.",
+        'Three things keep it honest.',
+        'People get uneasy after about four seconds of silence.',
+        'It changes the color of the cards.',
+    ];
+    for (const t of clean) assert.deepEqual(qs.answerSlips(t, SLIP_WORDS), [], `should pass: ${t}`);
+    // Without the word lists the British part is skipped, never an error.
+    assert.deepEqual(qs.answerSlips('the colour of it', null), []);
+});
+
+test('the app\'s copy of the British word list matches writing-conventions.json', () => {
+    const c = JSON.parse(readFileSync(new URL('../writing-conventions.json', import.meta.url), 'utf8'));
+    assert.deepEqual(SLIP_WORDS.words, [...c.britishSpellings, ...c.britishVocabulary].map(([b, a]) => [b, a]),
+        'run: node scripts/apply-slip-words.mjs');
+    assert.deepEqual(SLIP_WORDS.phrases, (c.britishPhrases || []).map(([b, a]) => [b, a]));
+});
+
+test('a flagged answer is rewritten by a small request that names the problems and sends no documents', async () => {
+    mockFetch(JSON.stringify({ text: 'Nobody has measured it yet.' }));
+    const out = await llm.rewriteAnswer({ text: 'The honest summary is that nobody has measured it.',
+        slips: qs.answerSlips('The honest summary is that nobody has measured it.', SLIP_WORDS) });
+    assert.equal(out, 'Nobody has measured it yet.');
+    const body = getFetchCalls()[0].body;
+    const system = Array.isArray(body.system) ? body.system.map((b) => b.text).join('') : body.system;
+    assert.match(system, /honest/);
+    assert.match(system, /Never add a fact/);
+    assert.doesNotMatch(system, /THE MATERIAL/);
+    assert.equal(body.messages[0].content, 'The honest summary is that nobody has measured it.');
+    mockFetch(JSON.stringify({ text: '' }));
+    await assert.rejects(llm.rewriteAnswer({ text: 'x', slips: [] }), /could not be read/);
+});
