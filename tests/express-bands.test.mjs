@@ -194,8 +194,23 @@ test('the Context band keeps its three kinds in their runs, always in the same o
 test('a situation key round-trips, and a missing half means Anyone or Anyplace', () => {
     assert.equal(bands.flexKey('mom', 'home'), 'mom|home');
     assert.equal(bands.flexKey(null, null), 'anyone|anyplace');
-    assert.deepEqual(bands.parseFlexKey('mom|home'), { partnerId: 'mom', placeId: 'home' });
-    assert.deepEqual(bands.parseFlexKey(''), { partnerId: 'anyone', placeId: 'anyplace' });
+    assert.deepEqual(bands.parseFlexKey('mom|home'), { partnerId: 'mom', placeId: 'home', topicId: null });
+    assert.deepEqual(bands.parseFlexKey(''), { partnerId: 'anyone', placeId: 'anyplace', topicId: null });
+    // A topic's own list (November 9 2026): its key can never be read as a who and where.
+    assert.deepEqual(bands.parseFlexKey(bands.topicFlexKey('tp1')), { partnerId: 'anyone', placeId: 'anyplace', topicId: 'tp1' });
+});
+
+test("a topic's own phrases come first in the Flex band, then the usual lists", () => {
+    const lists = {
+        [bands.topicFlexKey('tp1')]: [{ type: 'phrase', text: 'Thank you, next question.' }],
+        'mom|anyplace': [{ type: 'phrase', text: 'Love you.' }],
+        'anyone|anyplace': [{ type: 'phrase', text: 'Hi.' }],
+    };
+    const out = bands.flexFill(lists, 'mom', null, 10, 'tp1');
+    assert.deepEqual(out.map((x) => x.text), ['Thank you, next question.', 'Love you.', 'Hi.']);
+    assert.deepEqual(out.map((x) => x.source), ['topic', 'partner', 'general']);
+    assert.deepEqual(bands.flexFill(lists, 'mom', null, 10).map((x) => x.text), ['Love you.', 'Hi.'],
+        'no topic switched on, no topic phrases');
 });
 
 // A row is not a fixed quantity - "one row" is 13 positions on one layout and 2 on

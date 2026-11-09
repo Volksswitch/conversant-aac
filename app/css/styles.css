@@ -196,6 +196,8 @@
     --infl-feeling-tint: #e0f7fa;
     --infl-place: #827717;
     --infl-place-tint: #f9fbe7;
+    --infl-topic: #6A1B9A;
+    --infl-topic-tint: #f3e5f5;
     --choice: #2E7D32;
     --choice-tint: #e8f5e9;
     --goal: #4527A0;
@@ -405,6 +407,8 @@
     --infl-feeling-tint: #d3eef2;
     --infl-place: #827717;
     --infl-place-tint: #eef0d4;
+    --infl-topic: #6A1B9A;
+    --infl-topic-tint: #ead7f0;
     --choice: #2E7D32;
     --choice-tint: #d9ead9;
     --goal: #4527A0;
@@ -509,6 +513,8 @@
     --infl-feeling-tint: #ffffff;
     --infl-place: #4d4a00;
     --infl-place-tint: #ffffff;
+    --infl-topic: #4a0072;
+    --infl-topic-tint: #ffffff;
     --choice: #0a5c12;
     --choice-tint: #ffffff;
     --goal: #33107a;
@@ -611,6 +617,8 @@
     --infl-feeling-tint: #12292c;
     --infl-place: #c3c265;
     --infl-place-tint: #262712;
+    --infl-topic: #c9a3e0;
+    --infl-topic-tint: #261a2b;
     --choice: #6cc47a;
     --choice-tint: #1b2a1e;
     --goal: #b39ddb;
@@ -714,6 +722,8 @@
     --infl-feeling-tint: #000000;
     --infl-place: #e0e070;
     --infl-place-tint: #000000;
+    --infl-topic: #e0b0ff;
+    --infl-topic-tint: #000000;
     --choice: #69f0ae;
     --choice-tint: #000000;
     --goal: #d1b3ff;
@@ -820,6 +830,8 @@
     --infl-feeling-tint: #000000;
     --infl-place: #ffd400;
     --infl-place-tint: #000000;
+    --infl-topic: #ffb0ff;
+    --infl-topic-tint: #000000;
     --choice: #b6f05c;
     --choice-tint: #000000;
     --goal: #c8b8ff;
@@ -934,6 +946,8 @@
     --infl-feeling-tint: #e6ecf6;
     --infl-place: #8A6D00;
     --infl-place-tint: #f4f0dc;
+    --infl-topic: #8E2C7E;
+    --infl-topic-tint: #f5e6f1;
     --choice: #1B6E3C;
     --choice-tint: #e6f0e9;
     --goal: #7B3294;
@@ -2396,6 +2410,7 @@ body.opts-grid-below #responseArea { flex-direction: column; }
 .ep-mark-thick .ep-btn.ep-band-context { border-left-color: var(--band-color); }
 .ep-mark-thick .ep-btn.ep-partner      { border-left-width: 10px; }
 .ep-mark-thick .ep-btn.ep-place        { border-left-width: 6px; }
+.ep-mark-thick .ep-btn.ep-topic        { border-left-width: 4px; }
 .ep-mark-thick .ep-btn.ep-feeling      { border-left-width: 2px; }
 
 /* side: which edge the bar sits on. The border WIDTHS are swapped rather than the
@@ -2409,6 +2424,10 @@ body.opts-grid-below #responseArea { flex-direction: column; }
 .ep-mark-side .ep-btn.ep-feeling {
     border-left-width: 1px;
     border-top-width: 4px;
+}
+.ep-mark-side .ep-btn.ep-topic {
+    border-left-width: 1px;
+    border-bottom-width: 4px;
 }
 
 /* shape: a small mark before the label. The strongest of the four and the most in
@@ -2427,6 +2446,7 @@ body.opts-grid-below #responseArea { flex-direction: column; }
    looks lighter than both. */
 .ep-mark-shape .ep-btn.ep-partner .ep-text::before { content: '\25CF\2009'; font-size: 0.92em; }
 .ep-mark-shape .ep-btn.ep-place   .ep-text::before { content: '\25B2\2009'; font-size: 1em; }
+.ep-mark-shape .ep-btn.ep-topic   .ep-text::before { content: '\25C6\2009'; font-size: 0.95em; }
 .ep-mark-shape .ep-btn.ep-feeling .ep-text::before { content: '\25A0\2009'; font-size: 0.86em; }
 
 /* ⚠ THE FLEX BAND NOW HOLDS TWO KINDS, AND IT IS TOLD APART BY THE SAME SETTING AS
@@ -2592,6 +2612,7 @@ body.opts-grid-below #responseArea { flex-direction: column; }
    unmistakable (Rule 6) - it just uses the band's color rather than the kind's. */
 .ep-btn.ep-band-context.ep-partner,
 .ep-btn.ep-band-context.ep-place,
+.ep-btn.ep-band-context.ep-topic,
 .ep-btn.ep-band-context.ep-feeling {
     background: var(--band-tint);
     color: var(--ink);
@@ -5332,6 +5353,7 @@ body.conv-bottom     .danger-dialog {
        beside it stayed light (CR-230). */
     .ep-btn.ep-band-context.ep-partner:hover,
     .ep-btn.ep-band-context.ep-place:hover,
+    .ep-btn.ep-band-context.ep-topic:hover,
     .ep-btn.ep-band-context.ep-feeling:hover {
         background: var(--surface-raised);
         color: var(--ink);

@@ -86,6 +86,7 @@ const DATA_FILES = [
     { file: 'worldview.json',       cache: 'aac_worldview',       label: 'About Me answers' },
     { file: 'relationships.json',   cache: 'aac_relationships',   label: 'People and relationships' },
     { file: 'places.json',          cache: 'aac_places',          label: 'My Places' },
+    { file: 'topics.json',          cache: 'aac_topics',          label: 'My Topics' },
     { file: 'practice-scenarios.json', cache: 'aac_practice_scenarios', label: 'Your practice scenarios' },
     { file: 'control-phrases.json', cache: 'aac_control_phrases', label: 'Starters and control phrases' },
     { file: 'placeholders.json',    cache: 'aac_placeholders',     label: 'Placeholder phrases' },
@@ -224,6 +225,8 @@ export function summarize(pkg) {
             detail = ` (${value.people.length})`;
         } else if (entry.file === 'places.json' && value && Array.isArray(value.places)) {
             detail = ` (${value.places.length})`;
+        } else if (entry.file === 'topics.json' && value && Array.isArray(value.topics)) {
+            detail = ` (${value.topics.length})`;
         } else if (entry.file === 'voice.json' && value && value.soundCheck) {
             detail = ` (${Object.keys(value.soundCheck).length} answered)`;
         } else if (Array.isArray(value)) {

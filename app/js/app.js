@@ -10,6 +10,7 @@ import * as worldview from './worldview.js';
 import * as relationships from './relationships.js';
 import { goalItems } from './partner-profile.js';
 import * as places from './places.js';
+import * as topics from './topics.js';
 import * as sourceMaterial from './source-material.js';
 import * as qs from './question-session.js';
 import * as worldviewUI from './worldview-ui.js';
@@ -235,6 +236,9 @@ let manualListenArmed = false;
 let activePartner = null;
 let activeFeeling = null;
 let activePlace = null;
+// The TOPIC switched on (November 9 2026): while one is, each question gets four
+// answers drawn from its documents. Cleared at End conversation, like a partner.
+let activeTopic = null;
 
 // QUESTION SESSIONS (November 9 2026). While the active place is a talk that is switched
 // on, each audience question gets four ANSWERS from the talk's documents instead of the
@@ -972,6 +976,7 @@ function initApp() {
     relationships.load().catch(() => { /* falls back to empty graph */ });
     // My Places (places + their facts) — its own model + file, same lifecycle.
     places.load().catch(() => { /* falls back to no places */ });
+    topics.load().catch(() => { /* falls back to no topics */ });
     practiceLibrary.load().catch(() => { /* falls back to the built-in scenarios only */ });
     voiceProfile.load().catch(() => { /* falls back to no voice data */ });
     // Express Panel items — its own model + file. Loaded from cache now; the
@@ -1875,6 +1880,8 @@ async function warmUpStorage() {
     // Same for My Places.
     try { await places.load(); } catch { /* keep cached/empty places */ }
     try { await places.syncToFolder(); } catch { /* best-effort */ }
+    try { await topics.load(); } catch { /* keep cached/empty topics */ }
+    try { await topics.syncToFolder(); } catch { /* best-effort */ }
     try { await practiceLibrary.load(); } catch { /* keep cached/empty scenarios */ }
     try { await practiceLibrary.syncToFolder(); } catch { /* best-effort */ }
     try { await voiceProfile.load(); } catch { /* keep cached/empty voice data */ }
@@ -2276,7 +2283,8 @@ function failureEvent(err) {
 // that is switched on. Read fresh each time, so switching the talk on or off in My
 // Places takes effect at the next question.
 function activeTalk() {
-    return activePlace && activePlace.placeId ? places.talkFor(activePlace.placeId) : null;
+    const t = activeTopic && activeTopic.topicId ? topics.getTopic(activeTopic.topicId) : null;
+    return t ? { sources: t.sources, note: t.note, name: t.name } : null;
 }
 
 // The question to answer. After the user asked what a word meant, what the person says
@@ -2399,7 +2407,7 @@ async function generateTalkAnswers(question, opts = {}) {
         const result = await llm.generateAnswers({
             question, material,
             speakerNote: talk.note,
-            audience: talkAudienceText(talk.audienceId),
+            audience: talkAudienceText(activePartner && activePartner.personId),
             alreadySaid: talkSaid,
             avoid: opts.avoid || [],
             steer: opts.steer || '',
@@ -2945,7 +2953,7 @@ async function handleResponseSelected(response, index) {
         }
         // terminateConversation() resets the engine, so put it back into the opening
         // state the card was drawn from before the selection below consumes it.
-        ui.showEngineState(engine.initiate({ partnerName: partnerLabel(activePartner) }));
+        ui.showEngineState(engine.initiate({ partnerName: fillInValues().name }));
     }
 
     // Capture the partner's speech BEFORE stopping the mic — if they were still
@@ -3272,6 +3280,7 @@ async function commitExchange(raw, userText, index, opts = {}) {
         partner: partnerStamp(),
         feeling: feelingStamp(),
         place: placeStamp(),
+        topic: topicStamp(),
         goals: goalStamp(),
     };
 
@@ -4224,7 +4233,7 @@ function handleInitiate() {
         || !!currentPartnerText || !!heardPartnerText();
     // If a Partner is active, personalize the openers with their name ("Hi Tim,
     // have you got a minute?" instead of "Hey, got a minute?").
-    const snap = engine.initiate({ partnerName: partnerLabel(activePartner) });
+    const snap = engine.initiate({ partnerName: fillInValues().name });
     ui.showEngineState(snap);
     renderStaticPalette('opener', snap.palette, 'Pick an opener');
 }
@@ -4844,6 +4853,7 @@ async function handleEndConversation() {
 function clearInfluencers() {
     activePartner = null;
     activeFeeling = null;
+    activeTopic = null;   // like a partner (Ken, November 9 2026)
     // EVERY goal goes, whichever list it came from. A conversation goal is a property
     // OF the conversation by definition, so it cannot outlive it - which is also why
     // the general list is the only one of the three that survives a change of partner
@@ -5211,7 +5221,15 @@ function partnerLabel(item) {
 // The values the fill-ins take right now (fill-ins.js, Ken, October 9 2026): the
 // person selected, as the user calls them.
 function fillInValues() {
-    return { name: partnerLabel(activePartner) };
+    // A group (an audience) has no name to greet: "Hi {name}" becomes "Hi".
+    return { name: partnerIsGroup() ? '' : partnerLabel(activePartner) };
+}
+
+// Is the partner switched on a group, such as an audience, rather than one person?
+function partnerIsGroup() {
+    const id = activePartner && activePartner.personId;
+    const p = id ? relationships.getPerson(id) : null;
+    return !!(p && p.group);
 }
 function fillText(text) { return fillIns.fillIn(text, fillInValues()); }
 
@@ -5316,6 +5334,7 @@ function reconcileInfluencers() {
         else { if (now.placeId !== activePlace.placeId) dropGoalsFrom('place'); activePlace = now; }
     }
     if (activeFeeling) activeFeeling = find(activeFeeling);
+    if (activeTopic) activeTopic = find(activeTopic);
 }
 
 // An Always-band button leaves the panel on whatever page it is showing (Ken, October 6
@@ -5349,12 +5368,14 @@ function composedPanel(ctx = null) {
     const composed = expressBands.composePanel(expressLayoutRows(), expressPanel.getModel(), {
         partnerId: partner ? (partner.personId || partner.id) : null,
         placeId: place ? (place.placeId || place.id) : null,
+        topicId: !ctx && activeTopic ? (activeTopic.topicId || null) : null,
         goals: goalButtons(partner, place),
         // Switched-on buttons go to the front of their band so they are always in view,
         // and back to their own place when switched off (Ken, September 14 2026).
         litIds: [
             partner && partner.id,
             place && place.id,
+            !ctx && activeTopic && activeTopic.id,
             feeling && feeling.id,
             ...goalKeys,
         ].filter(Boolean),
@@ -5377,7 +5398,9 @@ function composedPanel(ctx = null) {
         ? { ...item, label: partnerLabel(item) }
         : item && item.type === 'place'
             ? { ...item, name: placeLabel(item) }
-            : item));
+            : item && item.type === 'topic'
+                ? { ...item, name: topicLabel(item) }
+                : item));
     return composed;
 }
 
@@ -5559,10 +5582,12 @@ function drawExpressPanel() {
         onToggleGoal: handleToggleGoal,
         activeFeelingId: activeFeeling ? activeFeeling.id : null,
         activePlaceId: activePlace ? activePlace.id : null,
+        activeTopicId: activeTopic ? activeTopic.id : null,
         onSpeak: handleSpeakExpressItem,
         onTogglePartner: handleTogglePartner,
         onToggleFeeling: handleToggleFeeling,
         onTogglePlace: handleTogglePlace,
+        onToggleTopic: handleToggleTopic,
         onInMyOwnWords: openComposer,
         // Wired only in Settings, which is the only place buttons are edited (Ken).
         // Safe to decide at render time now that hostExpressPanel always re-renders:
@@ -5619,7 +5644,11 @@ function buildSituationBlock() {
     // for). Ken, August 5 2026.
     if (activePartner) {
         const label = partnerLabel(activePartner);
-        if (label) lines.push(`You are currently talking with ${label} — ${label} is the person being spoken TO, not a topic to raise. When you address or refer to them, use "${label}".`);
+        if (label && partnerIsGroup()) {
+            // An audience (Ken, November 9 2026): spoken to as a group, never addressed
+            // by the entry's name as though it were one person.
+            lines.push(`The user is speaking to a group: ${label}. It is who is listening, not a topic to raise. Speak to them as a group, and never address them by that name as if it were one person.`);
+        } else if (label) lines.push(`You are currently talking with ${label} — ${label} is the person being spoken TO, not a topic to raise. When you address or refer to them, use "${label}".`);
         // How the user speaks WITH this particular person (Phase 3). Only for a
         // partner who is a real node in the graph — a free-typed Express Panel
         // partner has no edge to carry a profile — and only when they have one, so
@@ -5728,6 +5757,7 @@ function contextSnapshot() {
         partner: partnerStamp(),
         feeling: feelingStamp(),
         place: placeStamp(),
+        topic: topicStamp(),
         goals: goalStamp(),
     };
 }
@@ -5748,6 +5778,18 @@ function goalStamp() {
 function placeLabel(item) {
     const p = item && item.placeId ? places.getPlace(item.placeId) : null;
     return (p && p.name) || (item && item.name) || '';
+}
+
+function topicLabel(item) {
+    const t = item && item.topicId ? topics.getTopic(item.topicId) : null;
+    return (t && t.name) || (item && item.name) || '';
+}
+
+function topicStamp() {
+    if (!activeTopic) return null;
+    const label = (topicLabel(activeTopic) || '').trim();
+    if (!label && !activeTopic.topicId) return null;
+    return { id: activeTopic.topicId || null, label };
 }
 
 function placeStamp() {
@@ -5877,7 +5919,7 @@ async function handleTogglePartner(item) {
     // they are rebuilt with this person's own openers and name (CR-237). Only the
     // cards: the Start-conversation backout keeps what it captured.
     if (currentStatic.kind === 'opener') {
-        const snap = engine.initiate({ partnerName: partnerLabel(activePartner) });
+        const snap = engine.initiate({ partnerName: fillInValues().name });
         ui.showEngineState(snap);
         renderStaticPalette('opener', snap.palette, 'Pick an opener');
     }
@@ -5932,9 +5974,6 @@ async function handleToggleGoal(item) {
 async function handleTogglePlace(item) {
     if (editedInSettings(item)) return;
     activePlace = (activePlace && activePlace.id === item.id) ? null : item;
-    talkSaid = [];   // what was said at one talk is not "already said" at another
-    talkUnclear = [];
-    talkClarify = null;
     // Same rule as the partner's, for the same reason: "pick up my prescription"
     // stops being the goal the moment the user says they are somewhere else.
     dropGoalsFrom('place');
@@ -5947,6 +5986,19 @@ async function handleTogglePlace(item) {
 // One place all three toggles end, so the "set, not cleared" rule and the counting
 // cannot drift apart between them - three copies of a condition is how one of them
 // ends up saying something different by accident.
+// A TOPIC button (November 9 2026): switches question answering on or off.
+async function handleToggleTopic(item) {
+    if (editedInSettings(item)) return;
+    activeTopic = (activeTopic && activeTopic.id === item.id) ? null : item;
+    talkSaid = [];   // what was said on one topic is not "already said" on another
+    talkUnclear = [];
+    talkClarify = null;
+    renderExpressPanel();
+    storage.logContext('topic');
+    ui.setStatus(activeTopic ? `Taking questions on ${activeTopic.name || 'this topic'}` : 'Topic cleared');
+    await noteContextSet('topic', !!activeTopic);
+}
+
 async function noteContextSet(kind, wasSet) {
     metrics.event(metrics.EV.CONTEXT_SET, { kind });
     if (!wasSet) return;
@@ -7418,6 +7470,7 @@ async function adoptDataFolder() {
     try { await worldview.syncToFolder(); } catch { /* best-effort */ }
     try { await relationships.syncToFolder(); } catch { /* best-effort */ }
     try { await places.syncToFolder(); } catch { /* best-effort */ }
+    try { await topics.syncToFolder(); } catch { /* best-effort */ }
     try { await practiceLibrary.syncToFolder(); } catch { /* best-effort */ }
     try { await voiceProfile.syncToFolder(); } catch { /* best-effort */ }
     try { await expressPanel.syncToFolder(); } catch { /* best-effort */ }

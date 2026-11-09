@@ -2896,10 +2896,11 @@ async function pushContext(trigger) {
     currentLogData.exchanges.push({
         timestamp: new Date().toISOString(),
         role: 'context',
-        trigger,                 // start | partner | place | feeling | goal
+        trigger,                 // start | partner | place | topic | feeling | goal
         partner: snap.partner || null,
         feeling: snap.feeling || null,
         place: snap.place || null,
+        topic: snap.topic || null,
         goals: snap.goals || null,
     });
     await flushLog();
@@ -3057,7 +3058,7 @@ export async function finalizePartnerTurn(handle, { rawTranscript, cleanedTransc
     await flushLog();
 }
 
-export async function logUserResponse({ selectedText, spokenText = null, ttsUsed = null, selectedIndex, allOptions, selectedSlot = null, source = null, decideMs = null, partner = null, feeling = null, place = null, goals = null, audio = null, paused = null }) {
+export async function logUserResponse({ selectedText, spokenText = null, ttsUsed = null, selectedIndex, allOptions, selectedSlot = null, source = null, decideMs = null, partner = null, feeling = null, place = null, topic = null, goals = null, audio = null, paused = null }) {
     if (!conversationSaving) return; // private conversation — nothing is written
     // Start the log lazily if this user turn is the FIRST turn of the conversation
     // — an opener (Start conversation) or an Express-panel phrase takes the floor
@@ -3140,6 +3141,7 @@ export async function logUserResponse({ selectedText, spokenText = null, ttsUsed
         // dropped here, silently, with the app still working perfectly. The goal
         // stamp was written in app.js and would have gone straight in the bin. When
         // adding anything to a turn, add it in BOTH places in the same edit.
+        topic,             // the topic switched on (question sessions), or null
         goals,
         // A SOUND BUTTON PLAYED instead of words spoken (September 14 2026):
         // { file, label, kind: 'mine'|'other'|'sound', stopped }, or null. `stopped` is

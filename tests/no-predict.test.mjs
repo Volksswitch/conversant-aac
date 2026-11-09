@@ -48,9 +48,9 @@ test('every "How to say it" field is marked', () => {
         'the Express Panel respelling field is no longer marked');
 
     const wv = read('worldview-ui.js');
-    // Two sites: the shared name/nickname row, and the place form.
+    // Three sites: the shared name/nickname row, the place form, and the topic form.
     const marked = (wv.match(/wv-say-as'[\s\S]{0,200}?'data-no-predict'/g) || []).length;
-    assert.equal(marked, 2,
+    assert.equal(marked, 3,
         `both worldview respelling fields must be marked, found ${marked}`);
 });
 

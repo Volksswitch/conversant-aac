@@ -19,6 +19,7 @@ import { setIconButton } from './icons.js';
 import * as wv from './worldview.js';
 import * as rel from './relationships.js';
 import * as places from './places.js';
+import * as topics from './topics.js';
 import * as sourceMaterial from './source-material.js';
 import { SHAPE } from './express-bands.js';
 import { readDocumentFile } from './document-reader.js';
@@ -149,6 +150,9 @@ export async function open() {
     // My Places: same, so the Places section is ready.
     try { await places.load(); } catch { /* cache/empty places */ }
     try { await places.syncToFolder(); } catch { /* best-effort */ }
+    // My Topics: same.
+    try { await topics.load(); } catch { /* cache/empty topics */ }
+    try { await topics.syncToFolder(); } catch { /* best-effort */ }
     // How I Sound: same, so the section's answered count is right on first render.
     try { await voiceProfile.load(); } catch { /* cache/empty voice data */ }
     try { await voiceProfile.syncToFolder(); } catch { /* best-effort */ }
@@ -429,6 +433,20 @@ function renderHome() {
         el('div', { class: 'wv-chevron', text: '›' })
     ]));
 
+    // My Topics - subjects the user takes questions on (Ken, November 9 2026). Its own
+    // row, because a topic is independent of where the user is and who they are with.
+    contentEl.append(el('h3', { class: 'wv-section-title', text: 'Topics' }));
+    const nt = topics.count();
+    contentEl.append(el('button', { class: 'wv-module-row', onclick: () => renderTopics() }, [
+        el('div', { class: 'wv-module-main' }, [
+            el('div', { class: 'wv-module-title', text: 'My Topics' }),
+            el('div', { class: 'wv-module-meta', text: nt
+                ? `${nt} ${nt === 1 ? 'topic' : 'topics'} you can take questions on`
+                : 'Subjects you take questions on, with the documents the answers come from' })
+        ]),
+        el('div', { class: 'wv-chevron', text: '›' })
+    ]));
+
     // Goals for any conversation - the third source of a conversation goal, after the
     // person and the place. Its own row rather than a section of People or Places,
     // because it is precisely the list that belongs to NEITHER of them.
@@ -489,7 +507,7 @@ function renderHome() {
 async function onRestart() {
     const ok = await confirmDanger({
         title: 'Clear everything?',
-        body: 'This permanently deletes every answer, all the people you have added, all the places you have added, your goals for any conversation, and everything the app has learned about how you sound. This cannot be undone.',
+        body: 'This permanently deletes every answer, all the people you have added, all the places and topics you have added, your goals for any conversation, and everything the app has learned about how you sound. This cannot be undone.',
         confirmLabel: 'Yes, clear it all',
         cancelLabel: 'Keep my answers'
     });
@@ -497,6 +515,7 @@ async function onRestart() {
     await wv.resetAll();
     await rel.resetAll();
     await places.resetAll();
+    await topics.resetAll();
     await voiceProfile.resetAll();
     renderHome();
 }
@@ -1283,6 +1302,21 @@ function buildPersonForm(existing) {
         privCheck, el('span', { text: 'Private — AI knows but won\'t bring them up unprompted' })
     ]);
 
+    // A group rather than one person, such as an audience (Ken, November 9 2026). The
+    // fields that only make sense for one person are hidden while it is checked.
+    const groupId = 'wvgroup-' + (existing ? existing.id : 'new');
+    const groupCheck = el('input', { type: 'checkbox', id: groupId });
+    if (existing && existing.group) groupCheck.checked = true;
+    const groupRow = el('label', { class: 'wv-person-checkbox-row', for: groupId }, [
+        groupCheck, el('span', { text: 'This is a group, not one person (for example, an audience)' })
+    ]);
+    const syncGroup = () => {
+        const g = groupCheck.checked;
+        for (const node of [nicknameIn, nickPron.row, relSelect, livesRow]) node.hidden = g;
+        otherWrap.style.display = (!g && relSelect.value === OTHER) ? '' : 'none';
+    };
+    groupCheck.addEventListener('change', syncGroup);
+
     /**
      * EDITING AN EXISTING PERSON SAVES AS YOU GO; ADDING ONE STILL HAS A BUTTON
      * (Ken, September 10 2026: *"why is there a Save button at all"*).
@@ -1325,6 +1359,7 @@ function buildPersonForm(existing) {
             nicknamePronunciation: nickPron.inp.value.trim(),
             livesWithMe: livesCheck.checked,
             isPrivate: privCheck.checked,
+            group: groupCheck.checked,
             topicsWelcome: topicsWelcomeIn.value,
             topicsAvoid: topicsAvoidIn.value
         });
@@ -1340,13 +1375,14 @@ function buildPersonForm(existing) {
         for (const box of [nameIn, nicknameIn, aboutIn, otherIn, namePron.inp, nickPron.inp, topicsWelcomeIn, topicsAvoidIn]) {
             box.addEventListener('change', commitNow);
         }
-        for (const c of [relSelect, livesCheck, privCheck]) c.addEventListener('change', commitNow);
+        for (const c of [relSelect, livesCheck, privCheck, groupCheck]) c.addEventListener('change', commitNow);
     }
 
     // Each "how to say it" sits directly under the field it corrects, so there is
     // never a question about which name it applies to.
     card.append(el('div', { class: 'wv-person-fields' },
-        [nameIn, namePron.row, nicknameIn, nickPron.row, relSelect, otherWrap, aboutIn, topicsWelcomeIn, topicsAvoidIn, livesRow, privRow]));
+        [nameIn, namePron.row, groupRow, nicknameIn, nickPron.row, relSelect, otherWrap, aboutIn, topicsWelcomeIn, topicsAvoidIn, livesRow, privRow]));
+    syncGroup();
     card.append(profile.goalsNode, profile.node);
 
     const save = el('button', { class: 'wv-btn wv-btn-primary', text: existing ? 'Done' : 'Add person',
@@ -1370,6 +1406,7 @@ function buildPersonForm(existing) {
                 nicknamePronunciation: nickPron.inp.value.trim(),
                 livesWithMe: livesCheck.checked,
                 isPrivate: privCheck.checked,
+                group: groupCheck.checked,
                 topicsWelcome: topicsWelcomeIn.value,
                 topicsAvoid: topicsAvoidIn.value
             });
@@ -1486,7 +1523,6 @@ function buildPlaceCard(p) {
         el('div', { class: 'wv-question', text: p.name || '(unnamed place)' })
     ]);
     if (p.private) head.append(el('span', { class: 'wv-badge wv-badge-private', text: '🔒 Private' }));
-    if (p.talk && p.talk.on) head.append(el('span', { class: 'wv-badge', text: 'Talk' }));
     card.append(head);
 
     if (p.facts.length) {
@@ -1626,8 +1662,7 @@ function buildPlaceForm(existing) {
             goals: goalEd.read(),
             isPrivate: privCheck.checked,
             topicsWelcome: placeTopicsWelcomeIn.value,
-            topicsAvoid: placeTopicsAvoidIn.value,
-            talk: talkEd.read()
+            topicsAvoid: placeTopicsAvoidIn.value
         });
     }
 
@@ -1644,8 +1679,6 @@ function buildPlaceForm(existing) {
     ]);
     if (existing && existing.goals && existing.goals.length) goalsNode.open = true;
 
-    const talkEd = buildTalkEditor(existing && existing.talk, { onChange: commitPlaceNow });
-
     const privId = 'wvplacepriv-' + (existing ? existing.id : 'new');
     const privCheck = el('input', { type: 'checkbox', id: privId });
     if (existing && existing.private) privCheck.checked = true;
@@ -1654,7 +1687,7 @@ function buildPlaceForm(existing) {
     ]);
 
     card.append(el('div', { class: 'wv-person-fields' },
-        [nameIn, pronRow, factsWrap, addFact, placeTopicsWelcomeIn, placeTopicsAvoidIn, goalsNode, talkEd.node, privRow]));
+        [nameIn, pronRow, factsWrap, addFact, placeTopicsWelcomeIn, placeTopicsAvoidIn, goalsNode, privRow]));
 
     if (existing) {
         for (const box of [nameIn, pronIn, placeTopicsWelcomeIn, placeTopicsAvoidIn]) box.addEventListener('change', commitPlaceNow);
@@ -1678,8 +1711,7 @@ function buildPlaceForm(existing) {
                 goals: goalEd.read(),
                 isPrivate: privCheck.checked,
                 topicsWelcome: placeTopicsWelcomeIn.value,
-                topicsAvoid: placeTopicsAvoidIn.value,
-                talk: talkEd.read()
+                topicsAvoid: placeTopicsAvoidIn.value
             });
             renderPlaces();
         } });
@@ -1690,23 +1722,116 @@ function buildPlaceForm(existing) {
     return card;
 }
 
-// --- A place's talk: questions after a talk (Ken, November 9 2026) -----------------
+// --- My Topics (Ken, November 9 2026) -------------------------------------------------
 //
-// Lives on the place, because tapping the place is what switches the mode on (Ken: "On
-// the place"). Holds which documents the answers come from, the presenter's note on how
-// they relate to the material, and the audience (a person in About Me, whose "how I talk
-// with them" pitches the answers). Same shape as buildGoalEditor: a node, a read(), and
-// an onChange the place form saves on.
+// A topic is a subject the user takes questions on: a name, the documents the answers
+// come from, and a note on how the user relates to the material. Its button goes in the
+// Context band of the Express Panel; tapping it there switches question answering on.
+
+let topicsReturnScroll = null;
+
+function renderTopics(editingId = null) {
+    contentEl.innerHTML = '';
+    contentEl.append(el('button', { class: 'wv-back', text: '‹ About Me', onclick: renderHome }));
+    contentEl.append(el('h3', { class: 'wv-page-title', text: 'My Topics' }));
+    contentEl.append(el('p', { class: 'wv-intro', text:
+        'Add the subjects you take questions on, such as a talk you give, and the documents '
+        + 'your answers should come from. Put the topic\'s button on the Express Panel. When '
+        + 'you tap it, each question you hear gets four answers drawn from those documents.' }));
+    for (const t of topics.listTopics()) {
+        contentEl.append(editingId === t.id ? buildTopicForm(t) : buildTopicCard(t));
+    }
+    contentEl.append(el('h3', { class: 'wv-section-title', text: 'Add a topic' }));
+    contentEl.append(buildTopicForm(null));
+    if (editingId) {
+        const form = document.getElementById('wvtopicform-' + editingId);
+        if (form) form.scrollIntoView({ block: 'center' });
+    } else if (topicsReturnScroll != null) {
+        contentEl.scrollTop = topicsReturnScroll;
+        topicsReturnScroll = null;
+    } else {
+        contentEl.scrollTop = 0;
+    }
+}
+
+function buildTopicCard(t) {
+    const card = el('div', { class: 'wv-card', id: 'wvtopic-' + t.id });
+    card.append(el('div', { class: 'wv-card-head' }, [
+        el('div', { class: 'wv-question', text: t.name || '(unnamed topic)' })
+    ]));
+    const n = t.sources.length;
+    card.append(el('div', { class: 'wv-module-meta', text: n
+        ? `${n} ${n === 1 ? 'document' : 'documents'}` : 'No documents yet' }));
+    card.append(el('div', { class: 'wv-actions' }, [
+        el('button', { class: 'wv-btn wv-btn-link', text: 'Edit',
+            onclick: () => { topicsReturnScroll = contentEl.scrollTop; renderTopics(t.id); } }),
+        el('button', { class: 'wv-btn wv-btn-link', text: 'Remove',
+            onclick: async () => {
+                const owned = expressPanel.situationsFor({ topicId: t.id });
+                const ok = await confirmDanger({
+                    title: `Remove ${t.name || 'this topic'}?`,
+                    body: 'This removes the topic and its note. Its documents stay in your '
+                        + 'documents folder for other topics.' + expressNote(owned) + ' This cannot be undone.',
+                    confirmLabel: 'Remove', cancelLabel: 'Cancel',
+                });
+                if (!ok) return;
+                await topics.removeTopic(t.id);
+                if (owned.keys.length || owned.buttons) expressPanel.removeSituationsFor({ topicId: t.id });
+                renderTopics();
+            } }),
+    ]));
+    return card;
+}
+
+// Edit form for a topic, or the blank "add a topic" form. An existing topic saves as it
+// is edited, like a place; a new one is saved by "Add topic".
+function buildTopicForm(existing) {
+    const card = el('div', { class: 'wv-card wv-place-form', id: existing ? 'wvtopicform-' + existing.id : null });
+    const nameIn = el('input', { type: 'text', class: 'wv-text',
+        placeholder: 'Topic (e.g. Conversant AAC)', value: existing ? existing.name : '' });
+    const pronIn = el('input', { type: 'text', class: 'wv-text wv-say-as', 'data-no-predict': '',
+        placeholder: 'How to say it — only if the voice gets it wrong',
+        value: existing ? existing.pronunciation : '' });
+    const pronHear = el('button', { class: 'wv-btn-speak wv-say-as-hear',
+        onclick: () => { const v = pronIn.value.trim() || nameIn.value.trim(); if (v) speak(v); } });
+    setIconButton(pronHear, 'speak', 'Hear it said');
+    const pronRow = el('div', { class: 'wv-say-as-row' }, [pronIn, pronHear]);
+
+    async function commitNow() {
+        if (!existing) return;
+        await topics.updateTopic(existing.id, {
+            name: nameIn.value, pronunciation: pronIn.value.trim(), ...docsEd.read(),
+        });
+    }
+    const docsEd = buildTopicDocsEditor(existing, { onChange: commitNow });
+    if (existing) for (const box of [nameIn, pronIn]) box.addEventListener('change', commitNow);
+
+    card.append(el('div', { class: 'wv-person-fields' }, [nameIn, pronRow, docsEd.node]));
+    const save = el('button', { class: 'wv-btn wv-btn-primary', text: existing ? 'Done' : 'Add topic',
+        onclick: async () => {
+            if (existing) { await commitNow(); renderTopics(); return; }
+            const name = nameIn.value.trim();
+            if (!name) return;
+            await topics.addTopic({ name, pronunciation: pronIn.value.trim(), ...docsEd.read() });
+            renderTopics();
+        } });
+    card.append(el('div', { class: 'wv-actions' }, [save]));
+    return card;
+}
+
+// --- A topic's documents and note (Ken, November 9 2026) ---------------------------
 //
-// Documents are added HERE but kept in the one shared source-material folder, so a paper
-// added for one talk can be ticked for another, and replacing it reaches both.
-function buildTalkEditor(saved, opts = {}) {
+// Used by the topic form (My Topics). Holds which documents the answers come from and
+// the user's note on how they relate to the material. Same shape as buildGoalEditor: a
+// node, a read(), and an onChange the form saves on. Documents are added HERE but kept
+// in the one shared source-material folder, so a paper added for one topic can be ticked
+// for another, and replacing it reaches both. (Built first on a place, then moved to
+// topics the same day: a topic is independent of where the user is.)
+function buildTopicDocsEditor(saved, opts = {}) {
     const onChange = opts.onChange || (() => {});
     const draft = {
-        on: !!(saved && saved.on),
         sources: saved ? [...saved.sources] : [],
         note: saved ? saved.note : '',
-        audienceId: saved ? saved.audienceId : null,
     };
 
     const status = el('div', { class: 'wv-talk-status', role: 'status', 'aria-live': 'polite' });
@@ -1715,22 +1840,14 @@ function buildTalkEditor(saved, opts = {}) {
         status.classList.toggle('wv-talk-status-bad', !!bad);
     };
 
-    // On / off.
-    const onId = 'wvtalkon-' + Math.random().toString(36).slice(2, 8);
-    const onBox = el('input', { type: 'checkbox', id: onId });
-    onBox.checked = draft.on;
-    const onRow = el('label', { class: 'wv-person-checkbox-row', for: onId }, [
-        onBox, el('span', { text: 'Answer audience questions when I\'m here' }),
-    ]);
-
     // The short-label suggestion (Ken, November 8 2026: suggested, not forced). Shown only
-    // while the talk is on and the cards are not already showing short labels alone.
+    // while the cards are not already showing short labels alone.
     const offer = el('div', { class: 'wv-talk-offer' });
     const renderOffer = () => {
         offer.innerHTML = '';
-        if (!draft.on || storage.loadCardTextMode() === 'condensed') return;
+        if (storage.loadCardTextMode() === 'condensed') return;
         offer.append(
-            el('span', { text: 'Answers after a talk are long. Showing only the short label on each card makes them quicker to choose.' }),
+            el('span', { text: 'Answers to questions are long. Showing only the short label on each card makes them quicker to choose.' }),
             el('button', { class: 'wv-btn', text: 'Show short labels only', onclick: () => {
                 // Through the Settings control itself, so the setting, the cards and the
                 // control on the Conversation tab all change together.
@@ -1740,19 +1857,19 @@ function buildTalkEditor(saved, opts = {}) {
                 renderOffer();
             } }));
     };
-    // The "What do you mean by...?" buttons appear at the end of the Flex band, and the
-    // band starts with no rows. Said here rather than resized for the user (Ken, November
-    // 9 2026), and only while the talk is on and the band is empty.
+
+    // The topic's own phrases and the "What do you mean by...?" buttons appear in the Flex
+    // band, and the band starts with no rows. Said here rather than resized for the user
+    // (Ken, November 9 2026), and only while the band is empty.
     const flexNote = el('p', { class: 'wv-talk-empty' });
     const renderFlexNote = () => {
         const sz = expressPanel.getModel().sizes || {};
         const hasFlex = sz.shape === SHAPE.ROWS ? (sz.flexRows || 0) > 0 : (sz.flex || 0) > 0;
-        flexNote.textContent = draft.on && !hasFlex
-            ? 'Your Express Panel has no Flex band, so the "What do you mean by...?" buttons have nowhere to appear. You can give the Flex band a row on the Express Panel tab.'
+        flexNote.textContent = !hasFlex
+            ? 'Your Express Panel has no Flex band, so this topic\'s phrases and the "What do you mean by...?" buttons have nowhere to appear. You can give the Flex band a row on the Express Panel tab.'
             : '';
         flexNote.hidden = !flexNote.textContent;
     };
-    onBox.addEventListener('change', () => { draft.on = onBox.checked; renderOffer(); renderFlexNote(); onChange(); });
 
     // The documents.
     const docList = el('div', { class: 'wv-talk-docs' });
@@ -1767,7 +1884,7 @@ function buildTalkEditor(saved, opts = {}) {
             return;
         }
         for (const d of list) {
-            const id = 'wvtalkdoc-' + d.id;
+            const id = 'wvtalkdoc-' + d.id + '-' + Math.random().toString(36).slice(2, 6);
             const box = el('input', { type: 'checkbox', id });
             box.checked = draft.sources.includes(d.id);
             box.addEventListener('change', () => {
@@ -1780,7 +1897,7 @@ function buildTalkEditor(saved, opts = {}) {
                 'aria-label': `Replace ${d.title} with a newer version`,
                 onclick: () => pickFile(async (picked) => {
                     await sourceMaterial.replaceSource(d.id, picked);
-                    say(`Replaced ${d.title}. Every talk that uses it now has the new version.`);
+                    say(`Replaced ${d.title}. Every topic that uses it now has the new version.`);
                     renderDocs();
                 }) });
             const remove = el('button', { class: 'wv-btn wv-btn-link', text: 'Remove',
@@ -1788,13 +1905,13 @@ function buildTalkEditor(saved, opts = {}) {
                 onclick: async () => {
                     const ok = await confirmDanger({
                         title: `Remove ${d.title}?`,
-                        body: 'This removes the document from your documents folder. Every talk '
+                        body: 'This removes the document from your documents folder. Every topic '
                             + 'that uses it stops using it. This cannot be undone.',
                         confirmLabel: 'Remove', cancelLabel: 'Cancel',
                     });
                     if (!ok) return;
                     await sourceMaterial.removeSource(d.id);
-                    await places.forgetSource(d.id);
+                    await topics.forgetSource(d.id);
                     draft.sources = draft.sources.filter((x) => x !== d.id);
                     say(`Removed ${d.title}.`);
                     renderDocs();
@@ -1833,7 +1950,7 @@ function buildTalkEditor(saved, opts = {}) {
     const addFile = el('button', { class: 'wv-btn', text: 'Add a PDF or text file',
         onclick: () => pickFile(async ({ text, original, title }) => {
             const d = await sourceMaterial.addSource({ title, text, original });
-            draft.sources = [...draft.sources, d.id];   // added here, so it is for this talk
+            draft.sources = [...draft.sources, d.id];   // added here, so it is for this topic
             say(`Added ${d.title} (${d.words.toLocaleString('en-US')} words).`);
             onChange();
             renderDocs();
@@ -1862,42 +1979,25 @@ function buildTalkEditor(saved, opts = {}) {
 
     // The note on who "I" is (rule 10). Blank means the presenter is assumed NOT to be
     // one of the people the material describes.
-    const noteIn = el('input', { type: 'text', class: 'wv-text', maxlength: String(places.TALK_NOTE_MAX),
+    const noteIn = el('input', { type: 'text', class: 'wv-text', maxlength: String(topics.NOTE_MAX),
         placeholder: 'How you relate to this material (e.g. I lead the project and don\'t use the app myself)',
         value: draft.note });
     noteIn.addEventListener('change', () => { draft.note = noteIn.value.trim(); onChange(); });
 
-    // The audience: a person in About Me.
-    const aud = el('select', { class: 'wv-select', 'aria-label': 'Who the audience is' });
-    aud.append(el('option', { value: '', text: 'Audience: choose someone from People' }));
-    for (const p of rel.listPeople()) {
-        const o = el('option', { value: p.id, text: `Audience: ${p.nickname || p.name}` });
-        if (p.id === draft.audienceId) o.selected = true;
-        aud.append(o);
-    }
-    aud.addEventListener('change', () => { draft.audienceId = aud.value || null; onChange(); });
-
-    const node = el('details', { class: 'wv-partner-profile wv-talk' }, [
-        el('summary', { class: 'wv-disclosure' }, [
-            el('span', { class: 'wv-disclosure-mark', 'aria-hidden': 'true', text: '›' }),
-            el('span', { class: 'wv-disclosure-title', text: 'Questions after a talk' }),
-        ]),
-        el('div', { class: 'wv-talk-body' }, [
-            onRow, offer, flexNote,
-            el('div', { class: 'wv-talk-heading', text: 'Documents the answers come from' }),
-            docList,
-            el('div', { class: 'wv-talk-add' }, [addFile, pasteOpen, fileIn]),
-            pasteBox, status, noteIn, aud,
-        ]),
+    const node = el('div', { class: 'wv-talk-body' }, [
+        offer, flexNote,
+        el('div', { class: 'wv-talk-heading', text: 'Documents the answers come from' }),
+        docList,
+        el('div', { class: 'wv-talk-add' }, [addFile, pasteOpen, fileIn]),
+        pasteBox, status, noteIn,
     ]);
-    if (draft.on || draft.sources.length) node.open = true;
     renderOffer();
     renderFlexNote();
     renderDocs();
 
     return {
         node,
-        read: () => ({ ...draft, note: noteIn.value.trim(), sources: [...draft.sources] }),
+        read: () => ({ note: noteIn.value.trim(), sources: [...draft.sources] }),
     };
 }
 

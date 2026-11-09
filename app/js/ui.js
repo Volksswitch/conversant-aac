@@ -532,8 +532,8 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
     if (!epGrid) return;
     const {
         categories = {}, influencerColors = {},
-        activePartnerId = null, activeFeelingId = null, activePlaceId = null,
-        onSpeak, onTogglePartner, onToggleFeeling, onTogglePlace, onInMyOwnWords,
+        activePartnerId = null, activeFeelingId = null, activePlaceId = null, activeTopicId = null,
+        onSpeak, onTogglePartner, onToggleFeeling, onTogglePlace, onToggleTopic, onInMyOwnWords,
         // Choice chips take the leading cells for exactly as long as the partner has
         // a closed set on the table, and only as many cells as there are choices
         // (Ken, July 2026 — no standing reservation). With none on offer the panel
@@ -637,6 +637,22 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             b.setAttribute('aria-pressed', String(item.id === activePlaceId));
             b.innerHTML = `<span class="ep-text">${escapeHtml(label)}</span>`;
             b.addEventListener('click', () => onTogglePlace && onTogglePlace(item));
+            return b;
+        }
+        if (item.type === 'topic') {
+            // A subject the user takes questions on (November 9 2026). Switched on, each
+            // question heard gets four answers drawn from the topic's documents.
+            const label = item.name || 'Topic';
+            const ic = influencerColors.topic || {};
+            const on = !!item.id && item.id === activeTopicId;
+            setColor(b, ic.color, ic.tint);
+            b.classList.add('ep-topic');
+            if (on) b.classList.add('ep-on');
+            b.title = `Taking questions on ${label}`;
+            b.setAttribute('aria-label', `Taking questions on ${label}${on ? ' (on)' : ''}`);
+            b.setAttribute('aria-pressed', String(on));
+            b.innerHTML = `<span class="ep-text">${escapeHtml(label)}</span>`;
+            b.addEventListener('click', () => onToggleTopic && onToggleTopic(item));
             return b;
         }
         if (item.type === 'feeling') {

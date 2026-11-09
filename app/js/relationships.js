@@ -164,6 +164,12 @@ export function listPeople() {
             relationship: edge ? edge.type : '',
             about: (p.attrs && p.attrs.about) || '',
             livesWithMe: !!(p.attrs && p.attrs.livesWithMe),
+            // A GROUP rather than one person - an audience such as "SLPs and OTs" (Ken,
+            // November 9 2026). It answers "who is listening" like any partner, with its
+            // own Flex phrases and "how I talk with them", but it has no relationship to
+            // the user, is never called by a name in a greeting, and is not one of the
+            // people in their life (buildBlock leaves it out).
+            group: !!(p.attrs && p.attrs.group),
             // What the user likes to talk about WITH this person, and what they would
             // rather not. Sent only while this person is the active partner.
             topicsWelcome: normalizeTopics(p.attrs && p.attrs.topicsWelcome),
@@ -191,7 +197,7 @@ import { normalizeTopics, topicLines } from './partner-profile.js';
 
 export async function addPerson({ name, relationship = '', about = '', nickname = '',
                                   pronunciation = '', nicknamePronunciation = '',
-                                  livesWithMe = false, isPrivate = false,
+                                  livesWithMe = false, isPrivate = false, group = false,
                                   topicsWelcome = [], topicsAvoid = [] } = {}) {
     const g = ensureLoaded();
     const id = newId();
@@ -202,6 +208,7 @@ export async function addPerson({ name, relationship = '', about = '', nickname 
             pronunciation: (pronunciation || '').trim(),
             nicknamePronunciation: (nicknamePronunciation || '').trim(),
             livesWithMe: !!livesWithMe,
+            group: !!group,
             topicsWelcome: normalizeTopics(topicsWelcome),
             topicsAvoid: normalizeTopics(topicsAvoid)
         }
@@ -215,7 +222,7 @@ export async function addPerson({ name, relationship = '', about = '', nickname 
 
 export async function updatePerson(id, { name, relationship, about, nickname,
                                          pronunciation, nicknamePronunciation,
-                                         livesWithMe, isPrivate, topicsWelcome, topicsAvoid } = {}) {
+                                         livesWithMe, isPrivate, group, topicsWelcome, topicsAvoid } = {}) {
     const g = ensureLoaded();
     const p = g.people.find((x) => x.id === id);
     if (!p) return;
@@ -225,6 +232,7 @@ export async function updatePerson(id, { name, relationship, about, nickname,
     if (pronunciation !== undefined) { p.attrs = p.attrs || {}; p.attrs.pronunciation = (pronunciation || '').trim(); }
     if (nicknamePronunciation !== undefined) { p.attrs = p.attrs || {}; p.attrs.nicknamePronunciation = (nicknamePronunciation || '').trim(); }
     if (livesWithMe !== undefined) { p.attrs = p.attrs || {}; p.attrs.livesWithMe = !!livesWithMe; }
+    if (group !== undefined) { p.attrs = p.attrs || {}; p.attrs.group = !!group; }
     if (topicsWelcome !== undefined) { p.attrs = p.attrs || {}; p.attrs.topicsWelcome = normalizeTopics(topicsWelcome); }
     if (topicsAvoid !== undefined) { p.attrs = p.attrs || {}; p.attrs.topicsAvoid = normalizeTopics(topicsAvoid); }
     if (isPrivate !== undefined) p.private = !!isPrivate;
@@ -439,6 +447,9 @@ export function buildBlock() {
     const facts = [];
     const privateKnown = [];   // AI knows these people but must not mention them spontaneously
     for (const p of people) {
+        // A group (an audience) is not one of the people in the user's life; it reaches
+        // the AI only while it is switched on, as who is listening.
+        if (p.group) continue;
         const displayName = p.name || p.relationship || 'someone';
         const nick = p.nickname ? ` (called "${p.nickname}")` : '';
         const relParts = [p.relationship, p.livesWithMe ? 'lives with me' : ''].filter(Boolean);

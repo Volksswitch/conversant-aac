@@ -468,3 +468,16 @@ test('the words are kept with everything else on the person', async () => {
     await rel.setPartnerProfile(id, { note: 'Best friend since fourth grade.' });
     assert.equal(rel.getPartnerProfile(id).words, 'nah', 'saving another field leaves the words alone');
 });
+
+// An audience is a GROUP entry in "who" (Ken, November 9 2026).
+test('a group entry survives a reload and is left out of the people in the user\'s life', async () => {
+    const id = await rel.addPerson({ name: 'SLPs and OTs', about: 'Clinicians at my talk', group: true });
+    await rel.addPerson({ name: 'Elena', relationship: 'mother' });
+    await rel.load();
+    assert.equal(rel.getPerson(id).group, true);
+    const block = rel.buildBlock();
+    assert.match(block, /Elena/);
+    assert.doesNotMatch(block, /SLPs and OTs/, 'a group is not one of the people in the user\'s life');
+    await rel.updatePerson(id, { group: false });
+    assert.equal(rel.getPerson(id).group, false);
+});

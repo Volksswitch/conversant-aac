@@ -79,9 +79,18 @@ export const ANYPLACE = 'anyplace';
 export function flexKey(partnerId, placeId) {
     return `${partnerId || ANYONE}|${placeId || ANYPLACE}`;
 }
+// A TOPIC'S OWN LIST (Ken, November 9 2026): looked up FIRST, and standing alone - no
+// topic-with-a-person or topic-in-a-place lists. Its key has no "|", so it can never
+// be read as a partner and place.
+export const TOPIC_PREFIX = 'topic:';
+export function topicFlexKey(topicId) {
+    return TOPIC_PREFIX + topicId;
+}
 export function parseFlexKey(key) {
-    const [partnerId, placeId] = String(key || '').split('|');
-    return { partnerId: partnerId || ANYONE, placeId: placeId || ANYPLACE };
+    const k = String(key || '');
+    if (k.startsWith(TOPIC_PREFIX)) return { partnerId: ANYONE, placeId: ANYPLACE, topicId: k.slice(TOPIC_PREFIX.length) };
+    const [partnerId, placeId] = k.split('|');
+    return { partnerId: partnerId || ANYONE, placeId: placeId || ANYPLACE, topicId: null };
 }
 
 /**
@@ -215,7 +224,7 @@ function clamp(n, lo, hi) {
  * otherwise a phrase sensibly put in both a partner's list and the general list would
  * occupy two positions on a panel that is already short of them.
  */
-export function flexFill(flexLists, partnerId, placeId, room) {
+export function flexFill(flexLists, partnerId, placeId, room, topicId = null) {
     const out = [];
     const seen = new Set();
     const take = (key, source) => {
@@ -231,6 +240,7 @@ export function flexFill(flexLists, partnerId, placeId, room) {
             out.push({ ...item, source });
         }
     };
+    if (topicId) take(topicFlexKey(topicId), 'topic');   // the topic's own phrases first
     if (partnerId && placeId) take(flexKey(partnerId, placeId), 'pair');
     if (partnerId) take(flexKey(partnerId, ANYPLACE), 'partner');
     if (placeId) take(flexKey(ANYONE, placeId), 'place');
@@ -268,7 +278,7 @@ export function composePanel(layoutRows, model = {}, situation = {}) {
     // cannot steer anything, where a phrase not reachable can still be typed.
     const ownGoals = (situation.goals || []).filter(Boolean);
     const allGoals = litFirst(ownGoals, situation.litIds);
-    const flex = flexFill(model.flex || {}, situation.partnerId, situation.placeId, Infinity);
+    const flex = flexFill(model.flex || {}, situation.partnerId, situation.placeId, Infinity, situation.topicId || null);
     // A switched-on GOAL stays where it is (Ken, October 6 2026): it moves to the front
     // only when its own place would put it behind More. litFirst above is still what
     // later pages use; it shows the same buttons on the first page, in another order.
@@ -477,7 +487,7 @@ export function litFirst(list, litIds) {
  * find a partner button without reading the whole band, and because it makes the FAR
  * END predictable, which is where the partner's offered choices land.
  */
-export const CONTEXT_ORDER = ['partner', 'place', 'feeling'];
+export const CONTEXT_ORDER = ['partner', 'place', 'topic', 'feeling'];
 
 export function sortContext(list) {
     return (list || []).filter(Boolean).slice().sort((x, y) => {

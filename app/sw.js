@@ -70,6 +70,7 @@ const SHELL = [
   './js/worldview.js',
   './js/relationships.js',
   './js/places.js',
+  './js/topics.js',
   './js/question-session.js',
   './js/source-material.js',
   './js/document-reader.js',

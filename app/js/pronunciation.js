@@ -31,6 +31,7 @@
 
 import * as relationships from './relationships.js';
 import * as places from './places.js';
+import * as topics from './topics.js';
 import * as worldview from './worldview.js';
 import { loadSpokenWords } from './storage.js';
 
@@ -125,7 +126,7 @@ function selfName() {
  */
 export function apply(text) {
     try {
-        return substitute(text, buildLexicon(relationships.listPeople(), places.listPlaces(), selfName(), loadSpokenWords()));
+        return substitute(text, buildLexicon(relationships.listPeople(), [...places.listPlaces(), ...topics.listTopics()], selfName(), loadSpokenWords()));
     } catch {
         // A pronouncer that throws would take the app's whole voice down with it. The
         // uncorrected name is a far better outcome than silence.

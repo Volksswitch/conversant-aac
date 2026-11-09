@@ -1,7 +1,7 @@
 // Question sessions in the REAL app, in a real browser (November 9 2026).
 //
 // app.js cannot be loaded by a unit test, so this drives the whole path the user takes:
-// a talk place with a document, the place tapped on the Express Panel, a question heard
+// a topic with a document, the topic tapped on the Express Panel, a question heard
 // through a stand-in microphone, four answers on screen, one spoken, the answers kept,
 // no automatic listening, New 4, Listen clearing them, a second question, and the place
 // switched off giving ordinary suggestions again.
@@ -138,7 +138,8 @@ try {
     page.on('pageerror', (e) => { console.log('PAGE ERROR', e.message); failures++; });
 
     // 1. Set up: a key, auto-resume ON (to prove a talk overrides it), a document, a
-    //    talk place pointing at it, and the place's button on the Express Panel.
+    //    topic pointing at it, the topic's button on the Express Panel, and one phrase
+    //    in the topic's own Flex list.
     await page.goto(URL, { waitUntil: 'load' });
     const placeId = await page.evaluate(async () => {
         const storage = await import('/js/storage.js');
@@ -147,19 +148,27 @@ try {
         await storage.restoreDataFolder();
         const src = await import('/js/source-material.js');
         const doc = await src.addSource({ title: 'Test paper', text: 'People get uneasy after four seconds of silence. MATERIAL-SENTINEL' });
-        const places = await import('/js/places.js');
-        await places.load();
-        const id = await places.addPlace({ name: 'At my talk',
-            talk: { on: true, sources: [doc.id], note: 'NOTE-SENTINEL I lead the project.', audienceId: null } });
+        const topics = await import('/js/topics.js');
+        await topics.load();
+        const id = await topics.addTopic({ name: 'At my talk',
+            sources: [doc.id], note: 'NOTE-SENTINEL I lead the project.' });
         const ep = await import('/js/express-panel.js');
         const m = ep.getModel();
-        ep.setBand('context', [...m.context, { type: 'place', name: 'At my talk', placeId: id }]);
+        ep.setBand('context', [...m.context, { type: 'topic', name: 'At my talk', topicId: id }]);
+        ep.setFlexList(null, null, [{ type: 'phrase', text: 'Thank you, next question.' }], id);
         // One row of Flex band, where the "What do you mean by...?" buttons go.
         const m2 = ep.getModel();
         ep.setModel({ ...m2, sizes: { ...m2.sizes, shape: 'rows', flexRows: 1 } });
+        // The panel saves to the data folder in the background; the reload below must
+        // not overtake it, or the page loads the older copy from disk.
+        for (let i = 0; i < 40; i++) {
+            const disk = JSON.parse(await storage.readFile('express-panel.json') || '{}');
+            if (disk.sizes && disk.sizes.flexRows === 1 && disk.flex && disk.flex['topic:' + id]) break;
+            await new Promise((r) => setTimeout(r, 100));
+        }
         return id;
     });
-    check(!!placeId, 'set up a talk place with one document');
+    check(!!placeId, 'set up a topic with one document');
     await page.reload({ waitUntil: 'load' });
 
     // 2. Start, tap the place.
@@ -169,7 +178,8 @@ try {
     await place.click();
     await pace(300);
     check(await page.$eval('#expressPanel .ep-btn::-p-text(At my talk)', (b) => (b.closest('.ep-btn') || b).getAttribute('aria-pressed') === 'true'),
-        'the talk place is switched on');
+        'the topic is switched on');
+    check(!!(await page.$('#expressPanel .ep-btn::-p-text(Thank you, next question)')), "the topic's own phrase is in the Flex band");
 
     const cards = () => page.$$eval('#responseOptions .response-card:not(.response-card-empty)',
         (cs) => cs.map((c) => ({ cls: c.className, label: c.getAttribute('aria-label') || c.textContent.trim() })));
@@ -323,7 +333,7 @@ try {
             'the explanation is answered together with the question it explains');
     }
 
-    // 7. Switch the place off: ordinary suggestions again.
+    // 7. Switch the topic off: ordinary suggestions again.
     await page.click('#responseOptions .response-card:not(.response-card-empty)');
     await pace(1200);
     await page.click('#expressPanel .ep-btn::-p-text(At my talk)');
@@ -334,9 +344,22 @@ try {
     await page.waitForFunction(() => window.__requests.length >= 6, { timeout: 8000 });
     await pace(800);
     reqs = await requests();
-    check(!reqs[5].talk, 'with the place off, the question gets ordinary suggestions');
+    check(!reqs[5].talk, 'with the topic off, the question gets ordinary suggestions');
+    check(!(await page.$('#expressPanel .ep-btn::-p-text(Thank you, next question)')), "and the topic's phrase has left the Flex band");
     shown = await cards();
     check(shown.some((c) => /Everyday reply/.test(c.label)), 'the ordinary cards are on screen');
+
+    // 8. A topic switches off at End conversation, like a partner (Ken, November 9 2026).
+    await page.click('#expressPanel .ep-btn::-p-text(At my talk)');
+    await pace(400);
+    const isOn = () => page.$eval('#expressPanel .ep-btn::-p-text(At my talk)',
+        (b) => (b.closest('.ep-btn') || b).getAttribute('aria-pressed') === 'true');
+    check(await isOn(), 'the topic can be switched back on');
+    await page.click('#endConversationBtn');
+    await pace(800);
+    // Two taps where the setting asks for them; harmless otherwise.
+    if (await isOn()) { await page.click('#endConversationBtn'); await pace(800); }
+    check(!(await isOn()), 'End conversation switches the topic off');
 } finally {
     await browser.close();
     server.kill();

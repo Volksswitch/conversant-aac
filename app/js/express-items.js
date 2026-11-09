@@ -77,6 +77,7 @@ export const INFLUENCER_COLORS = {
   partner: { color: 'var(--infl-partner)', tint: 'var(--infl-partner-tint)' }, // brown
   feeling: { color: 'var(--infl-feeling)', tint: 'var(--infl-feeling-tint)' }, // cyan
   place:   { color: 'var(--infl-place)',   tint: 'var(--infl-place-tint)' },   // olive
+  topic:   { color: 'var(--infl-topic)',   tint: 'var(--infl-topic-tint)' },   // purple
 };
 
 // Choice chips: the alternatives the partner just offered ("mild / moderate /
@@ -259,7 +260,7 @@ export function ensureOrigin(items) {
     // empty string as "not one of ours" and credit it to the user.
     if (it.type === 'empty') return { ...it, origin: ORIGIN.DEFAULT };
     const text = it.text || it.name || '';
-    const ours = it.type !== 'partner' && it.type !== 'place' && SHIPPED_DEFAULT_TEXTS.has(text);
+    const ours = it.type !== 'partner' && it.type !== 'place' && it.type !== 'topic' && SHIPPED_DEFAULT_TEXTS.has(text);
     return { ...it, origin: ours ? ORIGIN.DEFAULT : ORIGIN.EDITED };
   });
 }

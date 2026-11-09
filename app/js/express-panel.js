@@ -46,7 +46,7 @@ import {
     ALWAYS_DEFAULTS, CONTEXT_DEFAULTS, SEED_REVISION,
     ensureIds, ensureOrigin, markEdits, isUserAuthored, ORIGIN,
 } from './express-items.js';
-import { DEFAULT_SIZES, SHAPE, CONTEXT_FLOOR, sortContext, flexKey, parseFlexKey } from './express-bands.js';
+import { DEFAULT_SIZES, SHAPE, CONTEXT_FLOOR, sortContext, flexKey, parseFlexKey, topicFlexKey } from './express-bands.js';
 
 const FILE = 'express-panel.json';
 const CACHE_KEY = 'aac_express_items';
@@ -213,9 +213,9 @@ export function setBand(band, list) {
 }
 
 /** Convenience for the editor: replace one situational list. */
-export function setFlexList(partnerId, placeId, list) {
+export function setFlexList(partnerId, placeId, list, topicId = null) {
     const m = getModel();
-    const key = flexKey(partnerId, placeId);
+    const key = topicId ? topicFlexKey(topicId) : flexKey(partnerId, placeId);
     if (!list || !list.length) delete m.flex[key];
     else m.flex[key] = list;
     return setModel(m);
@@ -251,15 +251,17 @@ export function removeFlexList(key) {
  * it, and the confirmation says how many phrases go - otherwise they stayed stored for
  * good and showed in the editor as "Someone at Anyplace".
  */
-export function situationsFor({ partnerId = null, placeId = null } = {}) {
+export function situationsFor({ partnerId = null, placeId = null, topicId = null } = {}) {
     const m = getModel();
     const keys = Object.keys(m.flex).filter((k) => {
         const s = parseFlexKey(k);
-        return (partnerId && s.partnerId === partnerId) || (placeId && s.placeId === placeId);
+        return (partnerId && s.partnerId === partnerId) || (placeId && s.placeId === placeId)
+            || (topicId && s.topicId === topicId);
     });
     const phrases = keys.reduce((n, k) => n + (m.flex[k] || []).length, 0);
     const buttons = (m.context || []).filter((it) => it
-        && ((partnerId && it.personId === partnerId) || (placeId && it.placeId === placeId))).length;
+        && ((partnerId && it.personId === partnerId) || (placeId && it.placeId === placeId)
+            || (topicId && it.topicId === topicId))).length;
     return { keys, phrases, buttons };
 }
 
@@ -269,7 +271,8 @@ export function removeSituationsFor(ids = {}) {
     const before = keys.flatMap((k) => clipsIn(m.flex[k]));
     for (const k of keys) delete m.flex[k];
     m.context = (m.context || []).filter((it) => !(it
-        && ((ids.partnerId && it.personId === ids.partnerId) || (ids.placeId && it.placeId === ids.placeId))));
+        && ((ids.partnerId && it.personId === ids.partnerId) || (ids.placeId && it.placeId === ids.placeId)
+            || (ids.topicId && it.topicId === ids.topicId))));
     const out = setModel(m);
     releaseClips(before);
     return out;

@@ -26,9 +26,10 @@
 import * as expressPanel from './express-panel.js';
 import * as relationships from './relationships.js';
 import * as places from './places.js';
+import * as topics from './topics.js';
 import { makeId, newEmptyItem } from './express-items.js';
 import {
-    ANYONE, ANYPLACE, flexKey, parseFlexKey, composePanel, CONTEXT_ORDER,
+    ANYONE, ANYPLACE, flexKey, parseFlexKey, topicFlexKey, composePanel, CONTEXT_ORDER,
 } from './express-bands.js';
 import { confirmDanger } from './confirm-dialog.js';
 import { focusMark, focusReturn } from './focus-keep.js';
@@ -54,6 +55,8 @@ let pickedId = null;
 // that leaving the tab and coming back does not silently move the user somewhere else.
 let flexPartner = ANYONE;
 let flexPlace = ANYPLACE;
+// A topic's own list, when one is chosen instead of a who-and-where (November 9 2026).
+let flexTopic = null;
 // Which section to force open after the next render, when something else has decided
 // (a tap on a panel cell, or adding an item to a band). Ordinary open/closed state is
 // NOT tracked here: sections.js owns it, keyed by position within this scope, which is
@@ -89,8 +92,8 @@ export function focusItem(id) {
     else {
         for (const [key, list] of Object.entries(m.flex)) {
             if (list.some((x) => x.id === id)) {
-                const { partnerId, placeId } = parseFlexKey(key);
-                flexPartner = partnerId; flexPlace = placeId; openAfterRender = 'flex';
+                const { partnerId, placeId, topicId } = parseFlexKey(key);
+                flexPartner = partnerId; flexPlace = placeId; flexTopic = topicId; openAfterRender = 'flex';
                 break;
             }
         }
@@ -124,6 +127,7 @@ export function addToBand(band, opts = {}) {
     if (key === 'flex' && opts.situation) {
         flexPartner = opts.situation.partnerId || ANYONE;
         flexPlace = opts.situation.placeId || ANYPLACE;
+        flexTopic = opts.situation.topicId || null;
     }
     if (key === 'context') addContext('feeling');
     else if (key === 'flex') addPhrase('flex', opts);
@@ -136,11 +140,11 @@ function bandList(band) {
     const m = expressPanel.getModel();
     if (band === 'always') return m.always;
     if (band === 'context') return m.context;
-    return m.flex[flexKey(flexPartner, flexPlace)] || [];
+    return m.flex[flexTopic ? topicFlexKey(flexTopic) : flexKey(flexPartner, flexPlace)] || [];
 }
 
 function saveBand(band, list) {
-    if (band === 'flex') expressPanel.setFlexList(flexPartner, flexPlace, list);
+    if (band === 'flex') expressPanel.setFlexList(flexPartner, flexPlace, list, flexTopic);
     else expressPanel.setBand(band, list);
     if (onChangeCb) onChangeCb();
 }
@@ -188,10 +192,11 @@ function addContext(type) {
     const list = bandList('context').slice();
     const item = type === 'partner' ? { id: makeId(), type: 'partner', name: '' }
         : type === 'place' ? { id: makeId(), type: 'place', name: '' }
-            : { id: makeId(), type: 'feeling', text: '' };
+            : type === 'topic' ? { id: makeId(), type: 'topic', name: '' }
+                : { id: makeId(), type: 'feeling', text: '' };
     list.push(item);
     pickedId = item.id;
-    saveBand('context', list);   // setBand re-sorts into partners, places, feelings
+    saveBand('context', list);   // setBand re-sorts into partners, places, topics, feelings
     render();
     revealPicked();
 }
@@ -276,6 +281,10 @@ function labelOf(item) {
     if (item.type === 'place') {
         const p = item.placeId ? places.getPlace(item.placeId) : null;
         return String((p && p.name) || item.name || '').trim();
+    }
+    if (item.type === 'topic') {
+        const t = item.topicId ? topics.getTopic(item.topicId) : null;
+        return String((t && t.name) || item.name || '').trim();
     }
     return String(item.text || item.label || item.name || '').trim();
 }
@@ -525,7 +534,7 @@ function contextRow(item) {
     // the last row that was TAPPED (CR-112).
     row.addEventListener('focusin', () => markPicked(row, item.id));
     row.appendChild(el('span', 'ee-kind', item.type === 'partner' ? 'Partner'
-        : item.type === 'place' ? 'Place' : 'Feeling'));
+        : item.type === 'place' ? 'Place' : item.type === 'topic' ? 'Topic' : 'Feeling'));
 
     const save = (patch) => {
         const list = bandList('context').slice();
@@ -545,6 +554,9 @@ function contextRow(item) {
     } else if (item.type === 'place') {
         row.appendChild(pickerFor(places.listPlaces().map((p) => ({ id: p.id, name: p.name })),
             item.placeId, item.name, (id, name) => save({ placeId: id, name }), 'Which place this button is for'));
+    } else if (item.type === 'topic') {
+        row.appendChild(pickerFor(topics.listTopics().map((t) => ({ id: t.id, name: t.name })),
+            item.topicId, item.name, (id, name) => save({ topicId: id, name }), 'Which topic this button is for'));
     } else {
         // A plain text box: a feeling is TYPED, never chosen from a list (Ken, August
         // 25 2026). The reasoning is a design decision rather than an implementation
@@ -661,13 +673,23 @@ function flexSection(composed) {
 
         const people = relationships.listPeople();
         const spots = places.listPlaces();
-        pickRow.appendChild(scopeSelect(
-            [{ id: ANYONE, name: 'Anyone' }, ...people.map((p) => ({ id: p.id, name: p.name }))],
-            flexPartner, (v) => { flexPartner = v; render(); }, 'Which partner the Flex phrases are for'));
-        pickRow.appendChild(el('span', 'ee-scope-lead', 'at'));
-        pickRow.appendChild(scopeSelect(
-            [{ id: ANYPLACE, name: 'Anyplace' }, ...spots.map((p) => ({ id: p.id, name: p.name }))],
-            flexPlace, (v) => { flexPlace = v; render(); }, 'Which place the Flex phrases are for'));
+        const subjects = topics.listTopics();
+        // A topic's own list, or a who-and-where list: one or the other, since a topic's
+        // list stands alone (Ken, November 9 2026).
+        if (subjects.length) {
+            pickRow.appendChild(scopeSelect(
+                [{ id: '', name: 'No topic' }, ...subjects.map((t) => ({ id: t.id, name: `Topic: ${t.name}` }))],
+                flexTopic || '', (v) => { flexTopic = v || null; render(); }, 'Which topic the Flex phrases are for'));
+        }
+        if (!flexTopic) {
+            pickRow.appendChild(scopeSelect(
+                [{ id: ANYONE, name: 'Anyone' }, ...people.map((p) => ({ id: p.id, name: p.name }))],
+                flexPartner, (v) => { flexPartner = v; render(); }, 'Which partner the Flex phrases are for'));
+            pickRow.appendChild(el('span', 'ee-scope-lead', 'at'));
+            pickRow.appendChild(scopeSelect(
+                [{ id: ANYPLACE, name: 'Anyplace' }, ...spots.map((p) => ({ id: p.id, name: p.name }))],
+                flexPlace, (v) => { flexPlace = v; render(); }, 'Which place the Flex phrases are for'));
+        }
         body.appendChild(pickRow);
 
         // What has already been made. Without it there is no screen anywhere that says
@@ -693,7 +715,9 @@ function flexSection(composed) {
             // and the browser would show the first entry as though it were the one being
             // edited (CR-252). A "choose" entry stands in instead, so the dropdown never
             // names a situation other than the one on screen.
-            const editingListed = entries.some((e) => e.partnerId === flexPartner && e.placeId === flexPlace);
+            const isEditing = (e) => (flexTopic ? e.topicId === flexTopic
+                : !e.topicId && e.partnerId === flexPartner && e.placeId === flexPlace);
+            const editingListed = entries.some(isEditing);
             if (!editingListed) {
                 const o = document.createElement('option');
                 o.value = '';
@@ -701,17 +725,17 @@ function flexSection(composed) {
                 o.selected = true;
                 sel.appendChild(o);
             }
-            entries.forEach(({ key, partnerId, placeId }) => {
+            entries.forEach((e) => {
                 const o = document.createElement('option');
-                o.value = key;
-                o.textContent = situationName(partnerId, placeId);
-                if (partnerId === flexPartner && placeId === flexPlace) o.selected = true;
+                o.value = e.key;
+                o.textContent = nameOf(e);
+                if (isEditing(e)) o.selected = true;
                 sel.appendChild(o);
             });
             sel.addEventListener('change', () => {
                 if (!sel.value) return;
-                const { partnerId, placeId } = parseFlexKey(sel.value);
-                flexPartner = partnerId; flexPlace = placeId;
+                const { partnerId, placeId, topicId } = parseFlexKey(sel.value);
+                flexPartner = partnerId; flexPlace = placeId; flexTopic = topicId;
                 render();
             });
             box.appendChild(sel);
@@ -744,11 +768,17 @@ function flexSection(composed) {
         body.appendChild(list);
         const spare = composed.counts.flex;
         body.appendChild(el('p', 'ee-note',
-            `The Flex band has ${spare} button${spare === 1 ? '' : 's'} right now. Phrases are filled in from the most specific list to the least: this partner in this place, then this partner anywhere, then anyone in this place, then Anyone at Anyplace.`));
+            `The Flex band has ${spare} button${spare === 1 ? '' : 's'} right now. Phrases are filled in from the most specific list to the least: the topic switched on, then this partner in this place, then this partner anywhere, then anyone in this place, then Anyone at Anyplace.`));
     });
 }
 
-function nameOf({ partnerId, placeId }) { return situationName(partnerId, placeId); }
+function nameOf({ partnerId, placeId, topicId }) {
+    if (topicId) {
+        const t = topics.getTopic(topicId);
+        return `Topic: ${t ? t.name : 'a topic since removed'}`;
+    }
+    return situationName(partnerId, placeId);
+}
 
 function situationName(partnerId, placeId) {
     const person = relationships.listPeople().find((p) => p.id === partnerId);
@@ -761,10 +791,11 @@ function situationName(partnerId, placeId) {
 function contextSection(composed) {
     return section('context', 'Context — describing the conversation context', (body) => {
         body.appendChild(el('p', 'ee-note',
-            'Partners, places and feelings, always in that order. This is also where the choices the other person offers appear, at the far end, for one exchange.'));
+            'Partners, places, topics and feelings, always in that order. This is also where the choices the other person offers appear, at the far end, for one exchange.'));
         body.appendChild(toolbar('context', [
             mkBtn('Add a partner', 'ee-add', () => addContext('partner')),
             mkBtn('Add a place', 'ee-add', () => addContext('place')),
+            mkBtn('Add a topic', 'ee-add', () => addContext('topic')),
             mkBtn('Add a feeling', 'ee-add', () => addContext('feeling')),
         ]));
         const list = el('div', 'ee-list');
@@ -806,12 +837,12 @@ async function resetAlways() {
 }
 
 async function deleteSituation() {
-    const key = flexKey(flexPartner, flexPlace);
+    const key = flexTopic ? topicFlexKey(flexTopic) : flexKey(flexPartner, flexPlace);
     const list = bandList('flex');
     if (!list.length) return;
     if (!(await confirmDanger({
         title: 'Delete this situation?',
-        body: `The ${list.length} button${list.length === 1 ? '' : 's'} you have made for ${situationName(flexPartner, flexPlace)} will be removed${expressPanel.clipsIn(list).length ? ', and any sound files with them' : ''}.`,
+        body: `The ${list.length} button${list.length === 1 ? '' : 's'} you have made for ${nameOf({ partnerId: flexPartner, placeId: flexPlace, topicId: flexTopic })} will be removed${expressPanel.clipsIn(list).length ? ', and any sound files with them' : ''}.`,
         confirmLabel: 'Delete them',
     }))) return;
     expressPanel.removeFlexList(key);
