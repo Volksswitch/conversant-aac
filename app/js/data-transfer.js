@@ -48,6 +48,7 @@ import * as storage from './storage.js';
 import * as platform from './platform.js';
 import * as prediction from './prediction.js';
 import { isSafeAudioName, mimeForName, blobToBase64, base64ToBlob, MAX_AUDIO_BYTES } from './express-audio.js';
+import * as sourceMaterial from './source-material.js';
 
 export const PACKAGE_KIND = 'conversant-aac-backup';
 // 3: one file again, carrying content AND settings AND every saved profile, with a
@@ -160,6 +161,15 @@ export async function buildPackage(appVersion, onProgress, parts = {}) {
     } catch { /* no folder, or unreadable — export the rest anyway */ }
     step('sound files');
 
+    // The documents behind question sessions (November 9 2026): their text, never the
+    // original PDFs, which an iPad does not need. In the safety copy too, because an
+    // import REPLACES a document of the same id.
+    let sources = null;
+    try {
+        const s = await sourceMaterial.exportSources();
+        if (s.index.length) sources = s;
+    } catch { /* no folder, or unreadable — export the rest anyway */ }
+
     return {
         kind: PACKAGE_KIND,
         packageVersion: PACKAGE_VERSION,
@@ -176,6 +186,7 @@ export async function buildPackage(appVersion, onProgress, parts = {}) {
         data,
         conversations,
         audio,
+        sources,
         // The typing suggestions' learned words (CR-170). Absent in older files.
         wordFreq: prediction.exportFrequencies(),
     };
@@ -224,6 +235,8 @@ export function summarize(pkg) {
     if (!(pkg && pkg.safetyCopy)) lines.push(`${convos} saved conversation${convos === 1 ? '' : 's'}`);
     const sounds = (pkg && Array.isArray(pkg.audio)) ? pkg.audio.length : 0;
     if (sounds) lines.push(`${sounds} sound file${sounds === 1 ? '' : 's'}`);
+    const docs = (pkg && pkg.sources && Array.isArray(pkg.sources.index)) ? pkg.sources.index.length : 0;
+    if (docs) lines.push(`${docs} document${docs === 1 ? '' : 's'} for question sessions`);
     const learned = pkg && pkg.wordFreq && typeof pkg.wordFreq === 'object' ? Object.keys(pkg.wordFreq).length : 0;
     if (learned) lines.push(`${learned} learned word${learned === 1 ? '' : 's'} for typing suggestions`);
     const settingCount = pkg && pkg.settings ? Object.keys(pkg.settings).length : 0;
@@ -524,6 +537,13 @@ export async function applyPackage(pkg, onProgress) {
         step('sound files');
     }
     if (soundFailed) restored.failed.push('Sound files');
+    // Documents for question sessions. Checked one by one inside importSources: a name it
+    // could not have written, or text over the limit, is skipped.
+    restored.sources = 0;
+    if (pkg.sources) {
+        try { restored.sources = await sourceMaterial.importSources(pkg.sources); }
+        catch { restored.failed.push('Documents for question sessions'); }
+    }
     if (pkg.wordFreq && prediction.importFrequencies(pkg.wordFreq)) restored.wordFreq = true;
 
     return restored;

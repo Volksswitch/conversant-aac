@@ -1081,7 +1081,10 @@ const AUDIO_DIR = 'audio';
  * Failure is deliberately silent. A folder granted read-only, or holding a FILE of
  * the same name, must not stop the app connecting to it - the app worked without
  * these folders before and still does. */
-const DATA_SUBFOLDERS = [SETTINGS_DIR, CONVERSATIONS_DIR, BACKUP_DIR, AUDIO_DIR];
+// The documents behind question sessions (Ken, November 9 2026): one folder, each
+// document kept once, that places and people point to. See source-material.js.
+const SOURCES_DIR = 'sources';
+const DATA_SUBFOLDERS = [SETTINGS_DIR, CONVERSATIONS_DIR, BACKUP_DIR, AUDIO_DIR, SOURCES_DIR];
 
 async function ensureDataSubfolders() {
     if (!dirHandle) return;
@@ -1251,6 +1254,60 @@ export async function listAudioFiles() {
     } catch { /* no audio folder yet */ }
     out.sort((a, b) => a.name.localeCompare(b.name));
     return out;
+}
+
+// --- Source material (Ken, November 9 2026) ----------------------------------------
+// Plain file operations on <data folder>/sources/. What the files mean - the index, the
+// text beside each original, the names - is source-material.js's business; this only
+// reads and writes. Without a data folder there is nowhere to keep a document: a write
+// throws with a message the screen shows, and a read returns null.
+
+async function getSourcesDir(create) {
+    if (!dirHandle) return null;
+    try {
+        return await dirHandle.getDirectoryHandle(SOURCES_DIR, { create: !!create });
+    } catch {
+        return null;
+    }
+}
+
+/* The sources folder itself, for a file picker to open IN. Fetch it BEFORE the tap,
+ * like getBackupsDirHandle. */
+export async function getSourcesDirHandle() {
+    return getSourcesDir(true);
+}
+
+// `content` is text or a Blob (an original PDF).
+export async function writeSourceFile(name, content) {
+    const dir = await getSourcesDir(true);
+    if (!dir) throw new Error('Choose a data folder first. Documents need somewhere to be kept.');
+    const fh = await dir.getFileHandle(name, { create: true });
+    const w = await fh.createWritable();
+    await w.write(content);
+    await w.close();
+    return true;
+}
+
+export async function readSourceFile(name) {
+    const dir = await getSourcesDir(false);
+    if (!dir || !name) return null;
+    try {
+        return await (await (await dir.getFileHandle(name)).getFile()).text();
+    } catch {
+        return null;
+    }
+}
+
+export async function sourceFileExists(name) {
+    const dir = await getSourcesDir(false);
+    if (!dir || !name) return false;
+    try { await dir.getFileHandle(name); return true; } catch { return false; }
+}
+
+export async function deleteSourceFile(name) {
+    const dir = await getSourcesDir(false);
+    if (!dir || !name) return;
+    try { await dir.removeEntry(name); } catch { /* already gone */ }
 }
 
 // A conversation's REVIEW file sits beside it, named for it (Conversation Review

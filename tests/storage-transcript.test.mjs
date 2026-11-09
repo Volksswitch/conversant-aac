@@ -115,7 +115,7 @@ test('the app adopts device storage when there is no folder to pick', async () =
     assert.equal(storage.supportsUserChosenFolder(), false);
 });
 
-test('connecting the data folder creates all four subfolders, before anything is saved', async () => {
+test('connecting the data folder creates all five subfolders, before anything is saved', async () => {
     // (!) WHY THIS IS ASSERTED ON DISK RATHER THAN BY CALLING THE GETTERS: the point
     // of the change is that the folders exist BEFORE anything asks for one. Ken's
     // reason is moving a file between devices - copying a settings profile or a
@@ -125,10 +125,10 @@ test('connecting the data folder creates all four subfolders, before anything is
     //
     // restoreDataFolder() has already run in the first test, so this reads the state
     // it left behind: no conversation has been saved, no profile written, no backup
-    // taken, and all four must be present regardless. (The fourth, audio, holds the
+    // taken, and all five must be present regardless. (The fourth, audio, holds the
     // clips behind Express Panel sound buttons - September 14 2026.)
     const names = [...root._dirs.keys()].sort();
-    assert.deepEqual(names, ['audio', 'backups', 'conversations', 'settings']);
+    assert.deepEqual(names, ['audio', 'backups', 'conversations', 'settings', 'sources']);
 });
 
 test('reconnecting a folder that already has the subfolders changes nothing', async () => {
@@ -141,7 +141,7 @@ test('reconnecting a folder that already has the subfolders changes nothing', as
 
     await storage.restoreDataFolder();
 
-    assert.deepEqual([...root._dirs.keys()].sort(), ['audio', 'backups', 'conversations', 'settings']);
+    assert.deepEqual([...root._dirs.keys()].sort(), ['audio', 'backups', 'conversations', 'settings', 'sources']);
     const again = await root.getDirectoryHandle('backups');
     const fh = await again.getFileHandle('keep-me.json');
     assert.equal(await (await fh.getFile()).text(), '{"a":1}', 'reconnecting must not wipe a backup');

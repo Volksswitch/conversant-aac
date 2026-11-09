@@ -1,5 +1,6 @@
 import { buildPartnerBrief, buildUserSideBlock, parseDraft, parseOpeners, CATEGORIES } from './practice-library.js';
 import * as provider from './suggest-provider.js';
+import * as qs from './question-session.js';
 import anthropic from './suggest-anthropic.js';
 
 /*
@@ -697,6 +698,34 @@ ${JSON.stringify(context)}${avoidBlock}${steerBlock}${focusBlock}${extraNamesBlo
 // ROLES ARE INVERTED from generateResponses — here the model IS the partner, so the
 // partner's own prior lines are 'assistant' and the user's responses are 'user'.
 // Returns a plain string (the words to speak). Requires a key like any generation.
+/*
+ * QUESTION SESSIONS: four answers to an audience question, drawn from the talk's
+ * documents (Ken, November 2026). The prompt and the reading of the reply live in
+ * question-session.js; this only sends it, so it goes through the provider seam like
+ * every other request and the cost is counted the same way.
+ *
+ * Deliberately NOT sent: the voice block (the answers do not imitate the user's voice,
+ * Ken, November 8 2026) and About Me (the tested prompt reads "content only from the
+ * material", and the talk's note is what says who the speaker is). The standing rules
+ * for anything spoken aloud ARE sent.
+ *
+ * opts: { question, material, speakerNote, audience, alreadySaid }
+ */
+export async function generateAnswers(opts = {}) {
+    if (!apiKey) throw new Error('API key not set');
+    if (onRequest) { try { onRequest({ reason: 'question' }); } catch { /* never break generation */ } }
+    const request = qs.buildAnswerRequest({ ...opts, extraRules: [SPEAKABLE, NO_VULGARITY] });
+    const { text, stopReason } = await askDetailed(request);
+    try {
+        return qs.parseAnswers(text);
+    } catch (err) {
+        err.message = `${err.message} (stop: ${stopReason || 'unknown'}, ${text.length} chars)`;
+        err.reply = text;
+        err.stopReason = stopReason;
+        throw err;
+    }
+}
+
 export async function generatePartnerUtterance(scenario, conversationHistory = []) {
     if (!apiKey) throw new Error('API key not set');
 

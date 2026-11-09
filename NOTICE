@@ -6,3 +6,7 @@ This software is, or is based on, Conversant AAC by Volksswitch
 
 Under section 4(d) of the Apache License, anyone who distributes this software
 or a work based on it must include this notice.
+
+This software includes PDF.js (https://github.com/mozilla/pdf.js), copyright
+Mozilla Foundation, used under the Apache License, Version 2.0. Its license is in
+app/vendor/pdfjs/LICENSE.

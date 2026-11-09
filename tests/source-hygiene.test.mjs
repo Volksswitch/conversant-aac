@@ -45,8 +45,12 @@ function trackedTextFiles() {
     const out = tracked + fresh;
     const exts = new Set(['.mjs', '.js', '.py', '.json', '.md', '.html', '.css', '.ps1',
                           '.yml', '.yaml', '.txt', '.gs', '.sh', '.bat']);
+    // app/vendor/ is outside code we did not write (pdf.js, November 2026): its minified
+    // files carry control bytes on purpose, and document-reader.test.mjs checks the copy
+    // is byte-identical to the published package instead.
     return out.split('\0')
         .filter(Boolean)
+        .filter((f) => !f.startsWith('app/vendor/'))
         .filter((f) => exts.has(path.extname(f).toLowerCase()));
 }
 

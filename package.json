@@ -9,6 +9,7 @@
   },
   "devDependencies": {
     "eslint": "^8.57.0",
+    "pdfjs-dist": "6.4.299",
     "puppeteer": "^25.1.0"
   },
   "dependencies": {
