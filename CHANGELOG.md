@@ -26,10 +26,13 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.14.0
+
 ### Everyone
 - You can now take questions on a subject you know, such as after a talk. In About Me, open My Topics and add a topic, the documents your answers should come from (pick a PDF, or paste text), and how you relate to the material. Put the topic's button on the Express Panel (Context band). When you tap it, each question you hear gets four answers drawn from your documents: a short one first, then three that go deeper. Ending the conversation switches the topic off. A topic can have its own Flex phrases, such as "Thank you, next question". After you speak one, the answers stay on screen so you can pick another to say more, and tapping Listen clears them for the next question. The documents are kept in a new "sources" folder inside your data folder.
 - At a talk, if a question hangs on a word that could mean several things, such as "covered", a "What do you mean by...?" button appears at the end of the Flex band. Tapping it asks, and the answers that follow take their explanation into account. It needs a Flex band with at least one row.
 - At a talk, tap an answer while it is being spoken to pause it. You can then say something else, such as a correction, and tap the answer again to carry on from the start of the sentence it was in.
+- In About Me, a People entry can now be marked as a group, such as an audience ("SLPs and OTs"). The app then speaks to them as a group and doesn't greet them by name.
 - At a talk, the app checks each answer for wording it should not use, such as "to be honest" or a British word. If it finds some, it asks for that answer to be reworded, and the new wording replaces it on screen a moment later, unless you have already tapped it.
 
 ### On an iPad
