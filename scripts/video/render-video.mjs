@@ -164,7 +164,16 @@ async function mark(page, selector, kind) {
       const clip = (e) => {
         let r = e.getBoundingClientRect();
         let box = { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+        // A fixed-position element is placed against the screen, so containers above
+        // it don't cut it off. While Settings is open the Express Panel sits inside the
+        // Settings window but pinned to the bottom of the screen, outside that window's
+        // box; trimming to the window lost the Flex row and stopped video 3.6
+        // (November 9 2026).
+        let escaped = getComputedStyle(e).position === 'fixed';
         for (let a = e.parentElement; a; a = a.parentElement) {
+          const pinned = getComputedStyle(a).position === 'fixed';
+          if (escaped) continue;
+          if (pinned) escaped = true;
           const o = getComputedStyle(a).overflowY + getComputedStyle(a).overflowX;
           if (!/auto|scroll|hidden/.test(o)) continue;
           const c = a.getBoundingClientRect();
@@ -353,6 +362,7 @@ function makeAI(ai = {}, page) {
   }
   const partnerLines = [...(ai.partnerLines || [])];
   const responseSets = [...(ai.responseSets || [])];
+  const answerSets = [...(ai.answerSets || [])];
   // A set marked untilReleased is held until a step calls page.releaseOptions().
   // A fixed delay is not enough: how long the steps before it take varies from
   // render to render, so the options could land a step early (October 31 2026,
@@ -369,6 +379,14 @@ function makeAI(ai = {}, page) {
       if (!partnerLines.length) throw new Error('The app asked for a partner line the script does not have.');
       console.log('  [ai] partner line');
       return partnerLines.shift();
+    }
+    // A question at a talk (a topic switched on) asks for answers, in their own shape.
+    const schema = body.output_config && body.output_config.format && body.output_config.format.schema;
+    if (schema && schema.properties && schema.properties.answers) {
+      if (!answerSets.length) throw new Error('The app asked for answers to a question the script does not have.');
+      const set = answerSets.shift();
+      console.log('  [ai] answers');
+      return JSON.stringify({ unclear_words: set.unclear || [], answers: set.answers });
     }
     if (body.output_config) {
       if (!responseSets.length) throw new Error('The app asked for options the script does not have.');

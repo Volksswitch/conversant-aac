@@ -41,7 +41,9 @@ export default {
     { speaker: 'narrator', highlight: flexPlus, press: true,
       page: "Flex: phrases for a person or a place. Give it room under Band sizes and look.",
       say: "Tap plus beside Flex band." },
-    { speaker: 'narrator', highlight: group('flex'),
+    // The panel redraws a moment after the size changes; ringing it before then
+    // finds no Flex buttons at all (sync, November 9 2026).
+    { speaker: 'narrator', waitFor: '#expressPanel .ep-band-flex', highlight: group('flex'),
       say: "Now the Flex group has a row. You add its phrases in the Flex section of this tab, for anyone, for one person, or for one place." },
     { speaker: 'narrator',
       say: "{next}" },

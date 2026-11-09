@@ -68,6 +68,7 @@ Video 1.5 is short on purpose. During the beta, speech keys are arranged with us
 | 3.8 | Your voice | Choose a voice and fix a name it says wrong | Staged |
 | 3.9 | Your own openers and goodbyes | Change the phrases behind Start conversation, Wrap up and the other commands | Staged |
 | 3.10 | Looking back at a conversation | Rewrite a reply so the app learns how you'd say it | Live |
+| 3.11 | Taking questions after a talk | Set up a topic and answer questions from your own documents | Live |
 
 ### 4. Fitting it to you (menu)
 
