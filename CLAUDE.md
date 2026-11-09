@@ -2312,6 +2312,15 @@ Ken settled the vocabulary for talking about the two configurations, the shape o
 - **Preparing answers to expected questions is a lesser feature** (Ken): the range of possible questions is too wide; on-the-fly answers have to work.
 - **Documents: PDFs and web pages** (Ken). **Preparation may happen OUTSIDE the conversation, on a PC** (Ken), which handles the heavier work better than an iPad: read the PDFs and pages, turn them into plain text, and store the result with the place, so it travels to the iPad through the data folder or a backup. Web pages usually cannot be fetched by the app directly (the browser blocks reading another site), so the user may need to save a page as a file first. **Prefer keeping the user's own text over an AI-condensed version**; condense only if the material is too large to send, since condensing loses their wording.
 - **To measure before building far:** whether the cards come back fast enough with a whole paper in the prompt, and whether the answers are good. Ken's ATOB paper (in the project folder) is the natural first test, with questions he has actually been asked. **The real target is Ken's own talk with a Conversant demo, likely ATIA 2027 in January**, for which he would supply BOTH the ATOB article and the Conversant Product Overview, so the test uses both (about 22,000 words together).
+- **DECIDED (Ken, November 8 2026), from the first test:**
+  - **"Sounds like me" is dropped for this mode.** Ken: the audience getting correct information matters more than matching how he answers. An old recording of his question answers showed the habits that serve that (answer first, how it works, the catch, where his knowledge ends), and the test's rules already produce them.
+  - **The short answer comes FIRST and summarizes the other three**; a deeper answer can be picked after it.
+  - **Answers stay on screen after one is spoken**, so the user can go deeper. They are cleared when Listen is pressed for the next question, so auto-listen is off in this mode.
+  - **"I don't know, and I haven't thought about it very much."** Never "I haven't written about it". When only part of a question is answered, say which part.
+  - **Never talk about one's own honesty or transparency** ("I should be honest about"), and **never claim to know the audience's work or feelings** ("I know funding is a huge part of your day").
+  - **Don't repeat a point already spoken in the session**; the AI is given what was said and refers back.
+  - **A word in the question that could be read two ways becomes a "What do you mean by X?" button** (e.g. "covered" in "Is this covered by Medicaid?").
+  - Open items (pronouns, the eight-card setting, stressing "as" and "for" in the tagline, a check after writing) are in [TODO.md](TODO.md).
 - **Not yet decided:** the stop / "say more" controls; what the place stores and how documents are added on the PC; how a talk's documents are kept separate from the user's general writing.
 
 ## Spanish and other languages (Ken, October 18 2026), DECIDED, not built

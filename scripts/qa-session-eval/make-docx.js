@@ -17,26 +17,25 @@ const lead = (b, rest) => [new TextRun({ text: b, bold: true }), new TextRun(res
 const children = [
     new Paragraph({ heading: HeadingLevel.TITLE, spacing: { after: 120 },
         children: [new TextRun({ text: 'Question Session Test', bold: true, size: 40, color: '1F4E79' })] }),
-    body([new TextRun({ text: 'Kenneth R. Hackbarth  |  Volksswitch.org  |  October 2026', color: GRAY })]),
+    body([new TextRun({ text: 'Kenneth R. Hackbarth  |  Volksswitch.org  |  November 2026', color: GRAY })]),
 
     new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun('What this is')] }),
-    body('This is a first test of answering audience questions after a talk, in paragraphs, from your own writing. The app does not have this mode yet. The test asked the AI the same way the app would, to see whether the answers are good enough to build it.'),
-    body('The AI was given two documents: your ATOB article and the Conversant AAC Product Overview, about 22,700 words together. It was asked twelve questions, each twice: once with an audience of SLPs and OTs, and once with an audience of academics. Each time it wrote four answers: three longer answers that each take a different angle, and one short answer.'),
-    body('Six of the questions are answered by the documents, three are partly covered, and three are not covered at all. The last group tests whether the AI admits it does not know instead of making something up.'),
-    body('The AI had no profile of how you talk. As examples of your voice it used five sentences you typed to me on October 11. That is closer to how you speak than the article, but it is still typing.'),
+    body('The second run of the question-session test, after your comments on the first. The app does not have this mode yet; the test asks the AI the way the app would. Same twelve questions, each asked twice (SLPs and OTs, then academics), with your ATOB article and the Product Overview as the material.'),
+    body('Two sentences in the Product Overview were corrected in the copy the AI was given, and only there: what still works when the internet is gone, and what the app reads from the replies the user picked. The real document still needs those fixes.'),
 
-    new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun('What we found')] }),
-    bullet(lead('Speed. ', 'A set of four answers took 7.6 seconds in the middle case, and 4.3 to 9.5 seconds overall. Everyday suggestions take about 3 seconds. A holding phrase such as "Good question" would cover most of the wait.')),
-    bullet(lead('Cost. ', 'About 2 cents for each set of four answers, 52 cents for the whole test. An hour of questions would cost well under a dollar.')),
-    bullet(lead('Staying inside what you wrote. ', 'Every answer to an uncovered question said plainly that you had not written about it. Asked about Medicaid, the short answer began "I don\'t know. I haven\'t written about Medicaid or insurance coverage."')),
-    bullet(lead('Audience. ', 'Answers for SLPs talked about clients and setting up. Answers for academics named the research the article cites and kept what has been measured apart from what is proposed.')),
-    bullet(lead('Copying. ', 'No answer reused a whole sentence. The longest stretch of words taken straight from the documents was 10 to 19 words, mostly descriptions from the Product Overview. Those are noted beside the answers below.')),
+    new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun('What changed since the first run')] }),
+    bullet(lead('Short answer first. ', 'It now summarizes the other three, so a deeper answer can follow it.')),
+    bullet(lead('No voice imitation. ', 'Your typed examples are gone. The answers are plain spoken American English.')),
+    bullet(lead('"I don’t know, and I haven’t thought about it very much." ', 'This replaces "I haven’t written about it" everywhere.')),
+    bullet(lead('Part of a question unanswered. ', 'Answers now say which part they can’t answer. Five of the six questions the documents only partly cover, or don’t cover, now say so.')),
+    bullet(lead('Clarifying buttons. ', 'The AI names a word in the question that could be read two ways, for a "What do you mean by ...?" button. It flagged "covered" in the Medicaid question and "outcomes" in the research question, and nothing else.')),
+    bullet(lead('Nothing about the audience’s work. ', '"I know funding is a huge part of your day" and its kind no longer appear.')),
+    bullet(lead('Not repeating a point. ', 'The AI is told what was already said in the session and refers back instead ("as I said a moment ago"). In a real session that list would be the answers actually spoken.')),
+    bullet(lead('Speed and cost. ', 'A set of four answers took 7.2 seconds in the middle case, 53 cents for all 24 sets.')),
 
-    new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun('What to mark')] }),
-    body('The one thing the test cannot judge is whether the answers sound like you. As you read, please mark:'),
-    bullet('answers that sound like you'),
-    bullet('answers that do not'),
-    bullet('any fact that is wrong'),
+    new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun('Still not right')] }),
+    bullet(lead('"Honest." ', 'Told never to use the word, the AI still used it twice in 96 answers ("the honest summary is"). An instruction alone does not stop it; the app would need to catch it after the answer is written.')),
+    bullet(lead('"First option." ', 'The question about tapping the first option carries the idea in its own wording, and some answers still repeat it ("the first option is meant to be the most natural one"). The material calls the green option the most natural answer, and the AI treats green as "first".')),
 ];
 
 const audienceName = { slp: 'SLPs and OTs', academics: 'academics' };
@@ -58,6 +57,8 @@ for (let i = 0; i < md.length; i++) {
         children.push(new Paragraph({ heading: HeadingLevel.HEADING_2,
             children: [new TextRun(`For ${m[1]}`)] }));
         children.push(body([new TextRun({ text: `Four answers in ${m[2]} seconds, ${Number(m[3]).toFixed(1)} cents.`, color: GRAY })]));
+    } else if ((m = line.match(/^\*Clarifying buttons: (.*)\*$/))) {
+        children.push(body([new TextRun({ text: `Clarifying buttons: ${m[1]}`, italics: true })]));
     } else if ((m = line.match(/^### (.*FAILED.*)$/))) {
         children.push(body(m[1]));
     } else if ((m = line.match(/^\*\*(.+?)\*\* \((angle|short), (\d+) words, copied (\d+)(?: - "(.*)")?\)$/))) {
@@ -94,7 +95,7 @@ const doc = new Document({
         headers: { default: new Header({ children: [new Paragraph({ alignment: AlignmentType.RIGHT,
             children: [new TextRun({ text: 'Conversant AAC — Question Session Test', italics: true, color: GRAY, size: 18, font: 'Arial' })] })] }) },
         footers: { default: new Footer({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [
-            footerRun('Volksswitch.org  |  October 2026  |  For internal use  |  Page '),
+            footerRun('Volksswitch.org  |  November 2026  |  For internal use  |  Page '),
             new TextRun({ children: [PageNumber.CURRENT], size: 18, font: 'Arial', color: GRAY }),
             footerRun(' of '),
             new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 18, font: 'Arial', color: GRAY }),

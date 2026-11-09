@@ -51,7 +51,20 @@ the one that quietly waits forever.
   4. **Cost wording:** the home page, At a Glance and the Product Overview say a fraction of a cent per reply. The September 30 2026 measurement was about half a cent per set of options, and one turn can write several sets. The FAQ uses the measured figure.
   5. **Staying with text is now a hypothesis (Ken, November 3 2026):** the Product Overview roadmap promises symbol support, and the Staying With Text draft says we plan to get there without symbols. Both should say the question is open and will be tested.
   6. **"No license" wording:** the home page and Product Overview say "no license", meaning no fee. Now that the code has an Apache 2.0 license, that should read "no license fee". The home page's "anyone is welcome to take it and build on it" could also mention the credit requirement.
+  7. **Product Overview, "AI is an enhancement" (found 2026-11-08 by Ken in the question-session test):** "If the connection drops, the API key is missing, or the AI provider is temporarily down, the user can still see what the partner said" is false when the internet itself is gone, since hearing the partner needs it too. The next paragraph says so, but the two together led the AI to tell an audience the opposite. Replace "If the connection drops" with "If the AI can't be reached while the internet is working", and say plainly that with no internet the app can't show what the partner said.
+  8. **Product Overview, Conversation Review:** "it reads the replies the user picked and the sentences they typed" led the AI to say picked replies are used as examples of how the user talks. They are not; the app only notes how long they tend to be. Say so.
+  9. **Product Overview, Maria example:** "the first option would read 'I don't know'" implies a ranked first option. Say "the green option".
 - **Why not now:** Ken asked for them to be listed. Each changes a published page, and they fit the next "sync docs" pass.
+
+### Question sessions after a talk: open items from the November 8 2026 test
+- **Raised:** 2026-11-08 - Ken's comments on the October 11 question-session test, and the re-run (`scripts/qa-session-eval/2026-11-08/`).
+- **What is wanted:**
+  1. **Pronouns (waiting on Ken):** "my" when an answer speaks from the point of view of a Conversant user, "I" when from the presenter's. Needs one example from Ken of each before the instruction can be written.
+  2. **Eight-card setting (waiting on Ken):** the test always returns four answers. Recommendation: question sessions ignore the "two per category" setting and keep four, because each answer is a paragraph.
+  3. **Tagline emphasis:** Ken wants "as" and "for" stressed whenever "speak as the user, not for them" is spoken. Only in that phrase, not every "as" and "for". The paid voices can stress a word (Deepgram measurably stresses capitals; Azure takes emphasis markup); the device's own voices cannot.
+  4. **"Honest" and "first option" still appear** in 2 and 4 of 96 test answers despite explicit instructions. The mode needs a check after the answer is written, not only an instruction.
+  5. **Clarifying buttons:** decide where "What do you mean by X?" buttons go. They speak, so not the Context band; the Flex band is the likely place.
+- **Why not now:** the mode is not built. These are decided when it is.
 
 ### PIN or password when the app extends to younger users
 - **Raised:** 2026-11-03 - Ken, on the Your Security and Privacy document: a PIN or password is still an issue for younger users.
