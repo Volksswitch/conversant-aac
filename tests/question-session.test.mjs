@@ -130,3 +130,41 @@ test('the rules match the tested prototype in scripts/qa-session-eval/run.mjs', 
     assert.equal(protoRules.length, 10);
     assert.deepEqual(appRules, protoRules);
 });
+
+// ⚠ THE CROSS-LAYER CHECK (standing rule: a change that crosses layers gets one check
+// that crosses all of them). A reply shaped as the service sends it goes through the
+// real request, the real reader and the real engine, and the snapshot the screen
+// draws from is checked. Nothing here is handed to a layer pre-made.
+import * as engine from '../app/js/engine.js';
+
+test('a talk question runs from the service reply to the four cards on screen', async () => {
+    engine.reset();
+    // The short answer arrives third, as a careless reply might send it.
+    mockFetch(reply([FOUR[1], FOUR[2], FOUR[0], FOUR[3]], ['covered']));
+    const result = await llm.generateAnswers({ question: 'Is this covered?', material: MATERIAL,
+        avoid: ['AVOID-SENTINEL'], steer: 'STEER-SENTINEL' });
+    const tail = getFetchCalls()[0].body.system[1].text;
+    assert.match(tail, /AVOID-SENTINEL/);
+    assert.match(tail, /STEER-SENTINEL/);
+    const snap = engine.ingestClassification({
+        classification: { partner_action: 'QUESTION', turn_status: 'COMPLETE', is_repair_initiator: false },
+        responses: qs.answersToResponses(result.answers),
+    }, 'Is this covered?');
+    assert.equal(snap.palette.length, 4, 'always four, whatever the two-per-category setting says');
+    assert.deepEqual(snap.palette.map((m) => m.slot), ['ANSWER_SHORT', 'ANSWER', 'ANSWER', 'ANSWER']);
+    assert.equal(snap.palette[0].hint, 'Silence, not speed', 'the label is the short form on the card');
+    assert.equal(snap.palette[0].text, 'Short answer.', 'the full answer is what is spoken');
+    assert.ok(snap.palette.every((m) => qs.isAnswerSlot(m.slot)));
+    assert.equal(snap.floor, engine.FLOOR.SELF, 'the question is the partner\'s turn; the user owes the answer');
+    // Picking one does not end anything the engine needs for New 4: refreshPalette
+    // replaces the cards for the same question.
+    engine.selectResponse(snap.palette[0]);
+    const again = engine.refreshPalette(qs.answersToResponses(result.answers));
+    assert.equal(again.palette.length, 4);
+});
+
+test('the cached block is unchanged by New 4 and Reframe', () => {
+    const a = qs.buildAnswerRequest({ question: 'Q?', material: MATERIAL });
+    const b = qs.buildAnswerRequest({ question: 'Q?', material: MATERIAL, avoid: ['x'], steer: 'y' });
+    assert.equal(a.system[0].text, b.system[0].text);
+});

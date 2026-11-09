@@ -246,6 +246,11 @@ const SLOT_META = {
     CHOICE_OTHER:    { cls: 'slot-dispreferred' },
     CHOICE_ASK:      { cls: 'slot-initiative' },
     CHOICE_REPAIR:   { cls: 'slot-repair' },
+    // Question sessions: the short answer is a plain answer (preferred green); the
+    // three that go deeper take the initiative blue, since each takes the answer
+    // somewhere further. One per cell, like the choices.
+    ANSWER_SHORT:    { cls: 'slot-preferred' },
+    ANSWER:          { cls: 'slot-initiative' },
 };
 
 // The response footprint is a fixed RESERVED grid of 4 CELLS (Rule 1) — 2×2 with

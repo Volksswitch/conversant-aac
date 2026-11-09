@@ -84,6 +84,12 @@ export const SLOT = {
     // moment; without this the user can only say goodbye. Offered only when the
     // PARTNER initiated the closing, never when the user is winding down.
     CLOSING_DECLINE: 'CLOSING_DECLINE',
+    // Question sessions (November 9 2026): at a talk every card is an ANSWER drawn
+    // from the talk's documents. The short one sums up the other three and always
+    // comes first. Outside the four categories, so the renderer lays them out one
+    // per cell and the two-per-category setting does not apply (Ken: always four).
+    ANSWER_SHORT: 'ANSWER_SHORT',
+    ANSWER: 'ANSWER',
 };
 
 const SLOT_PRIORITY = {
@@ -95,6 +101,8 @@ const SLOT_PRIORITY = {
     // CHOICE_OTHERs may appear (e.g. "about the same" AND "it comes and goes"),
     // and the stable sort keeps them in the order the model ranked them.
     CHOICE: 1, CHOICE_OTHER: 5, CHOICE_ASK: 6, CHOICE_REPAIR: 7,
+    // The short answer first; the deeper ones keep the order the AI gave them.
+    ANSWER_SHORT: 1, ANSWER: 2,
 };
 
 // Static Phase-1 palettes for the modes that don't need an LLM round-trip. These

@@ -88,10 +88,16 @@ Rules:
  *   audience     how to pitch the answers for this audience; blank says nothing
  *   alreadySaid  [{ q, a }] — answers already SPOKEN in this session, oldest first
  *   extraRules   standing rules for spoken text, from llm.js
+ *   avoid        answers already offered for this question ("New 4"), to differ from
+ *   steer        guidance the user typed and sent with Reframe
+ *
+ * avoid and steer are additions to the tested prototype, and both go in the second
+ * block, never the cached one. A typed steer is the user's own words, so a fact in it
+ * may be used even though it is not in the material, exactly as in everyday Reframe.
  *
  * Returns { system, messages, maxTokens, schema } for the provider seam.
  */
-export function buildAnswerRequest({ question, material = [], speakerNote = '', audience = '', alreadySaid = [], extraRules = [] }) {
+export function buildAnswerRequest({ question, material = [], speakerNote = '', audience = '', alreadySaid = [], extraRules = [], avoid = [], steer = '' }) {
     const note = String(speakerNote || '').trim() || NO_NOTE;
     const docs = (material || []).filter((d) => d && String(d.text || '').trim());
     const cached = `${instructions(extraRules)}
@@ -105,7 +111,7 @@ ${docs.map((d) => `=== ${d.name} ===\n${d.text}`).join('\n\n')}`;
     const turn = `THE AUDIENCE: ${String(audience || '').trim() || '(not described)'}
 
 ALREADY SAID IN THIS SESSION:
-${said.length ? said.map((x) => `- Asked: ${x.q || '(not heard)'}\n  Answered: ${x.a}`).join('\n') : '(nothing yet)'}`;
+${said.length ? said.map((x) => `- Asked: ${x.q || '(not heard)'}\n  Answered: ${x.a}`).join('\n') : '(nothing yet)'}${avoidBlock(avoid)}${steerBlock(steer)}`;
 
     return {
         system: [{ text: cached, cache: true }, { text: turn }],
@@ -149,6 +155,35 @@ export function parseAnswers(text) {
         .map((w) => String(w || '').trim())
         .filter((w) => w && w.split(/\s+/).length <= 4);
     return { answers: answers.slice(0, ANSWER_COUNT), unclearWords: [...new Set(unclearWords)] };
+}
+
+/**
+ * The answers as response cards for the engine: the label is the card's short form,
+ * the full answer is what is spoken. Slots match engine.SLOT.ANSWER_SHORT / ANSWER.
+ */
+export function answersToResponses(answers) {
+    return (answers || []).map((a) => ({
+        slot: a.kind === 'short' ? 'ANSWER_SHORT' : 'ANSWER',
+        text: a.text,
+        hint: a.label,
+    }));
+}
+
+/** True for a card that is a talk answer. */
+export function isAnswerSlot(slot) {
+    return slot === 'ANSWER_SHORT' || slot === 'ANSWER';
+}
+
+function avoidBlock(avoid) {
+    const list = (avoid || []).map((t) => String(t || '').trim()).filter(Boolean);
+    if (!list.length) return '';
+    return `\n\nThe speaker asked for different answers to this question. Take different parts of the material or different angles; do not reword these:\n${list.map((t) => `- ${t}`).join('\n')}`;
+}
+
+function steerBlock(steer) {
+    const t = String(steer || '').trim();
+    if (!t) return '';
+    return `\n\nTHE SPEAKER TYPED THIS GUIDANCE FOR THESE ANSWERS. Shape all four around it. It may say what to get across or how to come across. Being the speaker's own words, any fact in it is true and may be used even though it is not in the material:\n"${t}"`;
 }
 
 // A label from the text, for the rare answer that came without one.

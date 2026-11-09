@@ -10,6 +10,8 @@ import * as worldview from './worldview.js';
 import * as relationships from './relationships.js';
 import { goalItems } from './partner-profile.js';
 import * as places from './places.js';
+import * as sourceMaterial from './source-material.js';
+import * as qs from './question-session.js';
 import * as worldviewUI from './worldview-ui.js';
 import * as keyboard from './keyboard.js';
 import * as prediction from './prediction.js';
@@ -233,6 +235,16 @@ let manualListenArmed = false;
 let activePartner = null;
 let activeFeeling = null;
 let activePlace = null;
+
+// QUESTION SESSIONS (November 9 2026). While the active place is a talk that is switched
+// on, each audience question gets four ANSWERS from the talk's documents instead of the
+// usual four kinds of reply. See generateTalkAnswers.
+//   talkQuestion  the question the answers on screen answer, kept after an answer is
+//                 spoken so "New 4" and Reframe still work on it
+//   talkSaid      answers spoken so far this conversation, so the AI refers back
+//                 instead of repeating a point (rule 8)
+let talkQuestion = '';
+let talkSaid = [];
 
 // The GOALS switched on for this conversation - goal key -> which list it came from.
 //
@@ -2210,6 +2222,7 @@ function startFreshListening() {
     setOfferedRange(null);
     clearTurnSteering();
     dropHeldForComposer();
+    talkQuestion = '';       // at a talk: the next question, so the last one's answers go
     pendingPartnerHistoryIdx = -1;   // fresh partner turn — not yet promoted to history
     generationToken++;
     ui.setLiveTranscript('');
@@ -2242,6 +2255,107 @@ function isRefusal(err) {
 function failureEvent(err) {
     if (isRefusal(err)) return metrics.EV.AI_REFUSED;
     return isRateLimit(err) ? metrics.EV.RATE_LIMITED : metrics.EV.GENERATION_FAILED;
+}
+
+// The talk settings of the place the user has tapped, or null when that is not a talk
+// that is switched on. Read fresh each time, so switching the talk on or off in My
+// Places takes effect at the next question.
+function activeTalk() {
+    return activePlace && activePlace.placeId ? places.talkFor(activePlace.placeId) : null;
+}
+
+// Who the audience is, for pitching the answers: the person's name and "anything worth
+// knowing", then their "how I talk with them" settings.
+function talkAudienceText(personId) {
+    if (!personId) return '';
+    const p = relationships.listPeople().find((x) => x.id === personId);
+    if (!p) return '';
+    const who = [p.nickname || p.name, p.about].filter(Boolean).join(': ');
+    return [who, relationships.buildPartnerBlock(personId)].filter(Boolean).join('\n');
+}
+
+/*
+ * QUESTION SESSIONS: four answers to an audience question, from the talk's documents
+ * (Ken, November 2026). Called by generateOptions (each pause in the question), New 4,
+ * Reframe and a change of place. Returns false, having done nothing, when the talk has
+ * no readable documents, so the caller falls back to ordinary suggestions rather than
+ * four answers that can only say "I don't know".
+ *
+ * opts: { token, reason, ingest, avoid, steer, placeholderEpoch }
+ *   ingest  true for a new or growing question: the engine records it as the partner's
+ *           turn. False for New 4 and Reframe, which only replace the cards.
+ */
+async function generateTalkAnswers(question, opts = {}) {
+    const talk = activeTalk();
+    if (!talk || !talk.sources.length || !question) return false;
+    let material = [];
+    try { material = await sourceMaterial.readSources(talk.sources); } catch { /* treated as none */ }
+    if (!material.length) return false;
+
+    const token = opts.token || ++generationToken;
+    if (token !== generationToken) return true;   // superseded while reading the documents
+    ui.setPaletteBusy(true);
+    ui.setStatus('Writing answers...');
+    ui.setTranscriptState('generating');
+    const startedAt = Date.now();
+    try {
+        const result = await llm.generateAnswers({
+            question, material,
+            speakerNote: talk.note,
+            audience: talkAudienceText(talk.audienceId),
+            alreadySaid: talkSaid,
+            avoid: opts.avoid || [],
+            steer: opts.steer || '',
+        });
+        if (token !== generationToken) {
+            metrics.event(metrics.EV.GENERATION_SUPERSEDED, { ms: Date.now() - startedAt });
+            return true;
+        }
+        metrics.event(metrics.EV.GENERATION, { ms: Date.now() - startedAt });
+        const responses = qs.answersToResponses(result.answers);
+        // A question needs no classifying: it is the partner's turn and the user owes an
+        // answer. Ingesting it keeps the engine's record of whose turn it is right.
+        const snap = opts.ingest
+            ? engine.ingestClassification({
+                classification: { partner_action: 'QUESTION', turn_status: 'COMPLETE', is_repair_initiator: false },
+                responses }, question)
+            : engine.refreshPalette(responses);
+        if (opts.ingest) lastIngestedPartnerText = question;
+        ui.showEngineState(snap);
+        lastPalette = snap.palette;
+        talkQuestion = question;
+        currentStatic = { kind: null, full: [] };   // New 4 asks again, it does not page
+        setOfferedChoices([]);
+        setOfferedRange(null);
+        if (composerOpen) {
+            // Held while "In my own words" is open, exactly as ordinary suggestions are.
+            heldForComposer = { palette: snap.palette, at: Date.now() };
+            metrics.event(metrics.EV.PALETTE_HELD, { kind: 'ai' });
+        } else {
+            showPalette(snap.palette);
+        }
+        ui.setTranscriptState('ready');
+        ui.setStatus('Pick an answer');
+        // The holding phrases were armed by the pause, as in everyday conversation;
+        // this confirms or cancels them the same way generateOptions does.
+        if (opts.placeholderEpoch !== undefined) {
+            if (opts.placeholderEpoch === placeholderEpoch) placeholders.start();
+        }
+    } catch (err) {
+        if (token !== generationToken) return true;
+        metrics.event(failureEvent(err), { ms: Date.now() - startedAt });
+        storage.logError('generateAnswers', err.message, {
+            partner: (question || '').slice(0, 200),
+            ...(err.reply ? { reply: String(err.reply).slice(0, 400) } : {}),
+        });
+        updatePartnerLive(question);
+        ui.setTranscriptState('uncleaned');
+        notePaletteReplacedByError();
+        ui.showResponseError('AI is unavailable — reply using the Express Panel or “In my own words.” The question is shown above.',
+            () => generateTalkAnswers(question, { ...opts, token: undefined }));
+        ui.setStatus(`Error: ${err.message}`);
+    }
+    return true;
 }
 
 async function generateOptions(partnerText) {
@@ -2294,6 +2408,14 @@ async function generateOptions(partnerText) {
         ui.setTranscriptState('idle');
         ui.setStatus('No AI key - reply with the Express Panel or In my own words');
         return;
+    }
+
+    // At a talk, the question gets four answers from the talk's documents instead.
+    if (activeTalk()) {
+        clearTurnSteering();
+        if (await generateTalkAnswers(partnerText, { token, ingest: true, reason: 'reprompt',
+            placeholderEpoch: pEpoch })) return;
+        if (token !== generationToken) return;
     }
 
     ui.setStatus('Generating response options...');
@@ -2671,6 +2793,17 @@ async function handleResponseSelected(response, index) {
         // without waiting for the partner to reply; after a goodbye, re-offer them
         // (the partner may say bye back). Listening still resumes if armed (Ken).
         offerClosings();
+    } else if (qs.isAnswerSlot(response.slot) && lastPalette.length) {
+        // A TALK ANSWER STAYS ON SCREEN with the other three, so the user can pick a
+        // second one to go deeper (Ken, November 8 2026). This is the deliberate
+        // exception to CR-090 below: at a talk a second answer is the expected next
+        // move, not a stray tap. The answers are cleared when Listen is tapped for the
+        // next question, and listening does not restart by itself (autoResumeOn).
+        talkSaid.push({ q: talkQuestion, a: response.text });
+        if (talkSaid.length > 30) talkSaid.shift();
+        showPalette(lastPalette);
+        ui.setTranscriptState('idle');
+        ui.setStatus('Pick another answer to go deeper, or tap Listen for the next question');
     } else {
         // What was said has been said: the cards go back to empty outlines, so a stray
         // tap cannot speak a stale answer (CR-090). Listening may redraw them anyway.
@@ -2690,7 +2823,7 @@ function offerClosings() {
     // are about to show, whereas a live mic just waits. So in practice the goodbyes are
     // shown and the user taps Start Listening when ready, matching the decline-a-closing
     // rule already in force. (Ken, August 7 2026.)
-    if (!practiceMode && manualListenArmed && storage.loadAutoRelisten()) {
+    if (!practiceMode && manualListenArmed && autoResumeOn()) {
         currentPartnerText = '';
         currentPartnerUncertain = [];
         generationToken++;
@@ -2962,11 +3095,18 @@ async function commitExchange(raw, userText, index, opts = {}) {
     }
 }
 
+// Whether listening restarts by itself after the user speaks. The setting, except at a
+// talk: there each answer is followed by a deliberate Listen tap for the next question,
+// which is what clears the answers (Ken, November 8 2026).
+function autoResumeOn() {
+    return storage.loadAutoRelisten() && !activeTalk();
+}
+
 // Auto-resume only if the user has manually started listening this session (and
 // hasn't since manually stopped) — see manualListenArmed.
 function resumeOrIdle() {
     if (practiceMode) return practiceResumeOrIdle();
-    if (manualListenArmed && storage.loadAutoRelisten()) {
+    if (manualListenArmed && autoResumeOn()) {
         metrics.event(metrics.EV.LISTEN, { auto: true, status: 'start' });
         startFreshListening();
     } else {
@@ -3412,7 +3552,7 @@ function togglePracticeCue() {
 // auto-resume is armed) or wait for the user to tap Start Listening — the SAME gate
 // as a real conversation.
 function practiceResumeOrIdle() {
-    if (!tour && manualListenArmed && storage.loadAutoRelisten()) {
+    if (!tour && manualListenArmed && autoResumeOn()) {
         advancePracticePartner();
     } else {
         isListening = false;
@@ -3429,6 +3569,8 @@ function practiceResumeOrIdle() {
 // CLEAR the conversation window (transcript history) and ALL cards, and reset the
 // engine to STANDBY. Shared by End conversation and Start conversation.
 async function terminateConversation() {
+    talkQuestion = '';
+    talkSaid = [];   // a new conversation has said nothing yet
     conversationEpoch++;
     stopExpressAudio({ abort: true });
     placeholders.stop();
@@ -4077,6 +4219,13 @@ async function handleRegenerate() {
         generateOptions(currentPartnerText);   // the newest words were never classified (CR-079)
         return;
     }
+    // At a talk: four different answers to the same question, which still works after
+    // one answer has been spoken (the question is kept in talkQuestion).
+    if (activeTalk() && talkQuestion && lastPalette.length) {
+        ui.setStatus('Getting different answers...');
+        const prior = lastPalette.map((m) => m.text).filter(Boolean);
+        if (await generateTalkAnswers(talkQuestion, { reason: 'regenerate', avoid: prior })) return;
+    }
     // Statements the user asked for to steer things on their own turn (CR-134): a
     // different set for the same direction. There is no partner turn to answer here.
     if (!currentPartnerText && activeSteer.lead && lastPalette.length) {
@@ -4331,6 +4480,12 @@ async function handleReframe() {
     //  • No partner turn (the user just responded / holds the floor) → the user
     //    wants to LEAD: generate STATEMENTS that take the conversation where they
     //    want to go (Ken), not replies to a partner.
+    // At a talk: the four answers again, shaped by what the user typed.
+    if (activeTalk() && talkQuestion && lastPalette.length) {
+        ui.setStatus('Reworking the answers with your input...');
+        if (await generateTalkAnswers(talkQuestion, { token, reason: 'reframe', steer })) return;
+    }
+
     if (currentPartnerText && lastPalette.length) {
         ui.setStatus('Reworking options with your input...');
         // Remember it for this turn so "New N" reworks the options with the same
@@ -4547,7 +4702,7 @@ async function speakAsUserTurn(historyText, spokenText = historyText, source = '
     const capture = convLogic.captureAfterUserSpeaks({
         opensConversation,
         armed: manualListenArmed,
-        autoResume: storage.loadAutoRelisten(),
+        autoResume: autoResumeOn(),
     });
     // Practice Mode has no mic — "capturing" there means cueing the AI partner, and
     // practiceResumeOrIdle already gates that on the same setting, so route through
@@ -5421,6 +5576,11 @@ async function refreshForContextChange() {
     // replacing it with response cards would answer a question nobody asked - the
     // user is mid-wind-down and would suddenly be offered replies.
     if (currentStatic.kind) return false;
+    // Switching a talk place on with a question on screen answers it as a talk.
+    if (activeTalk() && (currentPartnerText || talkQuestion) && engine.getMode() !== engine.MODE.REPAIR_OF_SELF) {
+        const q = currentPartnerText || talkQuestion;
+        if (await generateTalkAnswers(q, { reason: 'context change', ingest: q !== lastIngestedPartnerText })) return true;
+    }
     if (currentPartnerText && currentPartnerText !== lastIngestedPartnerText) {
         generateOptions(currentPartnerText);   // picks up the new context too
         return true;
@@ -5554,6 +5714,7 @@ async function handleToggleGoal(item) {
 async function handleTogglePlace(item) {
     if (editedInSettings(item)) return;
     activePlace = (activePlace && activePlace.id === item.id) ? null : item;
+    talkSaid = [];   // what was said at one talk is not "already said" at another
     // Same rule as the partner's, for the same reason: "pick up my prescription"
     // stops being the goal the moment the user says they are somewhere else.
     dropGoalsFrom('place');
@@ -6329,7 +6490,7 @@ async function playAudioTurn(item, inherit = null) {
     const capture = convLogic.captureAfterUserSpeaks({
         opensConversation,
         armed: manualListenArmed,
-        autoResume: storage.loadAutoRelisten(),
+        autoResume: autoResumeOn(),
     });
     if (capture) startFreshListening();
     else resumeOrIdle();
