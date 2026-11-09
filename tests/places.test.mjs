@@ -266,3 +266,37 @@ test('a place\'s topics are split on commas, survive a reload, and reach the her
     await places.updatePlace(id, { topicsWelcome: [] });
     assert.doesNotMatch(places.buildHereBlock(id), /likes to talk about/);
 });
+
+// Question sessions (November 9 2026): the talk settings live on the place.
+test("a place's talk settings survive a reload", async () => {
+    const id = await places.addPlace({ name: 'At my talk',
+        talk: { on: true, sources: ['src-a', 'src-b', 'src-a'], note: ' I lead the project. ', audienceId: 'p1' } });
+    // Read back the STORED copy, which is where the whitelist trap bites.
+    await places.load();
+    assert.deepEqual(places.getPlace(id).talk,
+        { on: true, sources: ['src-a', 'src-b'], note: 'I lead the project.', audienceId: 'p1' });
+    assert.deepEqual(places.talkFor(id).sources, ['src-a', 'src-b']);
+});
+
+test('a place that is not a talk, or a talk switched off, starts no question session', async () => {
+    const plain = await places.addPlace({ name: 'Starbucks' });
+    assert.equal(places.getPlace(plain).talk, null);
+    assert.equal(places.talkFor(plain), null);
+    const off = await places.addPlace({ name: 'Old talk', talk: { on: false, note: 'kept for later' } });
+    assert.equal(places.talkFor(off), null);
+    assert.equal(places.getPlace(off).talk.note, 'kept for later', 'switching off keeps the setup');
+});
+
+test('the talk note is limited where it enters, and a deleted document is forgotten everywhere', async () => {
+    const id = await places.addPlace({ name: 'Talk', talk: { on: true, sources: ['src-x', 'src-y'], note: 'x'.repeat(5000) } });
+    assert.equal(places.getPlace(id).talk.note.length, places.TALK_NOTE_MAX);
+    await places.forgetSource('src-x');
+    await places.load();
+    assert.deepEqual(places.getPlace(id).talk.sources, ['src-y']);
+});
+
+test('the talk settings never reach the everyday prompt', async () => {
+    const id = await places.addPlace({ name: 'At my talk', talk: { on: true, note: 'NOTE-SENTINEL' } });
+    assert.doesNotMatch(places.buildBlock(), /NOTE-SENTINEL/);
+    assert.doesNotMatch(places.buildHereBlock(id), /NOTE-SENTINEL/);
+});

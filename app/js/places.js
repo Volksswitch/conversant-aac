@@ -83,6 +83,30 @@ function normalizeFacts(facts) {
         .filter((f) => f.key);
 }
 
+// A QUESTION SESSION'S SETTINGS, kept on the place that switches it on (Ken, November 9
+// 2026: "On the place"). Tapping a place marked as a talk turns on the mode where each
+// audience question gets four answers drawn from the talk's documents.
+//   on          this place is a talk
+//   sources     ids of documents in the source-material folder, in the order chosen
+//   note        how the presenter relates to the material, in their words (rule 10)
+//   audienceId  a person in About Me whose "how I talk with them" pitches the answers
+// The note is limited where it ENTERS, like scenario text: it goes to the AI as though
+// the user wrote it, so a file from elsewhere must not be able to send pages of it.
+export const TALK_NOTE_MAX = 1000;
+export function normalizeTalk(t) {
+    if (!t || typeof t !== 'object') return null;
+    const sources = [...new Set((Array.isArray(t.sources) ? t.sources : [])
+        .filter((x) => typeof x === 'string' && x))].slice(0, 20);
+    const talk = {
+        on: !!t.on,
+        sources,
+        note: String(t.note ?? '').trim().slice(0, TALK_NOTE_MAX),
+        audienceId: typeof t.audienceId === 'string' && t.audienceId ? t.audienceId : null,
+    };
+    // Nothing set at all is the same as no talk, so an untouched place stays as it was.
+    return (talk.on || talk.sources.length || talk.note || talk.audienceId) ? talk : null;
+}
+
 function normalizePlace(p) {
     return {
         id: p.id,
@@ -99,7 +123,10 @@ function normalizePlace(p) {
         facts: normalizeFacts(p.facts),
         goals: normalizeGoals(p.goals),
         topicsWelcome: normalizeTopics(p.topicsWelcome),
-        topicsAvoid: normalizeTopics(p.topicsAvoid)
+        topicsAvoid: normalizeTopics(p.topicsAvoid),
+        // ⚠ THIS FUNCTION IS A WHITELIST (see pronunciation above): a field left out
+        // here is dropped on the next load with nothing saying so.
+        talk: normalizeTalk(p.talk)
     };
 }
 
@@ -190,7 +217,8 @@ export function listPlaces() {
         facts: p.facts.map((f) => ({ ...f })),
         goals: (p.goals || []).map((g) => ({ ...g })),
         topicsWelcome: [...(p.topicsWelcome || [])],
-        topicsAvoid: [...(p.topicsAvoid || [])]
+        topicsAvoid: [...(p.topicsAvoid || [])],
+        talk: p.talk ? { ...p.talk, sources: [...p.talk.sources] } : null
     }));
 }
 
@@ -199,7 +227,7 @@ export function getPlace(id) {
 }
 
 export async function addPlace({ name = '', pronunciation = '', facts = [], goals = [], isPrivate = false,
-                                 topicsWelcome = [], topicsAvoid = [] } = {}) {
+                                 topicsWelcome = [], topicsAvoid = [], talk = null } = {}) {
     const m = ensureLoaded();
     const id = newId();
     m.places.push({
@@ -210,13 +238,14 @@ export async function addPlace({ name = '', pronunciation = '', facts = [], goal
         facts: normalizeFacts(facts),
         goals: normalizeGoals(goals),
         topicsWelcome: normalizeTopics(topicsWelcome),
-        topicsAvoid: normalizeTopics(topicsAvoid)
+        topicsAvoid: normalizeTopics(topicsAvoid),
+        talk: normalizeTalk(talk)
     });
     await save();
     return id;
 }
 
-export async function updatePlace(id, { name, pronunciation, facts, goals, isPrivate, topicsWelcome, topicsAvoid } = {}) {
+export async function updatePlace(id, { name, pronunciation, facts, goals, isPrivate, topicsWelcome, topicsAvoid, talk } = {}) {
     const m = ensureLoaded();
     const p = m.places.find((x) => x.id === id);
     if (!p) return;
@@ -227,6 +256,7 @@ export async function updatePlace(id, { name, pronunciation, facts, goals, isPri
     if (isPrivate !== undefined) p.private = !!isPrivate;
     if (topicsWelcome !== undefined) p.topicsWelcome = normalizeTopics(topicsWelcome);
     if (topicsAvoid !== undefined) p.topicsAvoid = normalizeTopics(topicsAvoid);
+    if (talk !== undefined) p.talk = normalizeTalk(talk);
     await save();
 }
 
@@ -327,4 +357,24 @@ export function buildHereBlock(id) {
     lines.push(...topicLines(p.topicsWelcome, p.topicsAvoid, `at ${p.name}`));
     if (p.private) lines.push(`Do not name ${p.name} on your own initiative — only if the partner asks where the user is, or the user's own typed guidance tells you to.`);
     return lines.join(' ');
+}
+
+/** The talk settings of a place, or null when it is not a talk that is switched on. */
+export function talkFor(id) {
+    const p = getPlace(id);
+    return p && p.talk && p.talk.on ? p.talk : null;
+}
+
+/** Remove a document from every place that points to it (the document was deleted). */
+export async function forgetSource(sourceId) {
+    const m = ensureLoaded();
+    let changed = false;
+    for (const p of m.places) {
+        if (p.talk && p.talk.sources.includes(sourceId)) {
+            p.talk = normalizeTalk({ ...p.talk, sources: p.talk.sources.filter((x) => x !== sourceId) });
+            changed = true;
+        }
+    }
+    if (changed) await save();
+    return changed;
 }

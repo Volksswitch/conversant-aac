@@ -19,6 +19,8 @@ import { setIconButton } from './icons.js';
 import * as wv from './worldview.js';
 import * as rel from './relationships.js';
 import * as places from './places.js';
+import * as sourceMaterial from './source-material.js';
+import { readDocumentFile } from './document-reader.js';
 import * as expressPanel from './express-panel.js';
 import * as voiceProfile from './voice.js';
 import { SOUND_CHECK_ITEMS, VERDICT, questionFor } from './sound-check-items.js';
@@ -1483,6 +1485,7 @@ function buildPlaceCard(p) {
         el('div', { class: 'wv-question', text: p.name || '(unnamed place)' })
     ]);
     if (p.private) head.append(el('span', { class: 'wv-badge wv-badge-private', text: '🔒 Private' }));
+    if (p.talk && p.talk.on) head.append(el('span', { class: 'wv-badge', text: 'Talk' }));
     card.append(head);
 
     if (p.facts.length) {
@@ -1622,7 +1625,8 @@ function buildPlaceForm(existing) {
             goals: goalEd.read(),
             isPrivate: privCheck.checked,
             topicsWelcome: placeTopicsWelcomeIn.value,
-            topicsAvoid: placeTopicsAvoidIn.value
+            topicsAvoid: placeTopicsAvoidIn.value,
+            talk: talkEd.read()
         });
     }
 
@@ -1639,6 +1643,8 @@ function buildPlaceForm(existing) {
     ]);
     if (existing && existing.goals && existing.goals.length) goalsNode.open = true;
 
+    const talkEd = buildTalkEditor(existing && existing.talk, { onChange: commitPlaceNow });
+
     const privId = 'wvplacepriv-' + (existing ? existing.id : 'new');
     const privCheck = el('input', { type: 'checkbox', id: privId });
     if (existing && existing.private) privCheck.checked = true;
@@ -1647,7 +1653,7 @@ function buildPlaceForm(existing) {
     ]);
 
     card.append(el('div', { class: 'wv-person-fields' },
-        [nameIn, pronRow, factsWrap, addFact, placeTopicsWelcomeIn, placeTopicsAvoidIn, goalsNode, privRow]));
+        [nameIn, pronRow, factsWrap, addFact, placeTopicsWelcomeIn, placeTopicsAvoidIn, goalsNode, talkEd.node, privRow]));
 
     if (existing) {
         for (const box of [nameIn, pronIn, placeTopicsWelcomeIn, placeTopicsAvoidIn]) box.addEventListener('change', commitPlaceNow);
@@ -1671,7 +1677,8 @@ function buildPlaceForm(existing) {
                 goals: goalEd.read(),
                 isPrivate: privCheck.checked,
                 topicsWelcome: placeTopicsWelcomeIn.value,
-                topicsAvoid: placeTopicsAvoidIn.value
+                topicsAvoid: placeTopicsAvoidIn.value,
+                talk: talkEd.read()
             });
             renderPlaces();
         } });
@@ -1680,6 +1687,204 @@ function buildPlaceForm(existing) {
     // create form is the permanent blank one at the foot of the list.
     card.append(el('div', { class: 'wv-actions' }, [save]));
     return card;
+}
+
+// --- A place's talk: questions after a talk (Ken, November 9 2026) -----------------
+//
+// Lives on the place, because tapping the place is what switches the mode on (Ken: "On
+// the place"). Holds which documents the answers come from, the presenter's note on how
+// they relate to the material, and the audience (a person in About Me, whose "how I talk
+// with them" pitches the answers). Same shape as buildGoalEditor: a node, a read(), and
+// an onChange the place form saves on.
+//
+// Documents are added HERE but kept in the one shared source-material folder, so a paper
+// added for one talk can be ticked for another, and replacing it reaches both.
+function buildTalkEditor(saved, opts = {}) {
+    const onChange = opts.onChange || (() => {});
+    const draft = {
+        on: !!(saved && saved.on),
+        sources: saved ? [...saved.sources] : [],
+        note: saved ? saved.note : '',
+        audienceId: saved ? saved.audienceId : null,
+    };
+
+    const status = el('div', { class: 'wv-talk-status', role: 'status', 'aria-live': 'polite' });
+    const say = (text, bad = false) => {
+        status.textContent = text || '';
+        status.classList.toggle('wv-talk-status-bad', !!bad);
+    };
+
+    // On / off.
+    const onId = 'wvtalkon-' + Math.random().toString(36).slice(2, 8);
+    const onBox = el('input', { type: 'checkbox', id: onId });
+    onBox.checked = draft.on;
+    const onRow = el('label', { class: 'wv-person-checkbox-row', for: onId }, [
+        onBox, el('span', { text: 'Answer audience questions when I\'m here' }),
+    ]);
+
+    // The short-label suggestion (Ken, November 8 2026: suggested, not forced). Shown only
+    // while the talk is on and the cards are not already showing short labels alone.
+    const offer = el('div', { class: 'wv-talk-offer' });
+    const renderOffer = () => {
+        offer.innerHTML = '';
+        if (!draft.on || storage.loadCardTextMode() === 'condensed') return;
+        offer.append(
+            el('span', { text: 'Answers after a talk are long. Showing only the short label on each card makes them quicker to choose.' }),
+            el('button', { class: 'wv-btn', text: 'Show short labels only', onclick: () => {
+                // Through the Settings control itself, so the setting, the cards and the
+                // control on the Conversation tab all change together.
+                const sel = document.getElementById('cardTextModeInput');
+                if (sel) { sel.value = 'condensed'; sel.dispatchEvent(new Event('change')); }
+                else storage.saveCardTextMode('condensed');
+                renderOffer();
+            } }));
+    };
+    onBox.addEventListener('change', () => { draft.on = onBox.checked; renderOffer(); onChange(); });
+
+    // The documents.
+    const docList = el('div', { class: 'wv-talk-docs' });
+    const renderDocs = async () => {
+        let list = [];
+        try { list = await sourceMaterial.listSources(); } catch { /* no folder: shown below */ }
+        // A document deleted elsewhere is no longer offered or sent.
+        draft.sources = draft.sources.filter((id) => list.some((d) => d.id === id));
+        docList.innerHTML = '';
+        if (!list.length) {
+            docList.append(el('p', { class: 'wv-talk-empty', text: 'No documents yet.' }));
+            return;
+        }
+        for (const d of list) {
+            const id = 'wvtalkdoc-' + d.id;
+            const box = el('input', { type: 'checkbox', id });
+            box.checked = draft.sources.includes(d.id);
+            box.addEventListener('change', () => {
+                draft.sources = box.checked
+                    ? [...draft.sources.filter((x) => x !== d.id), d.id]
+                    : draft.sources.filter((x) => x !== d.id);
+                onChange();
+            });
+            const replace = el('button', { class: 'wv-btn wv-btn-link', text: 'Replace',
+                'aria-label': `Replace ${d.title} with a newer version`,
+                onclick: () => pickFile(async (picked) => {
+                    await sourceMaterial.replaceSource(d.id, picked);
+                    say(`Replaced ${d.title}. Every talk that uses it now has the new version.`);
+                    renderDocs();
+                }) });
+            const remove = el('button', { class: 'wv-btn wv-btn-link', text: 'Remove',
+                'aria-label': `Remove ${d.title}`,
+                onclick: async () => {
+                    const ok = await confirmDanger({
+                        title: `Remove ${d.title}?`,
+                        body: 'This removes the document from your documents folder. Every talk '
+                            + 'that uses it stops using it. This cannot be undone.',
+                        confirmLabel: 'Remove', cancelLabel: 'Cancel',
+                    });
+                    if (!ok) return;
+                    await sourceMaterial.removeSource(d.id);
+                    await places.forgetSource(d.id);
+                    draft.sources = draft.sources.filter((x) => x !== d.id);
+                    say(`Removed ${d.title}.`);
+                    renderDocs();
+                } });
+            docList.append(el('div', { class: 'wv-talk-doc' }, [
+                el('label', { class: 'wv-person-checkbox-row', for: id }, [
+                    box, el('span', { text: `${d.title} (${d.words.toLocaleString('en-US')} words)` }),
+                ]),
+                el('div', { class: 'wv-talk-doc-tools' }, [replace, remove]),
+            ]));
+        }
+    };
+
+    // Reading a picked file. A PDF is read on the device; it can take a few seconds.
+    const fileIn = el('input', { type: 'file', accept: '.pdf,.txt,.md,application/pdf,text/plain', hidden: true });
+    let onPicked = null;
+    fileIn.addEventListener('change', async () => {
+        const file = fileIn.files && fileIn.files[0];
+        fileIn.value = '';
+        if (!file || !onPicked) return;
+        const then = onPicked;
+        onPicked = null;
+        try {
+            say(`Reading ${file.name}...`);
+            const r = await readDocumentFile(file, {
+                onProgress: ({ page, pages }) => say(`Reading ${file.name}: page ${page} of ${pages}`),
+            });
+            await then({ text: r.text, original: r.kind === 'pdf' ? { blob: file, ext: 'pdf' } : null,
+                title: file.name.replace(/\.(pdf|txt|md)$/i, '') });
+        } catch (err) {
+            say(err.message || String(err), true);
+        }
+    });
+    function pickFile(then) { onPicked = then; fileIn.click(); }
+
+    const addFile = el('button', { class: 'wv-btn', text: 'Add a PDF or text file',
+        onclick: () => pickFile(async ({ text, original, title }) => {
+            const d = await sourceMaterial.addSource({ title, text, original });
+            draft.sources = [...draft.sources, d.id];   // added here, so it is for this talk
+            say(`Added ${d.title} (${d.words.toLocaleString('en-US')} words).`);
+            onChange();
+            renderDocs();
+        }) });
+
+    // Pasting text: for a web page, or anything that is not a PDF.
+    const pasteTitle = el('input', { type: 'text', class: 'wv-text', 'data-no-predict': '',
+        placeholder: 'Name of the document' });
+    const pasteText = el('textarea', { class: 'wv-text wv-talk-paste', 'data-no-predict': '', rows: '6',
+        placeholder: 'Paste the document\'s text here' });
+    const pasteAdd = el('button', { class: 'wv-btn wv-btn-primary', text: 'Add this text',
+        onclick: async () => {
+            try {
+                const d = await sourceMaterial.addSource({ title: pasteTitle.value, text: pasteText.value });
+                draft.sources = [...draft.sources, d.id];
+                pasteTitle.value = ''; pasteText.value = '';
+                pasteBox.hidden = true;
+                say(`Added ${d.title} (${d.words.toLocaleString('en-US')} words).`);
+                onChange();
+                renderDocs();
+            } catch (err) { say(err.message || String(err), true); }
+        } });
+    const pasteBox = el('div', { class: 'wv-talk-pastebox', hidden: true }, [pasteTitle, pasteText, pasteAdd]);
+    const pasteOpen = el('button', { class: 'wv-btn', text: 'Paste text',
+        onclick: () => { pasteBox.hidden = !pasteBox.hidden; if (!pasteBox.hidden) pasteTitle.focus(); } });
+
+    // The note on who "I" is (rule 10). Blank means the presenter is assumed NOT to be
+    // one of the people the material describes.
+    const noteIn = el('input', { type: 'text', class: 'wv-text', maxlength: String(places.TALK_NOTE_MAX),
+        placeholder: 'How you relate to this material (e.g. I lead the project and don\'t use the app myself)',
+        value: draft.note });
+    noteIn.addEventListener('change', () => { draft.note = noteIn.value.trim(); onChange(); });
+
+    // The audience: a person in About Me.
+    const aud = el('select', { class: 'wv-select', 'aria-label': 'Who the audience is' });
+    aud.append(el('option', { value: '', text: 'Audience: choose someone from People' }));
+    for (const p of rel.listPeople()) {
+        const o = el('option', { value: p.id, text: `Audience: ${p.nickname || p.name}` });
+        if (p.id === draft.audienceId) o.selected = true;
+        aud.append(o);
+    }
+    aud.addEventListener('change', () => { draft.audienceId = aud.value || null; onChange(); });
+
+    const node = el('details', { class: 'wv-partner-profile wv-talk' }, [
+        el('summary', { class: 'wv-disclosure' }, [
+            el('span', { class: 'wv-disclosure-mark', 'aria-hidden': 'true', text: '›' }),
+            el('span', { class: 'wv-disclosure-title', text: 'Questions after a talk' }),
+        ]),
+        el('div', { class: 'wv-talk-body' }, [
+            onRow, offer,
+            el('div', { class: 'wv-talk-heading', text: 'Documents the answers come from' }),
+            docList,
+            el('div', { class: 'wv-talk-add' }, [addFile, pasteOpen, fileIn]),
+            pasteBox, status, noteIn, aud,
+        ]),
+    ]);
+    if (draft.on || draft.sources.length) node.open = true;
+    renderOffer();
+    renderDocs();
+
+    return {
+        node,
+        read: () => ({ ...draft, note: noteIn.value.trim(), sources: [...draft.sources] }),
+    };
 }
 
 // --- Module (a chunk of cards) ----------------------------------------------

@@ -4155,6 +4155,22 @@ dialog label.radio-label.radio-disabled {
 
 .wv-disclosure-title { font-weight: 600; min-width: 0; }
 
+/* A place's "Questions after a talk" section (November 9 2026). */
+.wv-talk-body { display: flex; flex-direction: column; gap: 0.5rem; }
+.wv-talk-heading { font-weight: 600; margin-top: 0.4rem; }
+.wv-talk-doc { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.25rem 0.75rem; }
+.wv-talk-doc .wv-person-checkbox-row { flex: 1 1 14rem; min-width: 0; }
+.wv-talk-doc-tools { display: flex; gap: 0.5rem; }
+.wv-talk-add { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.wv-talk-pastebox { display: flex; flex-direction: column; gap: 0.5rem; }
+.wv-talk-pastebox[hidden] { display: none; }
+.wv-talk-paste { min-height: 8rem; resize: vertical; font: inherit; }
+.wv-talk-empty, .wv-talk-status { color: var(--ink-muted); margin: 0; }
+.wv-talk-status:empty { display: none; }
+.wv-talk-status-bad { color: var(--danger-ink); }
+.wv-talk-offer { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; color: var(--ink-muted); }
+.wv-talk-offer:empty { display: none; }
+
 .wv-partner-profile > *:not(summary) {
     margin-top: 0.5rem;
 }
