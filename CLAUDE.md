@@ -2315,11 +2315,12 @@ Ken settled the vocabulary for talking about the two configurations, the shape o
 - **DECIDED (Ken, November 8 2026), from the first test:**
   - **"Sounds like me" is dropped for this mode.** Ken: the audience getting correct information matters more than matching how he answers. An old recording of his question answers showed the habits that serve that (answer first, how it works, the catch, where his knowledge ends), and the test's rules already produce them.
   - **The short answer comes FIRST and summarizes the other three**; a deeper answer can be picked after it.
+  - **Always four answers, whatever the eight-card setting says, and each card shows ONLY its short label** (Ken, November 8 2026): there is no time to read a paragraph before choosing. The full answer is spoken.
   - **Answers stay on screen after one is spoken**, so the user can go deeper. They are cleared when Listen is pressed for the next question, so auto-listen is off in this mode.
   - **"I don't know, and I haven't thought about it very much."** Never "I haven't written about it". When only part of a question is answered, say which part.
-  - **Never talk about one's own honesty or transparency** ("I should be honest about"), and **never claim to know the audience's work or feelings** ("I know funding is a huge part of your day").
+  - **Never talk about one's own honesty or transparency** ("I should be honest about", "the honest summary is"; Ken: nobody talks like that, it is formal and self-important; not knowing is "I don't know", "I'm afraid I don't know" or "I'm sorry, I don't know", never "I honestly don't know"), and **never claim to know the audience's work or feelings** ("I know funding is a huge part of your day").
   - **Don't repeat a point already spoken in the session**; the AI is given what was said and refers back.
-  - **A word in the question that could be read two ways becomes a "What do you mean by X?" button** (e.g. "covered" in "Is this covered by Medicaid?").
+  - **A word in the question too vague to answer without asking (Ken: not merely one with several meanings) becomes a "What do you mean by X?" button** (e.g. "covered" in "Is this covered by Medicaid?").
   - Open items (pronouns, the eight-card setting, stressing "as" and "for" in the tagline, a check after writing) are in [TODO.md](TODO.md).
 - **Not yet decided:** the stop / "say more" controls; what the place stores and how documents are added on the PC; how a talk's documents are kept separate from the user's general writing.
 

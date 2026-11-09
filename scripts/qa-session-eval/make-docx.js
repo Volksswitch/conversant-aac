@@ -21,21 +21,22 @@ const children = [
 
     new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun('What this is')] }),
     body('The second run of the question-session test, after your comments on the first. The app does not have this mode yet; the test asks the AI the way the app would. Same twelve questions, each asked twice (SLPs and OTs, then academics), with your ATOB article and the Product Overview as the material.'),
-    body('Two sentences in the Product Overview were corrected in the copy the AI was given, and only there: what still works when the internet is gone, and what the app reads from the replies the user picked. The real document still needs those fixes.'),
+    body('Three things in the Product Overview were changed in the copy the AI was given, and only there: what still works when the internet is gone, what the app reads from the replies the user picked, and a new sentence saying the four options aren’t ranked. The real document still needs those changes.'),
 
     new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun('What changed since the first run')] }),
     bullet(lead('Short answer first. ', 'It now summarizes the other three, so a deeper answer can follow it.')),
     bullet(lead('No voice imitation. ', 'Your typed examples are gone. The answers are plain spoken American English.')),
     bullet(lead('"I don’t know, and I haven’t thought about it very much." ', 'This replaces "I haven’t written about it" everywhere.')),
     bullet(lead('Part of a question unanswered. ', 'Answers now say which part they can’t answer. Five of the six questions the documents only partly cover, or don’t cover, now say so.')),
-    bullet(lead('Clarifying buttons. ', 'The AI names a word in the question that could be read two ways, for a "What do you mean by ...?" button. It flagged "covered" in the Medicaid question and "outcomes" in the research question, and nothing else.')),
+    bullet(lead('Clarifying buttons. ', 'The AI names a word in the question too vague to answer without asking, for a "What do you mean by ...?" button. It flagged "covered" in the Medicaid question and "outcomes" in the research question. It also flagged "client" once, which it was told not to.')),
     bullet(lead('Nothing about the audience’s work. ', '"I know funding is a huge part of your day" and its kind no longer appear.')),
     bullet(lead('Not repeating a point. ', 'The AI is told what was already said in the session and refers back instead ("as I said a moment ago"). In a real session that list would be the answers actually spoken.')),
-    bullet(lead('Speed and cost. ', 'A set of four answers took 7.2 seconds in the middle case, 53 cents for all 24 sets.')),
+    bullet(lead('Speed and cost. ', 'A set of four answers took 7.2 seconds in the middle case, 44 cents for all 24 sets.')),
 
     new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun('Still not right')] }),
-    bullet(lead('"Honest." ', 'Told never to use the word, the AI still used it twice in 96 answers ("the honest summary is"). An instruction alone does not stop it; the app would need to catch it after the answer is written.')),
-    bullet(lead('"First option." ', 'The question about tapping the first option carries the idea in its own wording, and some answers still repeat it ("the first option is meant to be the most natural one"). The material calls the green option the most natural answer, and the AI treats green as "first".')),
+    bullet(lead('British wording. ', 'A check against the project’s list of British words found none in this run. The October run had one, "licence".')),
+    bullet(lead('"First option." ', 'With the not-ranked sentence added, answers now correct the idea: "There isn’t really a first option to fall into. They aren’t ranked." Before it, several said the first option should be the best one.')),
+    bullet(lead('"Honest." ', 'No answer comments on its own honesty any more. The word still appears twice, about the device ("an honest partner in the conversation").')),
 ];
 
 const audienceName = { slp: 'SLPs and OTs', academics: 'academics' };

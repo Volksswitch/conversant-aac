@@ -1,8 +1,8 @@
 # Question-session test
 
-**Wait for a full set of four answers: median 7.2 s, range 2.3 to 9.3 s. Total cost 53¢ for 24 sets.**
+**Wait for a full set of four answers: median 7.2 s, range 5.4 to 10.7 s. Total cost 44¢ for 24 sets.**
 
-Run 2026-11-09T01:21:15.765Z, model claude-sonnet-5-5. Documents: atob.txt (10548 words), overview.txt (12517 words).
+Run 2026-11-09T02:20:19.377Z, model claude-sonnet-5-5. Documents: atob.txt (10548 words), overview.txt (12554 words).
 
 "Copied" is the longest run of words in an answer that appears word for word in the documents. Under about 6 is ordinary; 10 or more means it is reusing the documents' wording.
 
@@ -10,496 +10,532 @@ Run 2026-11-09T01:21:15.765Z, model claude-sonnet-5-5. Documents: atob.txt (1054
 
 *(answered by the documents)*
 
-### Audience: SLPs and OTs  (8.4 s, 772 output tokens, 11.94¢)
+### Audience: SLPs and OTs  (8.6 s, 867 output tokens, 1.80¢)
 
-**Silence is the real barrier** (short, 68 words, copied 5)
+**Silence matters more than rate** (short, 64 words, copied 4)
 
-I'm not saying rate is meaningless. Clients who type ten to twenty words a minute are far below what conversation needs, and that gap is real. But I think the deeper problem is the silence. Most people get uncomfortable after one to four seconds of quiet, so partners interrupt, finish the sentence, or drift away. Faster output doesn't fix that, so I tried to fill the gap instead.
+Rate is real, and I'm not saying it doesn't matter. But the deeper problem is that people get uncomfortable with silence after about one to four seconds. A fast AAC user who still leaves long gaps gets interrupted, finished for, or left behind. So the target isn't a number of words per minute. It's keeping the gap inside what a conversation partner will tolerate.
 
-**What the numbers do show** (angle, 96 words, copied 0)
+**Why silence breaks conversation** (angle, 126 words, copied 9)
 
-I'd keep the measurement. Typical conversation runs around a hundred twenty to a hundred fifty words a minute, and I'd call about eighty the floor for comfortable exchange. Someone using eye gaze usually averages ten to twenty, so the shortfall is large. Even a fifty to a hundred percent improvement from prediction or abbreviation only gets a person to fifteen or twenty. That's why I don't think rate work alone will close the gap. The measure is accurate. What I question is whether it captures what actually breaks down when your client talks with a stranger.
+Think about what happens at the other end of the gap. Research shows people in the United States start to feel uneasy after as little as one to four seconds of quiet. When that happens repeatedly, the partner starts interrupting, guessing what the AAC user means, finishing their sentences, or talking about them as if they weren't there. For clinicians, that's probably familiar. It's the interrogation pattern, where the partner asks and the user confirms or rejects. So even a client with a lot to say and a capable device can end up stuck in transactional exchanges, needs and wants, because the partner's patience runs out before the message arrives. That's a timing problem in the interaction, and it isn't a measure of the person's ability.
 
-**Why silence breaks conversations** (angle, 102 words, copied 9)
+**What rate numbers do show** (angle, 120 words, copied 4)
 
-Research on turn-taking finds that normal pauses between speakers last a fraction of a second, and people start to feel uneasy after as little as one to four seconds of quiet. When a client needs ten seconds to build a reply, the partner isn't being unkind, they're reacting to that discomfort. They finish the sentence, answer for the person, or turn to someone else. The client ends up answering questions rather than taking part. Notice that this happens even when the client is articulate and has plenty to say. Rate doesn't explain it. Timing and the partner's tolerance for waiting do.
+I'm not throwing out what you were trained to measure. The numbers show a real gap. People using eye gaze with significant motor limits typically average ten to twenty words per minute, and comfortable conversation sits at eighty or more. Even a fifty to one hundred percent improvement from a base of ten only gets you to fifteen or twenty. So rate tells you something true about how far apart the two are. What it doesn't tell you is why conversations fail. If you only chase the number, you're trying to close a gap that encoding strategies and prediction can't realistically close. The more useful question is how to keep the floor held while the person chooses what to say.
 
-**What I did about it** (angle, 100 words, copied 6)
+**What to do about the gap** (angle, 120 words, copied 5)
 
-Rather than trying to make typing faster, I tried to shorten the silence. When the partner stops talking, the system generates four kinds of reply within a few seconds, and the user taps one. While that happens, the device says a short neutral phrase, something like I'm thinking about that, so the floor is held. The user controls the timing and can turn those phrases off. For your clients, the aim is that a stranger at a counter never hits that four-second wall. I should say I haven't tested this with clients, so I can't give you outcome data.
+What I'm proposing is a different goal. Instead of making the person construct language faster, fill the gap with something real. When the partner stops talking, the system generates a few possible replies within seconds, and the user taps one. In the meantime, the device can say a short placeholder like I'm thinking about that, so the silence doesn't stretch past that one-to-four-second window. The user controls how long it waits and how many placeholders it uses, including none. So the measure shifts from words per minute to whether the person can take part in the exchange. Can they respond, redirect, joke, or disagree at the moment it matters? That's the outcome I'd want clinicians to watch.
 
-### Audience: academics  (9.3 s, 890 output tokens, 1.81¢)
+### Audience: academics  (8.2 s, 843 output tokens, 1.77¢)
 
-**Silence matters more than rate** (short, 68 words, copied 4)
+**Silence matters more than rate** (short, 58 words, copied 4)
 
-I'm not saying rate is irrelevant. The numbers are real: eye gaze users average ten to twenty words per minute, and comfortable conversation needs something like eighty. But I think the deeper problem is how people react to silence. If a partner gets uncomfortable after a second or a few seconds of quiet, then even a faster device doesn't fix the conversation unless the gap itself is handled.
+I'm not saying rate is irrelevant. I'm saying it isn't the root problem. The root problem is that listeners get uncomfortable with silence after about one to four seconds, and that discomfort is what leads partners to interrupt, finish our sentences, or drift away. So the target is filling that gap, not hitting a words-per-minute number.
 
-**The silence research** (angle, 125 words, copied 4)
+**Why rate alone misleads** (angle, 119 words, copied 5)
 
-The work I lean on is conversation research. Jefferson in 1989 proposed that the standard maximum silence in conversation is about one second. Koudenburg and colleagues in 2011 found people in the United States report discomfort after around four seconds. Typical turn-taking gaps are a quarter to half a second. So the tolerance window is tiny, and an AAC user who needs eight or ten seconds is outside it no matter how that time is spent. When delays repeat, partners start to interrupt, finish the user's sentences, or talk about the user instead of to them. That's the pattern I'm pointing at. I'll say plainly that I'm an engineer, not a conversation analyst, and I'm building on their findings rather than adding my own.
+Here's the arithmetic that got me thinking about this. Comfortable conversation sits somewhere around 80 to 150 words per minute. Users with significant motor limitations, especially on eye gaze, average 10 to 20, which Morris reported in 2021. Koester and Arthanat found 1.7 words per minute for switch scanning, and Waller cites 8 to 10 for eye gaze letter selection. Even a fifty to one hundred percent gain on a 10 word baseline only gets you to 15 or 20. That's still nowhere near conversational. So if rate were the whole story, the problem would look hopeless. But the arithmetic is rough, and I should say it's my own back-of-the-envelope calculation, not a measured result.
 
-**Why rate alone falls short** (angle, 119 words, copied 5)
+**The silence research I rely on** (angle, 98 words, copied 4)
 
-Look at what the rate numbers show. Koester and Arthanat reviewed switch scanning and found about 1.7 words per minute. Eye gaze letter selection gets around eight to ten, according to Waller. Prediction and abbreviation expansion can improve that, but a fifty to one hundred percent gain on a base of ten still lands at fifteen to twenty. That's still far below conversation. So even strong rate improvements leave the gap. And words per minute is a measure of production, not of whether the exchange feels like conversation to the partner. A rough calculation I use is that holding eighty words a minute leaves about a quarter second to choose each word. That's the scale of the mismatch.
+The evidence I lean on is from conversation research. Typical gaps between turns run a quarter to half a second. Jefferson in 1989 proposed roughly one second as a standard maximum silence, and Koudenburg and colleagues in 2011 found people in the United States become uncomfortable after about four seconds. Repeated multi-second delays make partners anxious, and that anxiety shows up as the interrupting and completing that Waller and others describe. I'd also note the limits here. Those studies were not done with AAC users, so applying them to AAC is my inference. I haven't measured it.
 
-**What I did about it** (angle, 119 words, copied 5)
+**What I'd measure instead** (angle, 106 words, copied 5)
 
-The design goal changed from typing faster to filling the silence with something real. When the partner pauses, the system generates a few response options within seconds and the user taps one. In the meantime a short placeholder like "I'm thinking about that" holds the floor, so the gap stays inside that one-to-four-second window. I should be clear about the status of this. That's a design rationale built on the silence research, and I haven't measured it. What I can say is that the approach moves the work from constructing words to choosing among options. Whether it produces better conversational outcomes, and how you'd measure that beyond rate, is something I'd welcome this room's help on.
+If rate is the wrong target, you need a different outcome. In the design I described, a short spoken placeholder holds the floor while the user chooses, so the silence stays inside that one to four second window. The thing to measure would be partner behavior and the user's conversational role: how often partners interrupt or complete, whether users initiate and redirect rather than only answer, and whether they reach interactional rather than merely transactional exchanges, in Cheepen's and Waller's terms. I haven't run that study, and I don't have data showing the approach works. I'd welcome people in this room testing it with those measures.
 
 ## How does the device know what to suggest? Where does that come from?
 
 *(answered by the documents)*
 
-### Audience: SLPs and OTs  (6.4 s, 718 output tokens, 1.67¢)
+### Audience: SLPs and OTs  (7.7 s, 787 output tokens, 1.74¢)
 
-**Short answer** (short, 55 words, copied 5)
+**Short answer** (short, 59 words, copied 0)
 
-The suggestions come from a generative AI language model. It writes the response options fresh, in a few seconds, from three things: what the partner just said, what the user has told the device about themselves, and the situation they're in. The user always makes the final choice, and nothing is spoken until they tap.
+It comes from three places. First, what the partner just said, which the device hears and shows as text. Second, a private profile the user builds about themselves, their people, and the places they go. Third, a generative AI that writes the options fresh each time from all of that. Nothing is picked from a stored list of phrases.
 
 
-**What it hears** (angle, 129 words, copied 6)
+**What the partner said** (angle, 128 words, copied 11 - "on screen so the user can always see what was heard")
 
-The first source is the conversation itself. The device listens to the communication partner, turns the speech into text, and shows that text on screen so the user can see what was heard. Each time the partner pauses, it sends what's been said so far to the AI. If the partner keeps talking, the options update. It also keeps track of what kind of reply the moment calls for. A question expects an answer. An invitation expects an accept or a decline. So the four options are four different kinds of reply: a natural agreeable answer, a graceful way to decline or push back, a new direction the user could take, and a way to ask for clarification. Each kind always sits in the same spot on the screen.
+The starting point is the conversation itself. The device listens to the communication partner, turns the speech into text, and shows that text on screen so the user can always see what was heard. Each time the partner pauses, that text goes to the AI. If the partner keeps talking, the options update to match the fuller sentence. The system also keeps track of what kind of reply the moment calls for. A question expects an answer, an invitation expects an acceptance or a decline, and a mishearing calls for repeating or rewording. That's why the four kinds of option are different in kind: a natural reply, a graceful decline or hedge, a new direction, and a request for clarification. They aren't four versions of the same answer.
 
-**What it knows about the user** (angle, 121 words, copied 6)
+**The user's own profile** (angle, 128 words, copied 8)
 
-The second source is the user's own profile. There's a self-paced questionnaire called About Me, where they answer questions about who they are, what they care about, and how they like to come across. No question is required, and the device works with an empty profile. There's also a private record of the people in their life, with the nicknames they actually use, and a record of places they go. They can also set goals, like staying close to a sister. All of it stays on their device. It only goes to the AI at the moment options are generated. When the AI needs a fact it doesn't have, that gets logged as a question the user can answer later.
+What makes the options sound like this person is a private profile that stays on their device. It has a self-paced questionnaire about who they are, what they care about, and how they like to come across. It has a record of the people in their life, using the nicknames the user really uses, and a record of places they go, with whatever facts matter for each. It also holds goals, such as staying close to a sister, or what the user needs from a particular conversation today. No question is required, so the device works with an empty profile and improves as it fills. When a conversation needs a fact the profile lacks, that becomes a question the user can answer afterward, in their own time.
 
-**Where it stops, and learning** (angle, 95 words, copied 6)
+**Generated, and the user decides** (angle, 117 words, copied 5)
 
-The device doesn't invent facts about the user or supply general knowledge on their behalf. If it hasn't been told something, the option says so rather than guessing. If the AI misses, the user can type their own words and have the device speak those instead. They can also review saved conversations afterward and rewrite replies the way they would have said them. The device uses those rewrites as examples of how this person talks, kept for the specific person they were talking with. The goal is to speak as the user, not for them.
+The words themselves are written by a generative AI, in real time, for this exact moment. It isn't choosing from a library of stored phrases. The user supplies their own account with the AI provider, and the app has no server of its own. Three things keep it honest. The user picks every option, and nothing is spoken without their selection. If they don't like any of them, they can type their own words, and the device speaks those. And the app won't answer general-knowledge questions in the user's voice, because it isn't meant to put facts in their mouth that they don't have. It only offers what the profile supports, or says it doesn't know.
 
-### Audience: academics  (8.2 s, 865 output tokens, 1.82¢)
+### Audience: academics  (6.6 s, 694 output tokens, 1.65¢)
 
-**Short answer** (short, 67 words, copied 5)
+**Short answer** (short, 52 words, copied 4)
 
-A generative AI language model writes the suggestions fresh each time. It's given what the partner just said, plus what the user has told the system about themselves, their relationships, and what they want from the conversation. The user picks one, and nothing gets spoken without that tap.
+It comes from three places. A generative AI model writes the options fresh each time, based on what the partner just said. It's guided by a profile of me that I build myself, and by who I'm with and where I am. The user picks, and nothing is spoken until they do.
 
-The AI knows a lot about language. It knows about this particular person only what the user has supplied.
+**The AI writing options** (angle, 106 words, copied 5)
 
-**What goes into each prompt** (angle, 118 words, copied 8)
+The core is a large language model, the same kind of technology behind ChatGPT. When my partner pauses, the app sends what was said so far and asks for response options. Nothing is pulled from a stored list. Each option is generated new for that moment. They come in four structurally different kinds, drawn from Conversation Analysis: a natural agreeable answer, a graceful way to decline, a new direction I might take, and a way to ask for clarification. Each kind sits in a fixed spot on the screen, so I learn where to look. If my partner keeps talking after a pause, the options update.
 
-Each time the partner pauses, the system sends the transcript of what was said to the AI, along with context. The context includes the user's profile, the people and places they've recorded, and any goals they've set. It can also include where the user is and who they're with, if they've tapped those.
+**The profile I build** (angle, 115 words, copied 5)
 
-I'll be careful here, because this is a design description, not something I've measured. I haven't evaluated how well the suggestions match what users would actually say. The architecture is that a large language model, which is the same kind of system as ChatGPT, generates the options from that context. It isn't picking from stored phrases. It's the prompt shaping that makes the output personal.
+The shaping comes from a profile I create. There's a self-paced questionnaire about who I am, what I care about, and how I like to come across, and no question is required. There's also a private record of the people in my life, with the nicknames I actually use, and of the places I go. Goals sit on top of that, like staying close to my sister. All of it stays on my device and goes to the AI only when it generates options. The aim is to speak as me, not for me. It's partly built and partly still a goal. Learning from my corrections after the fact is something I'm still developing.
 
-**Four kinds of response** (angle, 113 words, copied 9)
+**What it won't supply** (angle, 100 words, copied 4)
 
-The system doesn't just ask for four similar answers. It asks for four structurally different kinds, which comes from conversation analysis. One is the preferred, agreeable response. One is a graceful decline or hedge, with a brief reason attached. One is a new direction the user could take, like a follow-up question. And one is a repair, for when something needs clarifying.
-
-Each kind always appears in the same screen position, so the user learns where to look. The point is that a person in conversation needs to be able to disagree, redirect, and ask for clarification, not just say yes. Those are the moves that are hardest with a traditional device.
-
-**Where the personal content comes from** (angle, 152 words, copied 8)
-
-The personal part comes from the user, in three places. First, a questionnaire called About Me, which is self-paced and has no required questions. Second, a private record of the people in their life, with nicknames, relationships, and topics to favor or avoid. Third, a record of places they go. Goals can be added at three levels: a general style, a standing goal for a relationship, and a goal for the conversation happening right now.
-
-After a conversation, the user can also review it and write what they would rather have said. Those rewrites become examples of how they talk. All of this stays on the user's device. Nothing goes out except the request to the AI provider when options are generated.
-
-One limit matters. The system won't supply facts about the world in the user's voice, and if the profile lacks something, the option says so rather than inventing it.
+The AI knows far more than I do, so the app doesn't hand its knowledge over as mine. If a partner asks a general knowledge question, the options sound like a person: I don't know, or turning the question back. Subjects I've listed as ones I know well are answered in depth. If I haven't told it something about me, like an allergy, it says I don't know rather than inventing an answer. The facts it needed and lacked get logged, so I can fill them in later. I can also always type my own words, and that overrides everything.
 
 ## If the AI writes the sentences, how is that still the person's own voice?
 
 *(answered by the documents)*
 
-### Audience: SLPs and OTs  (8.6 s, 885 output tokens, 1.87¢)
+### Audience: SLPs and OTs  (8.6 s, 980 output tokens, 1.96¢)
 
-**Short answer** (short, 72 words, copied 5)
+**Short answer** (short, 64 words, copied 4)
 
-The goal is to speak as the person, not for them. The AI drafts options shaped by what the user has told the device about themselves, but nothing is spoken until they choose it, and they can always type their own words instead. I'd say the voice stays theirs because the decisions stay theirs.
+The goal is to speak as the person, not for them. The AI writes options shaped by their profile, their people, and their goals, but the user chooses what gets said, or types their own words instead. Nothing is spoken unless they select it.
 
-The next answers cover the user's control, how the device learns the person, and the limits of that.
+So the AI proposes, and the person decides. That's a different thing from a device that talks on their behalf.
 
-**The user decides everything** (angle, 146 words, copied 4)
+**The user decides** (angle, 127 words, copied 4)
 
-Think about where the control sits. The device offers four kinds of reply: an agreeable answer, a graceful decline, a new direction, and a request for clarification. The person reads them and taps one. Nothing is spoken until they do. If none of the options fits, there's a free-text control, which I call "In your own words," so they can type exactly what they mean and have it spoken at once. They can also type a rough idea and ask the device to reword the options around it. So the AI works more like a fast drafting partner than a ghostwriter. For clients, that matters. Choosing among options, rejecting some, and overriding all of them is an act of authorship. Many people who use AAC today are known mostly through their needs. Being able to pick the joke or the disagreement is what changes that.
+The first protection is control. The device offers four kinds of reply: an agreeable answer, a graceful decline, a new direction, and a way to ask for clarification. The user reads them and taps one. Nothing is spoken until they do.
 
-**How it learns the person** (angle, 149 words, copied 6)
+If none of them fits, there's a typing area called "In your own words," and whatever the user types is spoken just as written. They can also hand typed text back to the AI and ask it to rephrase around what they meant. The app treats whatever they type as true.
 
-The options are shaped by a profile the user builds, not by generic chatbot habits. There's a questionnaire they can answer at their own pace, covering who they are, what they care about, how they handle disagreement, and what their humor is like. No question is required. The device also keeps a private record of the people in their life, using the nickname they actually use, such as Mom rather than Mary, and the places they go. And after a conversation, the user can go back through it a turn at a time and write what they would have said instead. The device then uses those rewrites as examples of how this person talks, and keeps the ones about a particular person for that person. In therapy terms, that review is a natural place for a clinician to sit alongside a client and help them refine their own voice.
+So the person is always the final author. The AI is closer to a fast drafting partner than a ghostwriter. Nobody is putting words in their mouth, because they choose every word that gets spoken.
 
-**Where it falls short** (angle, 139 words, copied 4)
+**Shaped by who they are** (angle, 165 words, copied 7)
 
-I don't want to overstate this. The options won't always be the user's exact words. The device is working from what it's been told and from what the person has picked before, so early on it will sound less like them than it will later. Also, someone could be tempted to tap the first option just to keep up with the conversation. We all do something similar when we grab the first phrase that comes to mind. The design tries to reduce that. Each kind of reply always appears in the same screen position, so the person learns where to look, and the first option is meant to be the most natural one for them. The honest summary is that it's the user's voice to the degree they shape it, and the tools for shaping it are built in.
+The second protection is what the AI knows about the person. The user fills in a questionnaire at their own pace: their interests, their sense of humor, how they handle disagreement, and what they want others to know. They also record the people in their life, using the names they actually use, such as "Mom" rather than a formal first name. They can record the places they go, and what they want from each relationship.
 
-### Audience: academics  (9.2 s, 809 output tokens, 1.79¢)
+The AI uses all of that to word its options the way this person would. It's meant to sound like them, not like a generic polite speaker. It won't be perfect, and the app can't promise it will always sound like them. That's why the user stays in the chooser's seat.
 
-**Short answer: they choose** (short, 65 words, copied 5)
+There's also a review step. Afterward, the user can go back over a conversation and write what they would have said instead. The app reads those rewrites, and over time the options drift closer to how they really talk.
 
-I'd say the voice is theirs because the choosing is theirs. The AI offers options, but nothing gets spoken until the user picks one, and they can always type their own words instead. The goal is to speak as the person, not for them. I can't claim the options will always match what they'd have said, which is why the system keeps learning from them.
+**What it won't invent** (angle, 173 words, copied 5)
 
-**Where the control sits** (angle, 125 words, copied 4)
+The third protection is a limit on what the app will say. It won't answer general-knowledge questions in the user's voice. If a partner asks for a date or a technical fact, the options sound like what a person would say: they don't know, or they turn the question back. The AI knows far more than any one person, and handing that over would stop it being the user's voice. Listing a subject in the questionnaire lets the app answer in depth on those subjects, because that's the user's own claim about themselves.
 
-Think about where the decisions happen. The AI never speaks on its own. It writes four kinds of options: an agreeable answer, a graceful decline, a new direction, and a clarification. The user reads them and taps one, or ignores them all and uses the free typing box. That typing box is always one selection away, so the user is never confined to what the AI generated. There's also a button that lets them type a rough idea and have the options rebuilt around it. So the person decides whether to agree, decline, change the subject, or say something the AI never thought of. The words may come from the AI, but the stance, the timing, and the final say all come from the user.
+It also won't make up facts about them. If their date of birth or an allergy isn't on file, the option says "I don't know" rather than guessing, and that matters most in clinical settings. The conversation engine can also offer a stalling option like "Give me a second and I'll type it," so the user stays the one who gives the real answer.
 
-**What shapes the wording** (angle, 126 words, copied 7)
+For clinicians, that makes the device an honest partner in the conversation, not a performer.
 
-The options aren't generic. The AI is given what the user has told the system: their opinions, their sense of humor, how they handle disagreement, who the people in their life are and what they call them, and what they want from a particular conversation. The user also reviews conversations afterward and rewrites replies the way they'd actually have said them, and those rewrites become examples of how they talk. I haven't measured how well this works. It's a design claim, not a result. I'd also say the system stays honest about the limit. It treats what the user types as true, and when it hasn't been told a fact about the person, it says it doesn't know instead of making something up in their voice.
+### Audience: academics  (7.6 s, 808 output tokens, 1.78¢)
 
-**Honest limits of this claim** (angle, 131 words, copied 0)
+**Speaking as, not for** (short, 63 words, copied 4)
 
-I think your question points at something real, so I won't oversell it. An AI-written sentence is not the same as a sentence the person built word by word, and there's a risk someone just taps the first option to keep up with the pace. I don't have evidence yet on how often that happens or how it affects someone's sense of ownership. What I'd point to is what the alternative has meant. People with these devices have mostly been reduced to needs and short answers, while others finish their sentences or talk over them. That loses their voice too. In my view the open research question is how to measure whether selected, AI-drafted speech feels like the user's own, and I'd welcome people in this room studying that.
+The goal is for the device to speak as the person, not for them. The options are shaped by a profile the user builds about themselves, and nothing is spoken until they pick one. They can also type their own words instead, and I haven't measured how closely users feel the options match their own voice.
+
+It's a design claim, not a finding.
+
+**Who controls each word** (angle, 134 words, copied 4)
+
+Control sits with the user at every turn. The AI proposes, but the user chooses, and nothing is spoken without a selection. There's always an option to type something entirely in their own words, and that always works, even if the AI can't be reached. Typed text is treated as true, so a user can supply a fact or a stance directly and have the options reshaped around it. There's also a rule that the device doesn't supply general knowledge the user never claimed. If a partner asks a factual question, the options look like what a person would do, such as saying they don't know or turning the question back, rather than reciting what the AI knows. So the AI doesn't put words or facts in the person's mouth that they didn't choose.
+
+**The profile shapes the wording** (angle, 124 words, copied 8)
+
+The options aren't generic. The user fills in a questionnaire at their own pace, covering interests, opinions, sense of humor, and how they handle disagreement, plus a record of the people and places in their life. The model uses the nickname the user actually uses for someone, and it can lean toward topics the user likes with a particular person. After a conversation, the user can go back through it and rewrite a reply the way they would have said it. Those rewrites are kept as examples and used later. I should be clear that this is how the system is built. I haven't run a study measuring whether the resulting options feel like the user's voice to the user or to their partners.
+
+**Limits of this claim** (angle, 118 words, copied 0)
+
+I'd separate what I'm claiming from what's been measured. I'm claiming that the architecture keeps the user as the one who selects, edits, and decides, and that it uses their own profile and corrections. I haven't measured how closely the options match what a given person would have said unaided, and I don't know how often users settle for a less-than-ideal option because of time pressure. I raised that risk in the article, and the response is that review afterward and tuning over time should raise the odds the first option fits. The deeper question of whether chosen words count as one's own is philosophical, and I haven't thought about it very much beyond this design.
 
 ## Couldn't a user just keep picking the first option to save time? Doesn't that take away their autonomy?
 
 *(answered by the documents)*
 
-### Audience: SLPs and OTs  (7.8 s, 771 output tokens, 1.78¢)
+### Audience: SLPs and OTs  (8.8 s, 857 output tokens, 1.87¢)
 
-**Yes, it's a real risk** (short, 69 words, copied 5)
+**No first option exists** (short, 63 words, copied 0)
 
-Yes, a user could fall into tapping the first option just to keep up, and that's a fair worry. The design tries to protect against it in a few ways: the person can always type their own words, ask for new options, and tell the device afterward what it got wrong. The goal is that the first option becomes the right one more often, not that choosing stops mattering.
+There isn't really a first option to fall into. The four options are different kinds of reply, a natural answer, a graceful decline, a new direction, and a clarification, and they sit in fixed spots on the screen. They aren't ranked, so no position is the best one or the default. Autonomy comes from the user choosing, and that choice is real here.
 
-**We already do this** (angle, 120 words, copied 0)
+**Why no default exists** (angle, 134 words, copied 10 - "kind of reply it is not how good it is")
 
-I'd start by pointing out that speaking people do something similar all day. When we can't find the right word and the conversation is moving, we say the first thing that comes to mind, even if it's imperfect. Phones do it too, with suggested replies you tap instead of typing. So picking a good-enough reply for speed isn't new, and it isn't automatically a loss of autonomy. In casual exchanges with strangers or acquaintances, a quick, reasonable reply is often exactly what the moment calls for. The worry is real when it becomes the only way someone can speak. That's why the design never makes it the only path, and why the person decides each time what to say.
+The premise is that one option sits at the top as the easy pick. That isn't how the screen works. The four responses are structurally different kinds of reply, and each one stays in the same place every time. The upper left is the most natural, agreeing kind of answer. The upper right is a way to decline or push back. The lower left takes the conversation somewhere new, and the lower right asks for clarification. A position tells the user what kind of reply it is, not how good it is. Nothing is ordered by likelihood or quality, so there's no first option to grab for speed. Over time the user learns where each kind of move lives, and reaching for it becomes automatic. That makes the choice faster without making it thoughtless.
 
-**Ways to stay in control** (angle, 102 words, copied 6)
+**Speed versus autonomy tradeoff** (angle, 148 words, copied 6)
 
-The device keeps several other routes open, and they sit on screen in the same place every time. The person can type anything in their own words and have it spoken. They can ask the device to generate a fresh set if none of the options fit. The four kinds of reply are also different on purpose: one agrees, one declines or pushes back gracefully, one takes the conversation in a new direction, and one asks for clarification. So the user isn't choosing among four slightly different versions of yes. Declining and redirecting are always one tap away, which matters for autonomy.
+The worry about speed is fair, and people do it all the time. When we can't find the right word and the conversation is about to stall, we say whatever comes to mind. A texting app that suggests quick replies works the same way. The difference is that this device is built so that taking a shortcut costs less. The user can reread the options, ask for new ones, or open the keyboard and type exactly what they mean. They can also give feedback after the conversation, saying what felt off, and the system uses that to word future options more the way they would. So a quick pick in a hurry is one choice among many, not a trap. The user also decides how long to take. They control the timing of the placeholder phrase that holds the floor, so they can buy time to choose carefully.
 
-**Making the first option better** (angle, 125 words, copied 5)
+**Keeping the person in control** (angle, 126 words, copied 4)
 
-The other part of the answer is that the device is meant to improve with use. Later, when the person has time and no one is waiting, they can go back over a saved conversation turn by turn. Where a reply didn't sound like them, they type what they would have said. The device learns from those rewrites, including how long their replies tend to be and how they talk with particular people. They can also fill in a profile of their interests, opinions, and humor. The aim is that the option on top is more and more often the one they would have chosen anyway. I can't promise that fully works yet, and I haven't studied whether users over-rely on the first option.
+The deeper safeguard is that nothing is ever spoken until the user selects it. The device proposes and the person decides, and typing their own words is always one step away. The options are also shaped by their own profile, their people, and their goals, so even a quick choice is built from who they are. Compare that with the usual situation for AAC users, where partners guess, finish sentences, and speak for them. This design moves control toward the user, not away from it. I'd also say that autonomy includes the freedom to pick something good enough when time is short, which is what every speaking person does. The test is whether the user can say what they mean when it matters, and they can.
 
-### Audience: academics  (2.3 s, 156 output tokens, 1.17¢)
+### Audience: academics  (7.3 s, 782 output tokens, 1.78¢)
 
-**Yes, it's a real risk** (short, 78 words, copied 5)
+**Short answer** (short, 62 words, copied 0)
 
-It's a fair worry, and I don't think it goes away completely. Everyone takes the easy phrase sometimes when time is short, and the system can't stop a user from doing that. What I can say is how the design tries to keep control with the person: they can always type their own words, the first option is meant to be a good fit and not a default, and the user keeps training the system after the fact.
+It's a fair worry, and I'll correct one part of it. There's no first option. The four responses are different kinds of reply in fixed positions, and none is ranked or meant as the default. The risk of settling for something quick is real, though, and the design tries to limit it in several ways. I haven't measured how users actually behave.
+
+**No ranked first option** (angle, 124 words, copied 10 - "kind of reply it is not how good it is")
+
+The question assumes the options are ranked, and they aren't. The screen shows four structurally different kinds of reply: an agreeable answer, a graceful decline or hedge, a new direction the user wants to take, and a way to ask for clarification. Each one sits in the same spot every time, so a position tells the user what kind of reply it is, not how good it is. A user who always tapped the upper-left would be choosing to agree every time, which is a recognizable habit, not a shortcut the system sets up. Reading the option before tapping is still encouraged. And in Settings the user can choose two options per category, so there are eight to pick from instead of four.
+
+**Always an exit to their own words** (angle, 113 words, copied 5)
+
+Autonomy here depends on how much control the user keeps, and a few things protect it. Nothing is spoken until the user taps. They can always type anything in the box labeled "In your own words," and it's always one selection away. They can reframe, which means typing a fact or a direction and having the options regenerated around it. They also have buttons to hold the floor, ask the partner to repeat, or wrap up. And the user can review conversations afterward and rewrite what they would have said, so the system learns from that. Speaking as the user is the goal, and the user has the final say on every word.
+
+**Taking the quick option anyway** (angle, 118 words, copied 4)
+
+Sometimes a person will tap the closest fit just to keep the conversation moving. That's a real tradeoff, and I'd note that speakers do the same thing all day. When we can't find the right phrase and the moment is passing, we say the first thing that's good enough. The system makes that choice a lot easier, so it deserves attention. What I can say is that the design aims to make the quick option a better fit over time. The user reviews conversations later, in their own time, and tells it what missed, and that shapes future options. I haven't studied whether users lean on quick picks too heavily. That would be a good question for research.
 
 ## What about the communication partner's privacy? The device is recording what they say.
 
 *(answered by the documents)*
 
-### Audience: SLPs and OTs  (6.8 s, 811 output tokens, 1.85¢)
+### Audience: SLPs and OTs  (8.2 s, 764 output tokens, 1.80¢)
 
-**Short answer** (short, 82 words, copied 4)
+**Short answer on partner privacy** (short, 69 words, copied 7)
 
-It's a fair concern. Most of what the device keeps is on the user's own tablet, nothing goes to a server of mine, and the user can mark any conversation as not to be saved. But the material also says plainly that the partner's voice and face being recorded is an open question that deserves more thought and possibly legislation. I haven't settled it.
+It's a fair concern. The device has to hear the partner to show what was said and to suggest replies, and the speech recognition runs as an online service. The user can also keep any conversation from being saved, and the default weekly usage report never contains anything that was said. I don't think the larger question of consent for the partner is settled, and it deserves more thought.}
 
-So my answer is that there are real protections around the data, and a real question left over.
+**What gets heard and saved** (angle, 123 words, copied 8)
 
-**Where the data goes** (angle, 112 words, copied 4)
+The device listens to the partner in order to turn their words into text on the screen, so the user can see what was heard and get response options. That recognition is done by an online service, which means the partner's speech does leave the device for that step. What stays on the device is everything the app keeps: the user's profile, the people in their life, their settings, and the saved conversations. Nothing is kept on a server run by the project, because there isn't one. The device also plays a short sound when it starts listening, so the person across the table has a cue that the microphone is on. That matters because the screen faces the user, not the partner.
 
-Let me describe what actually happens to what the partner says. The device listens, turns the speech into a written transcript, and shows it to the user. Everything the user saves stays on their own device, in a folder they choose. There's no account of mine holding it, and I don't run a server that collects it.
+**Controls the user has** (angle, 131 words, copied 13 - "only in a problem report the user has read and chosen to send")
 
-The one place the words leave the device is when the text goes to the AI provider to generate response options, and that travels over an encrypted connection. The speech recognition itself can also be a cloud service on some devices. Nothing else is sent, and the user supplies their own account with that provider.
+Several controls bear on this. There's a one-tap Don't save button that keeps the current conversation out of the data folder. If it's pressed partway through, it deletes what was already saved from that conversation, since people often realize a conversation is private only after it has started. It can also be made the default, so every conversation starts off the record. The app can send a short usage report about once a week, with counts, timings, and any errors. It never contains what anyone said. A transcript goes out only in a problem report the user has read and chosen to send. During the current beta that reporting is on for testers, who are told so, and in the public release it's off unless the user turns it on.
 
-**Control and visibility** (angle, 117 words, copied 9)
+**What's still unsettled** (angle, 106 words, copied 4)
 
-There are a few controls built in that bear on this. First, the device plays a short, friendly sound when it starts listening. That matters because the tablet screen faces the user, not the partner, so the sound tells the other person that the microphone is on.
+There's a harder question underneath yours. In everyday life we recognize faces and remember what people said without asking permission, and it would sound absurd to ask. But a device that keeps records of conversations, and later may recognize a person by their voice or face, is different in kind. I don't have a settled answer about what the communication partner is owed, whether notice, consent, or something else. That may well involve law as well as design. For your clients, the practical step is to know the controls above, use Don't save for sensitive conversations, and tell partners the device is listening when it matters.
 
-Second, there's a one-tap "Don't save" control. It keeps the current conversation out of the data folder, and if it's pressed partway through, it deletes what was already saved from that conversation. People often realize a talk is private only after it's started. The user can also make that the default, so every conversation begins unsaved. The user decides what is kept; the partner has no say in that.
+### Audience: academics  (7.3 s, 789 output tokens, 1.82¢)
 
-**What I haven't resolved** (angle, 113 words, copied 8)
+**Short answer** (short, 70 words, copied 4)
 
-Here's the part I can't tidy up. When we talk with someone, our brains remember their face and voice, and nobody asks permission for that. But this system could keep a record of the voice and facial characteristics that made recognition possible, along with a very accurate record of the conversation, and use it to inform later conversations. That's different from ordinary memory, and some of that information might need to be stored and processed in the cloud.
+It's a real tension, and I don't think it's settled. The device listens to the partner so it can write response options, and the partner doesn't have to agree to anything or use anything. What the app keeps stays on the user's device, and the user can turn saving off for any conversation. Whether that's enough for the partner is a question I think needs more thought and possibly legislation.
 
-I think that deserves further thought and, if necessary, legislation. I don't have a finished answer, and I haven't thought about the legal side very much. I'd rather leave that open than pretend it's solved.
 
-### Audience: academics  (5.9 s, 616 output tokens, 1.65¢)
+**Where partner's words go** (angle, 127 words, copied 10 - "and the app says so when the folder is chosen")
 
-**Short answer on partner privacy** (short, 50 words, copied 0)
+The partner's speech is turned into text, and that text is sent over an encrypted connection to the AI provider so it can generate the response options. Speech recognition itself is a cloud service in the browser, so audio isn't staying entirely on the device either. Beyond that, nothing goes to a server of ours. There's no backend and no account holding conversations. Saved conversations live in a folder on the user's own device. If that folder happens to be backed up online, the conversations go with it, and the app says so when the folder is chosen. I should also say that I'm not an expert in privacy law, so I can't tell you how any of this maps onto consent rules in a particular place.
 
-It's a real concern, and I haven't settled it. The system has to keep the partner's voice and face details and a record of what they said, and some of that may go to a cloud service. In the paper I say that deserves more thought and, if needed, legislation.
+**User controls over saving** (angle, 114 words, copied 8)
 
-**Why it feels different** (angle, 86 words, copied 7)
+The user has a one-tap Don't save control that keeps a conversation off the record. If it's pressed partway through, everything already saved from that conversation is deleted, since people often realize a moment is private after it's started. It can also be made the default, so every conversation starts unsaved. The device plays a short sound when it starts listening, so the person across the table knows the microphone is on. That matters because the tablet screen faces the user, not the partner. There's also optional usage reporting, off in the public release unless the user turns it on. It never includes anything that was said, and names are replaced with placeholders.
 
-Everyday conversation already involves this. Our brains remember faces and voices, and nobody asks permission to remember what someone looked like or said. But the paper points out that this system would store the specific facial and voice characteristics that make recognition work, plus a highly accurate record of the conversation, so it can inform later conversations. That's different from a person's memory, and it can challenge those intuitions. I'm not claiming the everyday comparison settles it. It's the reason I think the question deserves attention.
+**The open question** (angle, 111 words, copied 7)
 
-**Where the data would go** (angle, 91 words, copied 9)
-
-It depends on the architecture. In the version where everything runs on the device, less protected data flows in and out, which cuts down the security concerns. In the versions where heavy processing moves to the cloud, there's a bigger need for data security and privacy, both around each component and in the communication between them. The paper also notes that this information may have to be sent to the cloud for storage and processing by the AI components. So where the processing happens changes how exposed a partner's information is.
-
-**What I can and can't say** (angle, 89 words, copied 8)
-
-The paper says every part of the system should be wrapped in a data security and privacy strategy, mainly because it holds the user's thoughts and opinions. It doesn't work out how the communication partner's consent should be handled, or what legislation would need to say. I don't know the answer to that, and I haven't thought about it very much. All I can tell you is that I see it as an open issue the field needs to take on, not one I can claim to have solved.
+In the article I raise this directly. Everyday conversation involves recognizing faces and voices, and nobody asks permission to remember what someone looks like or said. But a system that keeps an accurate record of a conversation is different from a memory, and it may also keep voice and face characteristics. The recognition features that would store those are planned for a later phase and aren't in the current build. My position is that these issues deserve further thought and, if necessary, legislation. I don't have a tested answer, and I haven't studied how communication partners react to being recorded, so I can't tell you whether the sound cue is enough.
 
 ## Does this only work for people who can read?
 
 *(answered by the documents)*
 
-### Audience: SLPs and OTs  (7.3 s, 723 output tokens, 1.79¢)
+### Audience: SLPs and OTs  (6.6 s, 625 output tokens, 1.69¢)
 
-**Reading helps most, today** (short, 58 words, copied 0)
+**Reading is needed right now** (short, 43 words, copied 5)
 
-The version I've built today does assume the person can read, because the response options appear as text on the screen. But reading is not an essential part of the idea. The same approach could speak the options aloud, simplify the wording, or show pictures instead of words. Those extensions are possible, but I haven't built them yet.
+Yes, for now. This first version is built for people who can read, because they have to read the response options on screen and judge which one fits. Reaching people who read less, or not at all, is a goal for later versions.
 
+**Why reading is required today** (angle, 89 words, copied 4)
 
-**What reading means here** (angle, 116 words, copied 6)
+The whole loop depends on the user reading. The device shows what the partner said as text, then shows several written replies, and the person picks one. So they need to read quickly enough to choose before the silence gets uncomfortable. That's why I describe the first users as literate adults who can point at a screen. I'd rather say that plainly than suggest it works for everyone today. It doesn't. The system was designed with room to grow, but a version that serves non-readers doesn't exist yet.
 
-Let me be specific about what the current version asks of the user. Four response options appear on the screen, and the person reads them and taps one. They also read a transcript of what the partner said, so they can check the device heard correctly. So today, reading is part of the job. That's why I describe the first users as literate adults who can point at the screen by touch, mouse, trackball, or an eye gaze device that moves the pointer. I chose that group because it's where a working version can help soonest. It was a starting point for the first version, not a claim that this is who AAC conversation is for.
+**Other ways options could be delivered** (angle, 94 words, copied 4)
 
+The speaker-side thinking in my writing is that reading the screen is only one way to take in the options. The options could be spoken aloud to the user, similar to auditory scanning. The AI is also good at restating an idea at a different reading level, so it could match the wording to the person's abilities. Those are possibilities I've described, though, not features that exist in the app today. I'd want you to hear them as a direction, not a promise, since the current build assumes the user reads the screen.
 
-**Options spoken aloud** (angle, 105 words, copied 0)
+**Symbols for preliterate users** (angle, 95 words, copied 5)
 
-One way past the reading requirement is to let the person hear their options instead of reading them. The device would speak each option privately, in order, much as auditory scanning works for some of your clients now. The article raises that possibility. I haven't built it, and I haven't tested it. A person would have to hold several spoken options in memory while choosing, which is a real load, and the delay would be longer than reading. So I'd call it a promising direction rather than a solved problem. It would be a good question for clinicians who know which clients can manage it.
+For people who use pictures rather than words, one idea is to have the AI turn the partner's speech and the suggested replies into a symbol set, either a standard one or a personal one. That could extend this kind of conversation to people who can't read. The symbol and picture support is on the longer-term roadmap, and it's meant to broaden who the system can serve. It isn't built yet. For a client who relies on symbols today, this app is not the right fit, and I wouldn't want you to expect otherwise.
 
+### Audience: academics  (5.4 s, 599 output tokens, 1.65¢)
 
-**Simpler wording or pictures** (angle, 112 words, copied 0)
+**Reading needed, for now** (short, 45 words, copied 5)
 
-There are two other directions. The first is matching the level of the language. The AI can restate the same idea at a different grade or reading level, so the options could be shorter and simpler for someone who reads a little. The second is pictures. The AI could translate what the partner says, and the suggested replies, into symbols from a standard or personal picture set. That could reach people who aren't yet reading. Neither is built yet. And I can't tell you how well they'd work with your clients, because I haven't tested that. For now, if a client can't read the options reliably, this version isn't the right tool.
+For now, yes. The first version is built for adults who can read the response options on screen and pick one. Nothing in the design stops it from reaching other users later, but those extensions are things I can describe, not things that exist today.
 
+**Why reading matters now** (angle, 88 words, copied 6)
 
-### Audience: academics  (6.6 s, 690 output tokens, 1.75¢)
+The current system shows the partner's words as a transcript and shows the response options as written text, and the user has to read and judge them before anything is spoken. That's why literacy is one of the stated requirements, along with being an adult with legal capacity and using direct selection. I should be clear that this describes the initial build. It reflects where a working proof of concept can deliver the most value soonest, not a belief that only readers have something to say in conversation.
 
-**Short answer** (short, 62 words, copied 0)
+**Spoken options for non-readers** (angle, 87 words, copied 5)
 
-The system I've built right now is for people who can read, because the response options show up as text on the screen. But the underlying idea doesn't depend on reading. I've described ways it could reach people who can't read yet, and those aren't built.
+In the 2024 paper I described how this could extend past readers. One idea is to speak the options aloud to the user, the way auditory scanning does. Another is that large language models are good at restating something at a different grade, age, or Lexile level, so the wording could be matched to the user's reading ability. Those are proposals about what the technology can plausibly do. I haven't built or tested either one, so I can't tell you how well they'd work for real users.
 
-So today, yes, literacy is required. That's a limit of this version, not of the approach.
+**Symbols for preliterate users** (angle, 81 words, copied 6)
 
-**Why reading is needed now** (angle, 112 words, copied 6)
-
-In the current version, the user sees what the partner said as a transcript and sees the response options as written text, then taps one. So being able to read, and to judge which option fits, is part of how it works. I've set it up for adults who are literate and who point at the screen directly, whether with a finger, a mouse, or an eye gaze or head tracker that moves the pointer. I'd rather say plainly that someone who can't read the options can't use this version, than suggest it works for everyone. I haven't tested it with people at other literacy levels, so I won't make claims there.
-
-**Options read aloud instead** (angle, 100 words, copied 4)
-
-The first way around reading is to have the device speak the options to the user, one after another, much like auditory scanning. The user hears them and chooses without needing the text. That's an idea I describe in the paper, not something I can say has been built or tested. I'd also flag a cost I haven't worked out: hearing options one at a time takes longer than glancing at them, and time is the very thing this approach is trying to protect. So I can't tell you yet how well it would hold up in a live conversation.
-
-**Simpler wording or pictures** (angle, 104 words, copied 5)
-
-Two other possibilities are in the paper. One is that these language models are good at restating something at a different reading level, so the options could be written to match what a particular user can read. The other is turning the partner's speech and the suggested replies into pictures, using a standard symbol set or the user's own, which could extend this to people who don't read at all. Again, those are ideas, not working features. I'd also say the first version focuses on literate adults, and widening it to other literacy levels and to younger users is on the roadmap, not done.
+The third idea reaches furthest. The model could translate the partner's speech and the suggested responses into pictographic symbols, using a standard or personal symbol set, which would extend the approach to preliterate individuals. That's on the longer-term roadmap under symbol and pictographic support. It isn't in the current build, and I don't know how well generated symbol output would hold up in a live conversation. The architecture was designed so it can grow in these directions without being rebuilt.
 
 ## How would I start a client on this? What does a first session look like?
 
 *(partly covered)*
 
-### Audience: SLPs and OTs  (8.1 s, 902 output tokens, 2.00¢)
+### Audience: SLPs and OTs  (10.7 s, 1341 output tokens, 2.42¢)
 
-**Short answer** (short, 66 words, copied 4)
+**Short version of a first session** (short, 79 words, copied 4)
 
-Start in Practice Mode, where the AI plays the other person, so nobody is waiting on your client. Have them set up an account, add a few things about themselves, and run a scenario or two. The first real conversation comes later, with someone patient.
+I'd start with Practice Mode, where the AI plays the other person, so nobody is waiting on your client and no microphone is involved. Alongside that, the client begins the About Me questionnaire, which they can answer in any order and at their own pace. The first real conversation comes after they've rehearsed, not before.
 
-This is for adults who can read, who can point at a screen by any means, and who hold legal capacity.
+One caution about who this is for: the first version suits adults who can read the options and who point directly at the screen.
 
-**Who it fits first** (angle, 126 words, copied 14 - "or head tracking device set up to move the pointer and click by dwelling")
+**Who it suits and what's needed** (angle, 162 words, copied 15 - "a finger a stylus a mouse or trackball or an eye gaze or head tracking")
 
-Before any session, check the fit. The version I've built is for adults who can read the response options on screen and judge them, and who hold legal capacity, because the app speaks aloud in their name and runs on an AI account billed to them. They need to use direct select. That can be a finger, stylus, mouse, trackball, or an eye gaze or head-tracking device set up to move the pointer and click by dwelling. I haven't built switch scanning yet, so someone who can't drive a pointer isn't a match today. It runs in a web browser, on a Windows tablet, laptop, Chromebook, Mac, or an iPad using Safari. An iPad has some extra setup choices, which the user manual walks through.
+Before a first session, check that the client fits. This version is for adults who can read the response options and judge which one fits, and who have legal capacity, because the app speaks aloud in their own name. They need to select by pointing directly at the screen, whether that's a finger, a stylus, a mouse or trackball, or an eye gaze or head-tracking system set to move the pointer and click by dwelling. There's no switch scanning yet.
 
-**Setup and About Me** (angle, 119 words, copied 7)
+On the setup side, the app runs in a web browser on a Windows tablet or laptop, a Chromebook, a Mac, or an iPad using Safari. Nothing comes from an app store. The client creates their own account with the AI provider and enters their own key, and the app has a check and a connection test to confirm it was entered correctly. There's no subscription to the app itself. They pay the provider only for the conversations they actually have.
 
-The first sitting is mostly setup. The person creates their own AI account and supplies their own key, so there's no subscription to my project. The app can check that the key was entered correctly with a one-tap connection test. Then they begin the About Me questionnaire. No question is required, and the app works with a completely empty profile, so nobody has to finish it in one visit. I'd focus on a few things: who the important people are, what they like to talk about, and especially what subjects they know a lot about. They can also record how names should be pronounced. The profile grows from use, so it never needs to be complete in advance.
+**Practice Mode as the first step** (angle, 159 words, copied 8)
 
-**Practice Mode first** (angle, 160 words, copied 17 - "with the app a guided tour of the buttons plus practical social medical personal and professional situations")
+Practice Mode is where I'd spend most of a first session. The AI plays the communication partner and speaks their side aloud, and the screen works exactly as it does in a real conversation. The one difference is that Start Listening cues the AI partner's next line instead of opening the microphone, so the client builds the same habit with the same button.
 
-Then I'd move straight to Practice Mode, found under Settings. The AI plays the communication partner, speaking its lines aloud, and no microphone is involved. Your client uses the same controls as in a real conversation, so what they learn transfers. Six scenarios come with the app: a guided tour of the buttons, plus practical, social, medical, personal, and professional situations. Because nothing on the screen ever moves, repetition builds motor planning, and practice is the only place repetition is free. It also lets you try settings changes, like text size, button size, or two options per category, before a real conversation depends on them. If a keyguard is used, it lines up across screens. When a specific situation is coming up, like an appointment, you can copy a scenario and make it theirs, or write a new one. After sessions, Conversation Review lets the person go back through a practiced conversation and write what they would rather have said.
+This matters because nothing on the screen ever moves. Each kind of response sits in the same spot every time, and reaching for it only becomes automatic with repetition. Practice is the one place where repetition costs nothing. It also lets you tell problems with the app apart from problems with the room or the connection. Six scenarios come with the app, starting with a guided tour of the buttons. You can copy one and make it the client's own, or build one for a situation coming up, like a medical appointment or a job interview.
 
-### Audience: academics  (8.4 s, 906 output tokens, 1.99¢)
+**Setting up the client's profile** (angle, 158 words, copied 11 - "what they care about how they like to express themselves and")
 
-**Short answer: start with practice** (short, 73 words, copied 4)
+The About Me questionnaire is how the device learns who the client is. No question is required, and the app works with a completely empty profile, so nobody has to finish it before starting. The client can answer a little at a time, in any order, over several sessions. It covers who they are, what they care about, how they like to express themselves, and which subjects they know a lot about. That last answer matters, because it's what lets the device give real detail on those subjects.
 
-I'd start with Practice Mode, where the AI plays the other person, so there's no one waiting and no microphone involved. Pair that with the About Me questionnaire, which can be answered a bit at a time. The app is free, runs in a browser, and the person needs their own AI account key.' I haven't tested a first session formally, so this is how the pieces are built to fit together.
+The client can also add the people in their life, with the nickname they actually use for each, and the places they go. Everything stays on their own device. Over time the app lists questions that real conversations turned out to need, and the client can answer those afterwards, in their own time. Rehearsing a scenario in Practice Mode surfaces the same gaps while there's still time to fill them.
 
-**Check fit and set up** (angle, 146 words, copied 12 - "on an ipad it must be safari because chrome and edge there")
+**Settings to adjust early on** (angle, 173 words, copied 9)
 
-First, check fit. The current version is for adults with legal capacity who can read the options on screen and who can point to a target, whether with a finger, a stylus, a mouse, or an eye gaze or head tracker running in pointer mode. There's no switch scanning yet, so someone who can't drive a pointer isn't served today. Then the setup. It runs in Chrome or Edge on Windows, a Chromebook, or a Mac, or in Safari on an iPad. On an iPad it must be Safari, because Chrome and Edge there can't hear the partner. The person creates an account with the AI provider and enters their own key. The app can check the key and test the connection with one tap. After that you can adjust text size, button size, and color scheme so the screen is easy to see and hit.
+Several things are worth adjusting in the first session, because they let you fit the screen to the client rather than the other way around. Text size can be set separately for each part of the screen, and the touch targets can be made larger. There are seven color schemes, including a high-contrast pair, yellow on black, and one chosen so the four kinds of response stay distinguishable with color blindness. A scheme changes color only. No button moves, so a keyguard cut for one scheme fits all of them.
 
-**Practice Mode as the first session** (angle, 126 words, copied 6)
+There are also options to show two response options per category instead of one, to set how long the device waits before it speaks a placeholder like "I'm thinking about that," and to have listening restart automatically after each turn. If your client composes by typing, the built-in on-screen keyboard can sit along the bottom or down one side. I'd change a few of these in Practice Mode first and hear the effect before a real conversation depends on it.
 
-For the session itself, I'd run Practice Mode. The AI speaks the partner's side aloud, and the person responds with the same controls they'd use in a real conversation. Start Listening just cues the AI partner's next line, so the habit transfers. That separates learning the buttons from the pressure of a real person waiting. The interface is built so nothing on the screen moves, and that only pays off with repetition, which practice makes free. One of the six scenarios is a guided tour of the controls, which is a natural place to begin. Scenarios can be copied and reworded, or new ones written for something coming up, like an appointment. I haven't measured how long learning takes, so I won't give you a number.
+### Audience: academics  (8.2 s, 992 output tokens, 2.07¢)
 
-**Building the profile over time** (angle, 129 words, copied 6)
+*Clarifying buttons: "What do you mean by 'client'?", "What do you mean by 'first session'?"*
 
-The profile doesn't need to be finished before the first conversation. The About Me questionnaire is self-paced, no question is required, and the app works with it completely empty. It fills in over time, and the app lists the questions that real conversations turned out to need. One question matters most: what subjects the person knows a lot about, because that's what lets the app give detailed replies on those subjects. I'd add the people in their life, with the nicknames they actually use, and a few places. For privacy, the data stays on the device, and the person can tap Don't save to keep any conversation off the record. Later, Conversation Review lets them go back over a saved conversation and write what they'd have rather said.
+**Short version** (short, 80 words, copied 4)
+
+Start with Practice Mode, where the AI plays the other person and no microphone is involved. The user needs an AI account and key, a supported device, and the ability to read the options and point at them. I haven't tested a first-session protocol, so what I can give you is the setup and what the app offers, not a clinical recommendation.
+
+If you meant a specific kind of client or setting, tell me and I'll narrow this down.
+
+**Who and what's needed** (angle, 144 words, copied 11 - "or head tracking device set up to move the pointer and")
+
+First, check fit. The current version is for adults with legal capacity who can read the response options and choose among them by direct select. That includes a finger, stylus, mouse, trackball, or an eye gaze or head tracking device set up to move the pointer and select by dwelling. There's no switch scanning yet, so someone who can't drive a pointer isn't a fit today.
+
+Then the practical pieces. The device is a Windows tablet or laptop, a Chromebook or Mac running Chrome or Edge, or an iPad running Safari. The client needs their own AI provider account and key, which is billed by use. On an iPad, hearing the partner works for free in Safari, but a Home Screen install needs a paid transcription service. I'd settle those choices before the session so the time goes to the client, not to setup.
+
+**Practice Mode as first step** (angle, 134 words, copied 7)
+
+I'd begin in Practice Mode, found under Settings, then Practice. The AI plays the communication partner and speaks its side aloud, and the screen behaves just like a real conversation. Start Listening cues the partner's next line instead of opening the microphone, so there's no one waiting and no background noise to blame.
+
+There's a guided tour of the controls, plus scenarios for practical, social, medical, personal, and professional situations, which can be repeated as often as the client likes. Because nothing on the screen moves, the payoff comes with repetition, and practice is where repetition is free. A scenario can also be copied and edited, or written for a conversation coming up. I haven't studied how long a person needs before real conversations work, so I can't give you a number of sessions.
+
+**Setting it up for the person** (angle, 157 words, copied 6)
+
+The app has several settings worth setting up with the client rather than leaving at defaults. Text and button sizes are adjustable for each part of the screen, as are the grid layout and the color scheme, and a keyguard fits across all of them because nothing moves. The user also chooses four or eight response options, how long the app waits after the partner pauses, and whether and how often it speaks a floor-holding placeholder.
+
+The About Me questionnaire builds the profile, but no question is required and the app works with an empty one. The people and places records can be filled in over time. It's a good idea to explain early that the user can type their own words at any point and keep any conversation off the record with one tap. I haven't evaluated this as a clinical intervention, so treat all of this as a description of what the app offers.
 
 ## What happens when there's no internet, like in a school with restricted Wi-Fi?
 
 *(partly covered)*
 
-### Audience: SLPs and OTs  (6.3 s, 662 output tokens, 1.78¢)
+### Audience: SLPs and OTs  (5.7 s, 593 output tokens, 1.71¢)
 
-**Short answer** (short, 54 words, copied 4)
+**Short answer** (short, 54 words, copied 7)
 
-Without internet, the AI stops writing response options, but the device doesn't go dead. The person can still type anything and have it spoken, and use a panel of quick phrases. The catch is that hearing the partner also needs internet, so with no connection at all, the device can't show what was said.
+It depends on what part you mean. The AI that writes the response options needs the internet, and so does hearing the partner. But the user can still speak with the quick phrases and by typing in their own words. So without a connection it becomes a capable manual device, not a dead one.
 
-**What still works offline** (angle, 110 words, copied 7)
+**What still works offline** (angle, 91 words, copied 7)
 
-If the AI can't be reached, the person still has two ways to speak. One is a panel of quick phrases they've set up ahead of time, each one a single tap. The other is a free typing box, where they can write anything and have the device say it aloud. Whatever they say is saved the same way it would be if the AI had written it. The device also signals quietly that something went wrong, with a faint color change, not an intrusive error message. So it becomes a capable manual communication tool until the connection returns. It's the fastest path that goes away, not the only path.
+The pieces that don't depend on the AI keep working. The Express Panel of one-tap phrases is still there, and so is the free typing box, where the person can type anything and have the device speak it. Whatever they say is recorded just as it would be normally. The device also signals quietly that something went wrong, with a faint colored cue on the transcript rather than an error message. So the user always has a way to say something, even though it's slower than choosing from AI options.
 
-**The listening limit** (angle, 89 words, copied 12 - "can't show what the partner said because it can't hear them the")
+**What stops without internet** (angle, 82 words, copied 6)
 
-There's one part I can't fully protect, and it matters for your question. Hearing the communication partner depends on speech recognition, and that's a cloud service. It's a limit of the browser technology underneath, not something I chose. So with no internet at all, the device can't show what the partner said, because it can't hear them. The person can still speak with the quick phrases and the typing box. But a school network that blocks the internet entirely would take away the partner's side of the conversation too.
+Two things stop. First, the AI response options go away, because the AI is an online service. Second, hearing the partner stops, because the speech recognition is also an online service. I'm sorry, but that is a real limit. With no connection at all, the device can't show what the partner said, since it can't hear them. So the user can speak, but the conversation is back to the old pattern, with the user mostly reacting to what the other person does.
 
-**Restricted school Wi-Fi** (angle, 105 words, copied 5)
+**The school Wi-Fi question** (angle, 89 words, copied 0)
 
-Here I have to say what I don't know, and I haven't thought about it very much. The material I've written does say that school internet access is more controlled and could be an issue. But it doesn't say which sites a given school blocks, or what a school's network would do to this app. What I can tell you is what the app needs: a connection to the AI service, and a connection for hearing the partner. For a particular client, I'd run it on the school's network before relying on it, and have the quick phrases and typing box ready as the backup.
+Restricted school Wi-Fi is a different case from no connection, and I don't know how it would behave in a particular building. I haven't tested any school network, so I can't tell you which restrictions would block it. What I can say is that it needs to reach the AI provider's service and the speech recognition service. If a network filters those out, the AI options and hearing the partner would be affected. That would be worth checking with the school's technology staff before relying on it there.
 
-### Audience: academics  (6.0 s, 664 output tokens, 1.78¢)
+### Audience: academics  (6.4 s, 771 output tokens, 1.88¢)
 
-**Short answer** (short, 66 words, copied 9)
+**Short answer** (short, 67 words, copied 7)
 
-Without internet, the AI can't write response options, and the app can't hear the partner either, because speech recognition is a cloud service. The user can still speak with the Express Panel of quick phrases and by typing in their own words. Restricted school Wi-Fi is a real concern I've only touched on, so I don't know how it plays out in any particular school.
+It depends on what the network blocks. If the AI can't be reached, the user keeps the Express Panel of quick phrases and can still type and speak anything. If there's no internet at all, the app can't hear the partner, because speech recognition is a cloud service. I haven't tested it on locked-down school networks, so I can't tell you how any particular one behaves.
 
-**What still works offline** (angle, 103 words, copied 4)
+**If only the AI is blocked** (angle, 118 words, copied 11 - "is recorded exactly as it would be if the ai had")
 
-The app is built so that the AI is a layer on top and not a lifeline. If the AI can't be reached, the user can still tap quick phrases from the Express Panel, and they can type anything in the free composition box and have it spoken. Whatever they say gets recorded just as if the AI had written it. What disappears is only the generated response options. The user's profile, people, and places all stay on the device, so nothing is lost. A faint colored cue tells them something went wrong, and the app keeps working as a manual communication tool.
+Say the school lets the internet through but the AI provider can't be reached. The app is built so that case degrades gracefully. The user still sees what the partner said, in a different color and style, so they know the AI isn't answering. They can still speak from the Express Panel, and they can still type anything in In my own words and have it spoken. Everything they say is recorded exactly as it would be if the AI had written it. Only the response options go away, and they come back as soon as the AI is reachable again. The device quietly signals what went wrong with a faint colored cue, not an intrusive error message.
 
-**The hearing problem** (angle, 85 words, copied 16 - "connection at all the app can't show what the partner said because it can't hear them")
+**If there's no internet at all** (angle, 106 words, copied 8)
 
-The part that doesn't survive is hearing the other person. Speech recognition is a cloud service, so with no connection at all, the app can't show what the partner said, because it can't hear them. That's a limit of the underlying browser technology, not of the AI feature. So in a fully offline room, the user is speaking, but not getting a transcript of the conversation. I'd count that as a real gap, and I don't have a workaround for it in the current version.
+This is the harder case. Hearing the partner depends on speech recognition, and that's a cloud service in the browser, so without any internet the app can't show what the partner said. That's a limit of the underlying browser technology, not of the AI feature. The user can still speak, using the Express Panel and In my own words, so the device works as a manual communication tool. Without the response options, though, it's no longer doing what it was built for, which is keeping a conversation going at near natural speed. Practice Mode also needs the AI, so I wouldn't count on it offline either.
 
-**Restricted school Wi-Fi** (angle, 101 words, copied 5)
+**What I haven't tested** (angle, 123 words, copied 6)
 
-The paper does mention schools. The architectures that lean on the cloud need internet access, and it says there may be an issue in a school setting where access is more controlled. Beyond that, I don't know, and I haven't thought about it very much. I can't tell you which school networks would block the AI provider or the speech service, or whether a school could allow just those. What I can say is that an app depending on the AI provider and speech service means someone would need to check with the school's IT staff before relying on it there.
+I should separate what the design says from what's been tried. I've described how the app behaves when the AI is out of reach and when there's no connection at all. I haven't tested it on school networks with filtering or restricted Wi-Fi, and I don't know which services a given school blocks. The app needs two things to reach the internet: the AI provider, and speech recognition, which on an iPad Home Screen or Android means a paid transcription service. If any of those is blocked, that piece fails. If you're planning for a school, the practical step is to find out with the school's IT staff which of those connections they allow, and try it there before relying on it.
 
 ## You mentioned eye gaze. Would this work for my clients who use switch scanning?
 
 *(partly covered)*
 
-### Audience: SLPs and OTs  (7.3 s, 763 output tokens, 1.91¢)
+### Audience: SLPs and OTs  (7.2 s, 769 output tokens, 1.91¢)
 
-**Not yet for switch scanning** (short, 57 words, copied 7)
+**Not yet, scanning isn't built** (short, 65 words, copied 8)
 
-Not yet. The app works with eye gaze when the equipment moves the pointer and selects by dwelling, but it has no switch scanning today. Nothing in it steps through the choices automatically. I designed it so scanning can be added without rebuilding it, and it's on my list, but I don't want to promise a date.
+Not yet, I'm afraid. Right now the app needs the person to point at the screen directly, and eye gaze works because it moves a pointer and selects by dwelling. Nothing in it steps through the choices for someone who can't direct a pointer. Switch scanning is on the roadmap, and the system was designed so it can be added, but it doesn't exist today.
 
-**Why eye gaze works today** (angle, 119 words, copied 12 - "the dwell time is set on the tracker not in the app")
+**Why gaze works but scanning doesn't** (angle, 132 words, copied 9)
 
-The app picks things by direct selection, meaning the person points straight at what they want. A finger, a stylus, a mouse, a trackball, or an eye gaze or head-tracking system all reach the app as the same thing, a pointer clicking. So if your client's eye gaze equipment is set to the mode that moves the pointer and selects by dwelling, usually called computer control or mouse emulation, it should work with no special setup in the app. The dwell time is set on the tracker, not in the app. I'd also suggest leaving the setting that asks for a second tap turned off for gaze users, because two full dwells in a row would be hard.
+The difference is how the person chooses. With direct selection, the user points straight at an item. A finger, a stylus, a mouse, a trackball, or an eye gaze or head-tracking device all reach the app the same way, as a pointer, and the app doesn't ask which one it is. So gaze works as long as the equipment is in the mode where it moves the pointer and clicks by dwelling. Scanning is a different idea. A cursor moves through the items on its own, and the user hits a switch at the right moment. The app has no cursor that steps through the options and nothing that responds to a switch press that way. So for a client who can only use a switch, it can't be used today.
 
-**What scanning would need** (angle, 111 words, copied 7)
+**Who it suits today** (angle, 116 words, copied 10 - "driving the screen by gaze means looking at the screen")
 
-Scanning is a different kind of access. Instead of pointing, the person waits while a cursor moves through the choices and then hits a switch at the right moment. The app has nothing like that yet. I do think the screen layout will help when it's added. Nothing on the screen ever moves, so the response options always sit in the same four places, and that is the kind of predictable layout scanning depends on. But that's my expectation, not something I've built or tested. I also haven't thought much about the timing problem. Scanning adds seconds to every selection, and the whole point of this work is shortening the silence.
+So the question for each client is whether they can drive a pointer by any means. If they can, including by gaze or head tracking, the app can work for them. That includes many people who use eye gaze as their main access method. I'd also say that for someone who has moved beyond being able to do that, it doesn't suit them yet. The first version is also meant for adults who can read the options on screen and who have legal capacity. One thing worth watching with gaze users in early sessions is that driving the screen by gaze means looking at the screen, which is attention not spent on the other person's face.
 
-**Who it suits right now** (angle, 102 words, copied 7)
+**What's planned for scanning** (angle, 96 words, copied 10 - "to switch scanning to different literacy levels and to a")
 
-Right now it suits adults who can read, hold legal capacity, and can drive a pointer by any means. That includes many people who use eye gaze, such as people with ALS. It doesn't yet suit someone who has moved beyond being able to direct a pointer at all, and your clients who rely on switch scanning fall into that group today. One more thing for eye gaze clients: the app asks them to read the transcript and the response options, and that is attention not spent on the partner's face. It rules nothing out, but it's worth watching in early sessions.
+Switch scanning is on the roadmap, and the system was designed from the start so that it can be added without rebuilding it. The plan is to broaden who it serves over time, to switch scanning, to different literacy levels, and to a wider age range. But I don't have a date for scanning, and I haven't thought about the details of how it would work very much. I don't want to promise something that doesn't exist. If it matters for a particular client, I'd keep using their current system for now and watch for it.
 
-### Audience: academics  (7.6 s, 815 output tokens, 1.96¢)
+### Audience: academics  (6.2 s, 684 output tokens, 1.82¢)
 
-**Not yet, for switch scanning** (short, 61 words, copied 13 - "has no switch scanning yet nothing in it steps through the choices for")
+**Not yet for switch scanning** (short, 58 words, copied 5)
 
-Not today. The app is built for direct selection, which includes eye gaze when the tracker is set up to move the pointer and click by dwelling. It has no switch scanning yet. Nothing in it steps through the choices for someone who can't point. It's on the roadmap, and the design was made so it can be added without rebuilding.
+No, not today. The app is built for direct select, which means pointing at an item by any means. Eye gaze works when the tracker is set to move the pointer and select by dwelling. Switch scanning isn't built yet. It's on the roadmap, and the design should allow it to be added, but it doesn't exist now.
 
-**Why eye gaze works but not scanning** (angle, 140 words, copied 12 - "in the mode where it moves the pointer and selects by dwelling")
+**Why eye gaze works but not scanning** (angle, 104 words, copied 12 - "in the mode where it moves the pointer and selects by dwelling")
 
-The reason eye gaze works is that the app doesn't care what is doing the pointing. A finger, a mouse, a trackball, or a gaze or head tracker all arrive the same way, as a pointer choosing something on the screen. So eye gaze works as long as the tracker is in the mode where it moves the pointer and selects by dwelling, usually called mouse emulation. The app never needs a drag, a right click, a pinch, or anything revealed by hovering. Switch scanning is a different kind of access. The cursor moves through items on its own and the user hits a switch at the right moment. The app has nothing that does that stepping. So a client who can drive a pointer by any means can use it today, and a client who relies on scanning can't.
+The app doesn't care what moves the pointer. Eye gaze and head tracking reach it the same way a mouse or a finger does, as long as the tracker is in the mode where it moves the pointer and selects by dwelling. Nothing in the app needs a drag, a right click, or anything revealed by hovering. Scanning is a different idea. The app would have to step through the choices on its own, and a switch would pick one. Nothing in it does that today. So the app suits anyone who can direct a pointer by any means, and not someone who can't.
 
-**What this means for your clients** (angle, 116 words, copied 0)
+**What's planned for scanning** (angle, 90 words, copied 6)
 
-For your clients who use switch scanning, the app can't be used by them in its current form, and I don't want that to look like a small gap. Scanning is how many people with the most limited movement get access at all. There's also a timing question I haven't tested. The whole design is about keeping the pause short enough that a partner doesn't drift away. Scanning adds its own delay on top of reading the options, and I don't know how that plays out in a live conversation. So I'd say this version is a fit for people who can direct a pointer, and I can't say yet whether scanning would work well here.
+Switch scanning is on the roadmap, and the system was designed so it can be added without rebuilding it. But that's an intention, not something I've built or tested. I can't tell you when it will arrive, or how well the four response options and the fixed screen positions will work under scanning. Scanning has a real cost, since stepping through choices takes time, and time is exactly what this approach is trying to protect. I haven't measured how that would play out, so I'd rather say that than guess.
 
-**What's planned and what isn't known** (angle, 112 words, copied 5)
+**What you could do for those clients** (angle, 89 words, copied 4)
 
-Switch scanning is on the roadmap. It doesn't exist today, and I don't have a date for it. What I can say is that the system was designed so scanning can be added later without rebuilding it. The four kinds of response sit in fixed positions on the screen, and that stability should help any scanning layout, because the user can learn where each kind of reply lives. I don't know yet how scanning would handle the placeholder timing, or how many options a scanning user would want to step through. Those are open questions I haven't thought about very much, and I'd welcome input from people who work with scanning users.
+For clients who rely on switch scanning, I don't have something to hand you today. The app does have fallbacks. If a client can still drive a pointer some other way, say a head tracker or an eye gaze system used in mouse mode, the app may work for them. I'd test that before relying on it. For anyone who can only use a switch, this version isn't the right fit yet. I haven't studied how those clients would do with it, so I'm not making a clinical recommendation.
 
 ## Is there any research yet showing this improves outcomes for AAC users?
 
 *(not covered)*
 
-### Audience: SLPs and OTs  (7.2 s, 698 output tokens, 1.87¢)
+### Audience: SLPs and OTs  (6.3 s, 639 output tokens, 1.81¢)
 
 *Clarifying buttons: "What do you mean by 'outcomes'?"*
 
-**Short answer: no evidence yet** (short, 59 words, copied 0)
+**Short answer** (short, 44 words, copied 0)
 
-I don't know of any research showing this improves outcomes, and I haven't thought about it very much. What I can tell you is why I think it should help, and that the idea rests on earlier research about conversation, silence, and why AAC users get left out. Whether it actually improves anyone's life still has to be tested.}
+I don't know of any, and I haven't thought about it very much. This work is a proposal and a working first version, not a tested intervention. What I can tell you is what it's built on, and what I'd want to see measured.
 
-**What my claims rest on** (angle, 104 words, copied 6)
+**What it rests on** (angle, 88 words, copied 6)
 
-The case I make is built on earlier work, not on a study of this system. People get uncomfortable after one to four seconds of silence, and AAC users with limited movement often type ten to twenty words a minute. Researchers have also described for years how AAC users stay stuck in transactional talk, meaning needs and wants, and rarely reach interactional talk like jokes, shared stories, and friendship. Those findings are why I built the device around filling the silence. But they describe the problem. They don't show that my solution fixes it. I'd call this a reasoned design, not a proven one.
+The design leans on existing research about conversation, but none of it tests this device. There's work showing that people grow uncomfortable after about one to four seconds of silence, and that AAC users often stay in transactional exchanges instead of interactional ones, like sharing experiences or joking. There's also work on how slowly many AAC users can produce words. The idea is that closing the timing gap might let people take part in conversation. That's a reasoned case, and I wouldn't call it evidence that it works.
 
-**What testing would need to show** (angle, 93 words, copied 0)
+**What's not been measured** (angle, 102 words, copied 4)
 
-I haven't designed a study, so I don't want to invent one for you. What I can say is what I'd want to know, using the problems I described. Do partners interrupt and finish sentences less? Do users take more turns, start more topics, and make more jokes? Do they feel more like themselves? Those are conversation outcomes, which are different from words per minute. I'd also want clinicians who know these clients to help judge whether the response options sound like the person. That's where your training matters, and I'd welcome it.
+I'm not aware of any study of whether this changes how often a person initiates, how long conversations last, how partners respond, or how users feel about being heard. The outcomes I care about are the ones in the talk: timing, taking a turn, spontaneity, humor, and being known as a whole person. Those are the things I'd want a study to look at. There's also an untested question about whether people feel the words are really theirs, since the user picks from options the AI writes. Whether that holds up in practice is exactly what outcome research would need to examine.
 
-**What I can say today** (angle, 98 words, copied 6)
+**How you could help** (angle, 92 words, copied 4)
 
-The system is built and working in its first version. It's free and open source, so it can be tried without a purchase or a subscription. The user pays only for the AI conversations they actually have. That's partly why I'm sharing it now. It's meant for adults who can read, can point at a screen by any means, and hold legal capacity, and a client like that could use Practice Mode first, where nobody is waiting on them. Careful observation of how clients actually do is the only way any of us will learn whether this helps.
+The first version is free and open source, so it can be tried and studied. It suits adults who can read the options and point at the screen. Practice Mode lets a client rehearse with no one waiting, and saved conversations can be reviewed turn by turn, which could give a researcher or clinician something concrete to look at. If you try it with a client, what you observe would be worth more than anything I could claim today. I'd rather be clear that the evidence doesn't exist yet than suggest otherwise.
 
-### Audience: academics  (4.0 s, 334 output tokens, 1.50¢)
+### Audience: academics  (6.4 s, 665 output tokens, 1.83¢)
 
 *Clarifying buttons: "What do you mean by 'outcomes'?"*
 
-**Short answer: not yet** (short, 54 words, copied 0)
+**No, not yet** (short, 41 words, copied 0)
 
-No, not from me. I don't have outcome data showing this improves things for AAC users, and I haven't thought about it very much beyond that. What I have is a design built on published research about conversation and silence, and a working system. Whether it changes real outcomes is still an open question.}
+No. I don't have any outcome data for this system. What I have is a design argument built on published work, plus a working prototype. I can tell you what that argument rests on and what still needs to be measured.
 
-**What the paper actually claims** (angle, 108 words, copied 0)
+**What the argument rests on** (angle, 87 words, copied 5)
 
-I want to separate what's argued from what's measured. The paper is a design argument. It describes an architecture, shows a ChatGPT 3.5 simulation of the coffee shop exchange, and says the needed technology exists or is in development. That simulation shows the language model can write plausible response options in under a second. It doesn't show that a real AAC user converses better, feels more included, or is understood differently. The word outcomes in the title of the journal is not something I can claim to have measured. I haven't run a study with users, so any benefit I describe is a prediction, not a finding.
+The argument leans on published findings about the problem, not about this solution. Morris, 2021, puts eye gaze users at ten to twenty words per minute. Koudenburg and colleagues, 2011, found people get uncomfortable after about four seconds of silence, and Jefferson, 1989, put it as low as one second. Waller's work, 2006 and 2019, describes AAC users staying in transactional communication and rarely reaching interactional communication. Those describe the gap. They don't show that response options close it. That link is my reasoning, not a result.
+
+**What I haven't measured** (angle, 90 words, copied 0)
+
+I haven't run a study. I haven't measured whether conversations get faster or longer, whether partners interrupt less, or whether users feel the options sound like them. I also haven't measured how often users pick something quick just to fill the silence. Those are the places I'd want researchers to look, because they're where the design claims could turn out wrong. The ChatGPT sessions in my article are a simulation of the idea, not a trial with users. I'd call this a proposal ready for testing, not a tested intervention.
+
+**What would be worth testing** (angle, 94 words, copied 6)
+
+The app saves conversations on the user's device, including which options were offered, which one was chosen, and how long each stayed on screen. So the raw material for timing and selection analysis exists, though nobody has analyzed it yet. The questions I'd put first are whether turn timing improves, whether users move from transactional to interactional exchanges, and whether autonomy holds up when options are offered. The first version is built for literate adults using direct select, so any early study would be limited to that group. I'd welcome collaboration on a design.
 
 ## What does it cost a family per month?
 
 *(not covered)*
 
-### Audience: SLPs and OTs  (6.3 s, 746 output tokens, 1.94¢)
+### Audience: SLPs and OTs  (5.7 s, 651 output tokens, 1.84¢)
 
-**Pay only for what's used** (short, 62 words, copied 9)
+**No monthly fee** (short, 40 words, copied 5)
 
-There's no subscription and no fee to me. The app is free and open source. The family sets up their own account with the AI company and pays only for the conversations the person actually has, typically a small fraction of a cent per exchange. I don't have a monthly total to give you, because it depends on how much they talk.
+There's no subscription and no license fee. The app itself is free and open source. The family pays an AI provider directly, only for the conversations the user actually has, and I don't have a monthly figure to give you.
 
 
-**Why there's no subscription** (angle, 106 words, copied 5)
+**Why no subscription** (angle, 94 words, copied 8)
 
-The app runs in a web browser with no server of mine behind it. Each user creates their own account with the AI provider and gives the app their own key, and the provider bills them directly. That means I'm not paying for anyone's conversations, so there's nothing for me to charge for. I chose this on purpose, because earlier AI-driven AAC projects were shelved when their funding ran out, and a project that pays everyone's computing costs is fragile. This one can't be defunded. I don't know what that works out to in dollars each month, and I haven't thought about it very much.
+The app runs as a free web application with no server behind it. Nobody is paying for computing on the users' behalf. That matters because earlier attempts at AI communication systems have been shelved when the funding behind their servers ran out. This design can't be defunded, because the project has no ongoing costs. The user creates their own account with an AI provider and supplies their own key. So there's nothing to renew each month, no waiting list, and no company that has to stay in business for the app to keep working.
 
-**Optional paid voice and hearing** (angle, 118 words, copied 10 - "device billed by the amount spoken at a few cents")
+**What the AI usage costs** (angle, 96 words, copied 6)
 
-Two extras can cost money, and neither is needed to start. One is a more natural voice than the ones built into the device, billed by the amount spoken, at a few cents per hour of conversation. The other is paid transcription, which is how the app hears the other person. On Android, and on an iPad where the app is added to the Home Screen, the device's own speech recognition can't be used, so hearing costs roughly twenty-two cents to a dollar per hour of speech, depending on the company. Both are off unless the family turns them on. I'd suggest hearing a paid voice before deciding, since the iPad's built-in voices are rather mechanical.
+The one required cost is the AI provider, which bills the user directly. It's based on use, and each exchange typically costs a small fraction of a cent. That's the only figure I can give you. I don't know, and I haven't thought about it very much, what that adds up to over a month, because it depends on how much the person talks. A heavy conversation day and a quiet week would look very different. I'd suggest having a family try it for a couple of weeks and watch what the provider's account actually shows.
 
-**Device and getting started** (angle, 101 words, copied 7)
+**Optional paid voice and hearing** (angle, 111 words, copied 13 - "on android and on an ipad running from the home screen where the")
 
-The app itself needs nothing installed from an app store. It runs in a browser on a Windows tablet or laptop, a Chromebook, a Mac, an iPad, or an Android device, so a family can use hardware they already own. I haven't priced out devices, and I can't say what a family would need to buy if they don't have one. For a first step, Practice Mode lets someone rehearse conversations with the AI playing the other person, so a family can try it out before anything depends on it. The only account they truly need is the AI provider account.
+Two extras can be added, and neither is needed to start. The first is a more natural voice than the one built into the device, billed by how much it speaks, at a few cents an hour of conversation. The second applies on Android, and on an iPad running from the Home Screen, where the device's own speech recognition can't be used. There, hearing the other person is a paid service billed by the minute of speech, roughly 22 cents to a dollar per hour of speech depending on the company. Both are off unless the family turns them on. On an iPad opened in Safari, hearing the partner is free.
 
-### Audience: academics  (7.0 s, 756 output tokens, 1.95¢)
+### Audience: academics  (6.6 s, 809 output tokens, 1.99¢)
 
-**Free app, pay per use** (short, 66 words, copied 9)
+**Short answer on cost** (short, 52 words, copied 9)
 
-The app itself is free and open source, with no subscription. The family pays their own AI provider directly, only for the conversations the user actually has, and the material says that's typically a small fraction of a cent per exchange. I don't have a monthly figure, because it depends on how much the person talks, and I haven't thought about it very much beyond that.
+The app itself is free and open source, with no subscription. The user pays their own AI provider only for the conversations they actually have, which I've described as typically a small fraction of a cent per exchange. I don't have a monthly figure, and I haven't measured what real families spend.
 
-**Why there's no subscription** (angle, 107 words, copied 5)
 
-The reason there's no monthly fee is how it's built. It's a web app with no server of mine behind it, so I'm not paying for anyone's computing. Each user makes an account with an AI provider, Claude from Anthropic to start, and puts in their own key. That's what the family is billed for. Earlier AI-driven AAC projects were shelved when the funding ran out, because the project was paying for everyone's usage. This design avoids that, since the cost sits with each user and scales with how much they actually converse. There's also no license and no waiting list, and I can't defund it.
+**What costs money, what doesn't** (angle, 117 words, copied 4)
 
-**Optional paid extras** (angle, 108 words, copied 12 - "a more natural sounding voice than the ones built into the device")
+The app has no license, no subscription, and no waiting list, and it runs as a web application with no server of ours behind it. That's deliberate. Earlier AI-driven AAC projects were shelved when the funding for their servers ran out, and this design avoids that. The cost that does exist is the AI account. The user creates their own account with a provider, Claude from Anthropic to start, and supplies their own key. They're billed directly for the conversations they have. Beyond that, the user needs a device that can run it, such as a Windows tablet, Chromebook, Mac, or iPad. I haven't priced devices, so I can't say what that adds for a family.
 
-There are two optional paid pieces, and the app works without either. One is a more natural-sounding voice than the ones built into the device, billed by the amount spoken, at a few cents per hour of conversation. The other is paid speech recognition, billed by the minute of speech, which is needed on Android and on an iPad running from the Home Screen, because the device's own recognition isn't available there. On an iPad opened in Safari, hearing the partner is free. Depending on the company, transcription runs roughly twenty-two cents to a dollar per hour of speech, and only while someone is actually talking.
+**Optional paid voice and hearing** (angle, 128 words, copied 14 - "device billed by the amount spoken at a few cents an hour of conversation")
 
-**What I can't give you** (angle, 104 words, copied 0)
+Two extras can be added, and neither is needed to start. One is a more natural voice than the ones built into the device, billed by the amount spoken, at a few cents an hour of conversation. The other is paid speech recognition, billed by the minute of speech. That one matters on Android, and on an iPad that's running from the Home Screen, because the device's own recognition can't be used there. The figure I've given is roughly 22 cents to a dollar per hour of speech, depending on which company, and only while someone is actually talking. Opened in Safari on an iPad, hearing the partner is free. Most iPad users will probably still want a paid voice, because the built-in iPad voices are poor.
 
-I can't hand you a real monthly number, and I'd be guessing if I tried. The material gives per-exchange and per-hour rates, but it doesn't tell me how many exchanges a typical person has in a month, or what a family's mix of services would add up to. That depends on how much the person converses, which voice they choose, and which device they use. Hardware is separate too. The material recommends a Microsoft Surface or an iPad, but I have no prices for those. I also haven't tested cost over real months of use, so I'd treat any total as unmeasured.
+**Why I can't give a monthly number** (angle, 122 words, copied 0)
+
+What I have are per-use prices, not a monthly total. A monthly total depends on how many conversations someone has, how long they run, how many response options get generated, and whether they add a paid voice or paid hearing. I haven't tracked spending across real users, so any monthly figure from me would be a guess, and I don't want to hand a family a guess about money. What I can say is the structure of it. The cost scales with use rather than being a flat fee. If you tell me roughly how much a family would talk with it, I can walk through which parts of the bill would apply, but I couldn't put a total on it.
 
 ## Is this covered by Medicaid or insurance?
 
 *(not covered)*
 
-### Audience: SLPs and OTs  (6.3 s, 716 output tokens, 1.94¢)
+### Audience: SLPs and OTs  (5.5 s, 672 output tokens, 1.88¢)
 
 *Clarifying buttons: "What do you mean by 'covered'?"*
 
-**Short answer** (short, 51 words, copied 6)
+**I don't know about coverage** (short, 45 words, copied 4)
 
-I don't know, and I haven't thought about it very much. What I can tell you is what it costs, because that's what my material covers. The app is free and open source, and the person pays only a small amount to an AI company for the conversations they actually have.}
+I don't know, and I haven't thought about it very much. Nothing I've worked on addresses Medicaid or insurance coverage. What I can tell you is that the app itself is free, and the user pays an AI provider directly for the conversations they have.
 
-**What the app costs** (angle, 116 words, copied 17 - "pays only for the conversations they actually have typically a small fraction of a cent per exchange")
 
-Here is what I can say about money. The app itself is free. There's no license, no subscription, and no waiting list, and I don't charge anything. The person sets up their own account with an AI company and pays only for the conversations they actually have, typically a small fraction of a cent per exchange. I don't have a monthly total, because it depends on how much they talk. There are also two optional paid extras. One is a more natural-sounding voice, and the other is paid speech recognition, which is needed on an iPad running from the Home Screen and on Android. Both are billed by use, and the app works without either.
+**What the app costs** (angle, 106 words, copied 8)
 
-**What I can't answer** (angle, 96 words, copied 0)
+Here's what I can say about money. The app is free and open source. There's no subscription and no license fee. It runs in a web browser, so nothing comes from an app store. The user creates their own account with an AI provider and pays that provider directly, only for the conversations they actually have. I don't have a monthly figure to give you. Two optional extras can be added. One is a more natural voice, and the other is paid speech recognition for hearing the partner on some devices. Both are billed by use and both are off unless the user turns them on.
 
-The material I have says nothing about Medicaid, private insurance, or any funding source, so I can't tell you whether any of them pays for this. I also don't know how a funding body would classify it, or what documentation it might ask for. I would rather not guess, because a wrong answer could send a family down the wrong path. Whoever handles funding for your clients would be the right person to ask. If you can tell me which kind of coverage you mean, I can at least describe what the person would be buying.
+**What it runs on** (angle, 97 words, copied 6)
 
-**Why no one pays me** (angle, 128 words, copied 5)
+Part of any funding question is the hardware, and I can only say what the app needs. It runs on a Windows tablet or laptop, a Chromebook, or a Mac using Chrome or Edge, on an iPad using Safari, or on an Android phone or tablet using Chrome. A Microsoft Surface or an iPad suits the way it's used, carried and often fitted with a keyguard. I haven't looked into whether any payer will fund those devices for this purpose, and I can't tell you how a device would be classified. That's outside what I've worked on.
 
-One thing in the design bears on your question. Earlier attempts at AI-driven communication devices were shelved when their funding ran out, because a server-based system means someone has to keep paying for the computing on behalf of every user. I avoided that on purpose. The app runs in a web browser with no server of mine behind it, so there's no ongoing cost to the project and it can't be defunded. The person's own account pays for their own use. It also means there's no product sold to a family or billed to a payer for me to point you to. The device itself is whatever tablet or laptop the person already uses, such as a Windows tablet, a Mac, a Chromebook, or an iPad.
+**Why I'd like to know what you mean** (angle, 92 words, copied 0)
 
-### Audience: academics  (5.8 s, 693 output tokens, 1.91¢)
+The word covered could mean a few different things, and the answer would change with each. It could mean paid for as a device, approved as a type of equipment, or reimbursed as a service. I can't speak to any of those. If you tell me which one you mean, I can say whether anything I've worked on bears on it. I'd expect the answer to stay the same, though, which is that I don't know. This is a working first version of a free tool, and I haven't pursued payer coverage.
+
+### Audience: academics  (6.3 s, 713 output tokens, 1.91¢)
 
 *Clarifying buttons: "What do you mean by 'covered'?"*
 
-**Short answer** (short, 45 words, copied 4)
+**Short answer** (short, 51 words, copied 5)
 
-I don't know, and I haven't thought about it very much. Nothing I've worked out addresses Medicaid or insurance. What I can tell you is that the app itself is free and open source, and the only cost is the family's own AI account.'
+I don't know, and I haven't thought about it very much. The material says nothing about Medicaid, insurance, or reimbursement. What I can tell you is that the app is free and open source, with no subscription, and the user pays their own AI provider only for the conversations they have.
 
-**What the app costs** (angle, 104 words, copied 9)
 
-The app is free to use, and the source code is open. There's no license, no subscription and no waiting list. It runs in a web browser, so there's nothing to buy from an app store. The person sets up their own account with an AI provider and pays that provider directly, only for the conversations they actually have. I've said that's typically a small fraction of a cent per exchange, but I don't have a monthly figure, since it depends on how much someone talks. So there's no device purchase for anyone to reimburse, which may or may not matter to your question.
+**What I do know on cost** (angle, 113 words, copied 9)
 
-**Optional paid extras** (angle, 109 words, copied 14 - "device billed by the amount spoken at a few cents an hour of conversation")
+Here's what the material actually says about money. The app itself is free, and the code is open source. There's no license, no subscription, and no waiting list. The one ongoing cost is the AI account. Each user creates their own account with an AI provider and supplies their own key, and they pay that provider directly for the conversations they actually have. I described that as typically a small fraction of a cent per exchange, but I don't have a monthly figure, and I haven't measured what real users spend. The project itself carries no server costs, which is deliberate, so it can't be defunded the way earlier server-based attempts were.
 
-Two extras can cost money, and neither is needed to start. One is a more natural voice than the ones built into the device, billed by the amount spoken, at a few cents an hour of conversation. The other is paid speech recognition for hearing the communication partner. That's needed on Android, and on an iPad running from the Home Screen, because the device's own recognition isn't available there. It's billed by the minute of speech, roughly twenty-two cents to a dollar per hour of speech depending on the company. Both are off unless the user turns them on. These are the only recurring costs I know of.
+**Optional paid extras** (angle, 96 words, copied 14 - "device billed by the amount spoken at a few cents an hour of conversation")
 
-**Hardware and what I can't say** (angle, 89 words, copied 5)
+There are two optional paid pieces, and neither is needed to start. One is a more natural-sounding voice than the ones built into the device, billed by the amount spoken, at a few cents an hour of conversation. The other is paid speech recognition, which is needed on Android and on an iPad running from the Home Screen, billed by the minute of speech. I gave roughly 22 cents to a dollar per hour of speech there, depending on the company. Those are the figures in my notes. Anything beyond that, I can't speak to.
 
-The app runs on a Windows tablet or laptop, a Chromebook, a Mac, an iPad, or an Android phone or tablet. I recommend a Microsoft Surface or an iPad for carrying around and mounting, but the person needs to have one. I don't know whether any funder would pay for that hardware, or whether a free browser app could be billed to anyone at all. I haven't looked into coverage rules, so I can't tell you how Medicaid or private insurance would treat it, and I'd rather not guess.
+**What I can't answer** (angle, 103 words, copied 4)
+
+Whether Medicaid or a private insurer would pay for any part of this, I don't know. That includes the device it runs on, the AI account, or the optional voice and transcription services. I haven't looked at how funding bodies classify a free web application that runs on a tablet or laptop, and I haven't investigated reimbursement at all. It's also worth saying that the app is a prototype. I don't have outcome data for it, and that may matter to anyone asking a funder. If you tell me what you mean by covered, I can at least say which costs are involved.

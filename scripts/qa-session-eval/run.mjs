@@ -77,7 +77,7 @@ Return exactly four answers, in this order:
 - then three of kind "angle": each goes deeper on a DIFFERENT part of the answer, in one or two spoken paragraphs (about 80 to 160 words).
 Each label is 2 to 6 words naming what that answer covers.
 
-Also return "unclear_words": a word or short phrase FROM THE QUESTION only when it has two everyday meanings that would lead to DIFFERENT answers, so the user can ask the questioner what they mean. Example: "covered" in "Is this covered by insurance?" could mean paid for by insurance or included in the plan's list of devices. Most questions are clear: return [] for them. Never flag an ordinary word just because it could be more specific ("client", "family", "research").
+Also return "unclear_words": a word or short phrase FROM THE QUESTION only when it is too vague to answer well without asking what the questioner means. Example: in "Is this covered by Medicaid or insurance?", "covered" could mean paid for, approved as a device, or reimbursed as a service, and the right answer depends on which. Most questions are clear enough to answer: return [] for them. Never flag a word just because it could be more specific ("client", "family", "research").
 
 Rules:
 1. CONTENT ONLY FROM THE MATERIAL BELOW. Never add facts, figures, studies, prices or claims that are not in it. If the material does not answer the question, say so in these words or close to them: "I don't know, and I haven't thought about it very much." Then offer what the material does say that is related. Do not guess.
@@ -85,7 +85,7 @@ Rules:
 3. IF THE QUESTION RESTS ON SOMETHING THE MATERIAL CONTRADICTS, correct it plainly. For example, the response options are four different kinds of reply and are not ranked, so there is no "first" or "top" option.
 4. NEVER REUSE THE MATERIAL'S WORDING. It was written to be read; these answers are spoken. Take the ideas and say them fresh.
 5. Plain spoken American English with contractions, first person. No British words or phrasing. No technical or professional terms the material doesn't use itself.
-6. Never talk about your own honesty, candor or transparency, and never use the words "honest" or "honestly": no "to be honest", "I should be honest", "I'll be plain", "I want to be precise", "I'd rather tell you than guess". Just say it.
+6. Never comment on your own honesty, openness or accuracy, or announce how you are about to say something: no "the honest summary is", "to be honest", "I should be honest about", "I'll be plain", "I want to be precise", "I'd rather tell you than guess", "I take it seriously". People don't talk like that; it sounds formal and self-important. Just say the thing. For not knowing, say "I don't know", "I'm afraid I don't know" or "I'm sorry, I don't know", never "I honestly don't know".
 7. Never claim to know about the audience's work, feelings or experience ("I know funding is a big part of your day"). You don't.
 8. Don't repeat a point already made in an earlier answer in this session (listed below the audience) unless the question asks about it again. Refer back briefly instead ("as I said a moment ago").
 9. No lead-ins like "Great question" and no closing summary. Answer, then stop.
@@ -188,4 +188,8 @@ const med = times[Math.floor(times.length / 2)];
 lines.splice(2, 0, `**Wait for a full set of four answers: median ${(med / 1000).toFixed(1)} s, range ${(times[0] / 1000).toFixed(1)} to ${(times[times.length - 1] / 1000).toFixed(1)} s. Total cost ${(total * 100).toFixed(0)}¢ for ${times.length} sets.**`, '');
 fs.mkdirSync(path.dirname(outPath), { recursive: true });
 fs.writeFileSync(outPath, lines.join('\n'));
+// Report British wording, since the answers are meant to be American English.
+const { execFileSync } = await import('node:child_process');
+const { fileURLToPath } = await import('node:url');
+console.error(execFileSync(process.execPath, [fileURLToPath(new URL('./british-check.mjs', import.meta.url)), outPath]).toString().trim());
 console.error('wrote', outPath);

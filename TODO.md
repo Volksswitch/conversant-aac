@@ -54,15 +54,16 @@ the one that quietly waits forever.
   7. **Product Overview, "AI is an enhancement" (found 2026-11-08 by Ken in the question-session test):** "If the connection drops, the API key is missing, or the AI provider is temporarily down, the user can still see what the partner said" is false when the internet itself is gone, since hearing the partner needs it too. The next paragraph says so, but the two together led the AI to tell an audience the opposite. Replace "If the connection drops" with "If the AI can't be reached while the internet is working", and say plainly that with no internet the app can't show what the partner said.
   8. **Product Overview, Conversation Review:** "it reads the replies the user picked and the sentences they typed" led the AI to say picked replies are used as examples of how the user talks. They are not; the app only notes how long they tend to be. Say so.
   9. **Product Overview, Maria example:** "the first option would read 'I don't know'" implies a ranked first option. Say "the green option".
+  10. **Product Overview, Response Panel:** add that a position says which kind of reply it is, not how good it is, and that the options aren't ranked. Measured November 8 2026: with that one sentence in the test's copy, answers corrected the "first option" premise instead of repeating it ("There isn't really a first option to fall into").
 - **Why not now:** Ken asked for them to be listed. Each changes a published page, and they fit the next "sync docs" pass.
 
 ### Question sessions after a talk: open items from the November 8 2026 test
 - **Raised:** 2026-11-08 - Ken's comments on the October 11 question-session test, and the re-run (`scripts/qa-session-eval/2026-11-08/`).
 - **What is wanted:**
   1. **Pronouns (waiting on Ken):** "my" when an answer speaks from the point of view of a Conversant user, "I" when from the presenter's. Needs one example from Ken of each before the instruction can be written.
-  2. **Eight-card setting (waiting on Ken):** the test always returns four answers. Recommendation: question sessions ignore the "two per category" setting and keep four, because each answer is a paragraph.
-  3. **Tagline emphasis:** Ken wants "as" and "for" stressed whenever "speak as the user, not for them" is spoken. Only in that phrase, not every "as" and "for". The paid voices can stress a word (Deepgram measurably stresses capitals; Azure takes emphasis markup); the device's own voices cannot.
-  4. **"Honest" and "first option" still appear** in 2 and 4 of 96 test answers despite explicit instructions. The mode needs a check after the answer is written, not only an instruction.
+  2. **Eight-card setting: DECIDED (Ken, 2026-11-08)** - always four, cards show only the short label. Recorded in CLAUDE.md.
+  3. **Tagline emphasis:** Ken wants "as" and "for" stressed when the project's tagline ("speak as the user, not for them") is spoken - only in that phrase; everywhere else would be laughable (Ken). The paid voices can stress a word (Deepgram measurably stresses capitals; Azure takes emphasis markup); the device's own voices cannot.
+  4. **Check answers after they are written:** told plainly that self-commentary is formal and self-important, the AI stopped it, but runs vary (one run still flagged "client" as unclear after being told not to). The mode needs a check after the answer is written, not only instructions. `scripts/qa-session-eval/british-check.mjs` is the start of one.
   5. **Clarifying buttons:** decide where "What do you mean by X?" buttons go. They speak, so not the Context band; the Flex band is the likely place.
 - **Why not now:** the mode is not built. These are decided when it is.
 
