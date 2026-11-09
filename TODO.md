@@ -51,10 +51,7 @@ the one that quietly waits forever.
   4. **Cost wording:** the home page, At a Glance and the Product Overview say a fraction of a cent per reply. The September 30 2026 measurement was about half a cent per set of options, and one turn can write several sets. The FAQ uses the measured figure.
   5. **Staying with text is now a hypothesis (Ken, November 3 2026):** the Product Overview roadmap promises symbol support, and the Staying With Text draft says we plan to get there without symbols. Both should say the question is open and will be tested.
   6. **"No license" wording:** the home page and Product Overview say "no license", meaning no fee. Now that the code has an Apache 2.0 license, that should read "no license fee". The home page's "anyone is welcome to take it and build on it" could also mention the credit requirement.
-  7. **Product Overview, "AI is an enhancement" (found 2026-11-08 by Ken in the question-session test):** "If the connection drops, the API key is missing, or the AI provider is temporarily down, the user can still see what the partner said" is false when the internet itself is gone, since hearing the partner needs it too. The next paragraph says so, but the two together led the AI to tell an audience the opposite. Replace "If the connection drops" with "If the AI can't be reached while the internet is working", and say plainly that with no internet the app can't show what the partner said.
-  8. **Product Overview, Conversation Review:** "it reads the replies the user picked and the sentences they typed" led the AI to say picked replies are used as examples of how the user talks. They are not; the app only notes how long they tend to be. Say so.
-  9. **Product Overview, Maria example:** "the first option would read 'I don't know'" implies a ranked first option. Say "the green option".
-  10. **Product Overview, Response Panel:** add that a position says which kind of reply it is, not how good it is, and that the options aren't ranked. Measured November 8 2026: with that one sentence in the test's copy, answers corrected the "first option" premise instead of repeating it ("There isn't really a first option to fall into").
+  7. **Product Overview, "In your own words":** the heading, the paragraph under it, the feature list and the glossary still say "In your own words"; the app's button says "In my own words". (Items for the connection-drop sentence, picked replies, "first option" and not-ranked options were made November 8 2026; see DOC-SYNC.)
 - **Why not now:** Ken asked for them to be listed. Each changes a published page, and they fit the next "sync docs" pass.
 
 ### Question sessions after a talk: open items from the November 8 2026 test
@@ -66,6 +63,11 @@ the one that quietly waits forever.
   4. **Check answers after they are written:** told plainly that self-commentary is formal and self-important, the AI stopped it, but runs vary (one run still flagged "client" as unclear after being told not to). The mode needs a check after the answer is written, not only instructions. `scripts/qa-session-eval/british-check.mjs` is the start of one.
   5. **Clarifying buttons:** decide where "What do you mean by X?" buttons go. They speak, so not the Context band; the Flex band is the likely place.
 - **Why not now:** the mode is not built. These are decided when it is.
+
+### "sync docs" could look for sentences a reader would misread
+- **Raised:** 2026-11-08 - Ken, after the question-session test showed the AI misreading the Product Overview (offline behavior, ranked options, picked replies used as examples). *"The same misunderstanding could happen with the reader/user."*
+- **What is wanted:** a step in "sync docs" that hands the document to a fresh AI as a reader, asks it a fixed set of questions about how the app works, and compares its answers with the facts. A wrong answer points at the passage that misled it. The question-session test is a working prototype of this: three of its wrong answers each traced to one passage.
+- **Why not now:** Ken's go-ahead on cost and scope. Each check is a few cents per document; the work is writing the questions and their correct answers, which must be kept in step with the app.
 
 ### PIN or password when the app extends to younger users
 - **Raised:** 2026-11-03 - Ken, on the Your Security and Privacy document: a PIN or password is still an issue for younger users.
