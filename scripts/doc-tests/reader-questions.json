@@ -23,7 +23,7 @@
       ],
       "mustCover": true,
       "q": "If the internet works but the AI provider can't be reached or the AI key is missing, what still works?",
-      "a": "Everything except the AI's suggested responses: the user still sees what the other person said, and can speak with the Express Panel and by typing in \"In my own words\"."
+      "a": "Everything except what the AI writes: the user still sees what the other person said, and can speak with the Express Panel and by typing in \"In my own words\". The suggested responses stop, and so do the choice buttons the AI builds from what the other person offered."
     },
     {
       "id": "ranked",
@@ -41,7 +41,7 @@
       ],
       "mustCover": true,
       "q": "What are the different kinds of response option the app offers?",
-      "a": "Four kinds: an agreeable, natural answer; a polite way to decline or disagree, with a reason; a reply that takes the conversation in a new direction; and a reply that asks for clarification. A setting can show two of each kind, eight in all."
+      "a": "Four kinds, at least one of each every time: an agreeable, natural answer; a polite way to decline or disagree, with a reason; a reply that takes the conversation in a new direction; and a reply that asks for clarification. A setting can show two of each kind, eight in all."
     },
     {
       "id": "spoken-without-tap",
@@ -68,7 +68,7 @@
       ],
       "mustCover": true,
       "q": "Where is the user's personal information stored, and is any of it kept on a server run by the project?",
-      "a": "On the user's own device; the project runs no server and keeps nothing. Information leaves the device only to the services the app uses: the AI provider when suggestions are written, the speech services in use, and an optional weekly report that carries counts and timings but no words."
+      "a": "On the user's own device; the project runs no server and keeps nothing. Information leaves the device only to the services the app uses: the AI provider when suggestions are written, the speech services in use, and an optional weekly report that carries counts, timings and descriptions of errors, but nothing that was said."
     },
     {
       "id": "partner-speech",
@@ -153,11 +153,11 @@
       ],
       "mustCover": true,
       "q": "Does the user need a paid speech service for the app to hear the other person?",
-      "a": "Not on Windows, a Chromebook or a Mac, or on an iPad in the Safari browser: the browser's own hearing is free there. On Android, and on an iPad when Conversant is installed on the Home Screen, a paid speech service is needed to hear the other person.",
+      "a": "Not on Windows, a Chromebook or a Mac, or on an iPad in the Safari browser: the browser's own hearing is free there. On an iPad installed on the Home Screen a paid speech service is needed to hear the other person. On Android a paid service is needed for real conversations; Android's own listening works well enough to try the app but drops words.",
       "aByDoc": {
         "User Manual (Windows Chromebook Mac)": "No. On a Windows computer, Chromebook or Mac the browser's own hearing is free. A paid service is optional.",
         "User Manual (iPad)": "Not in the Safari browser, where the iPad's own hearing is free. When Conversant is installed on the Home Screen, a paid speech service is needed to hear the other person.",
-        "User Manual (Android)": "Yes. On Android a paid speech service is needed to hear the other person."
+        "User Manual (Android)": "Yes, for real conversations. Android's own listening works well enough to try the app, but it drops words and the device plays a tone each time it restarts."
       }
     },
     {

@@ -46,7 +46,7 @@ the one that quietly waits forever.
 - **Raised:** 2026-11-03 - while checking the FAQ against the documents. Ken asked for these to stay on the list. The FAQ already avoids each of them, but the published pages still say them.
 - **What is wanted:**
   1. **Known Issues page:** still lists OpenAI as a speech service, says one-copy-at-a-time is being worked on (built October 9 2026), and was last updated September 14 2026.
-  2. **Product Overview, "Private by Design":** says nothing goes to an outside server except the AI, leaving out speech services.
+  2. *(Done November 8 2026: Private by Design now names the speech services.)*
   3. **Keeping Costs Down:** lists only Deepgram and Azure for speech, and quotes a holding phrase the app no longer uses.
   4. **Cost wording:** the home page, At a Glance and the Product Overview say a fraction of a cent per reply. The September 30 2026 measurement was about half a cent per set of options, and one turn can write several sets. The FAQ uses the measured figure.
   5. **Staying with text is now a hypothesis (Ken, November 3 2026):** the Product Overview roadmap promises symbol support, and the Staying With Text draft says we plan to get there without symbols. Both should say the question is open and will be tested.
@@ -63,17 +63,6 @@ the one that quietly waits forever.
   4. **Check answers after they are written:** told plainly that self-commentary is formal and self-important, the AI stopped it, but runs vary (one run still flagged "client" as unclear after being told not to). The mode needs a check after the answer is written, not only instructions. `scripts/qa-session-eval/british-check.mjs` is the start of one.
   5. **Clarifying buttons:** decide where "What do you mean by X?" buttons go. They speak, so not the Context band; the Flex band is the likely place.
 - **Why not now:** the mode is not built. These are decided when it is.
-
-### Reader check findings waiting on a decision (first run, November 8 2026)
-- **Raised:** 2026-11-08 - the new reader check (`scripts/doc-tests/reader-check.mjs`, now step 3c of "sync docs").
-- **What is wanted:** decide and fix, after confirming each against the app:
-  1. **Product Overview:** "It uses what the user tells it, and the replies they pick, to word its response options more the way they would" still says picked replies are used as examples. They are only measured for length.
-  2. **Product Overview:** the glossary says opening the Composition Pane speaks a holding phrase automatically. The app does not start one when the pane opens; it lets one already running carry on. And "Nothing is said without their intervention" contradicts the holding phrases.
-  3. **Product Overview, "Private by Design":** says nothing goes to an outside server except the AI, leaving out the speech services (already item 2 of the stale-statements list).
-  4. **Android and Windows manuals:** "The four options always appear in the same order" led the reader to invent a ranking rule ("the first option is always the one that settles the matter"). Say position shows the kind of reply, not how good it is.
-  5. **Android manual:** describing the built-in hearing's faults right after saying a paid service is needed led the reader to think the built-in hearing is a free option to try first.
-  6. **All three manuals:** the no-internet passages don't say the other person's words stop appearing, and don't mention typing in "In my own words" as still working.
-- **Why not now:** found while building the check; Ken decides whether to fix now or at the next "sync docs".
 
 ### PIN or password when the app extends to younger users
 - **Raised:** 2026-11-03 - Ken, on the Your Security and Privacy document: a PIN or password is still an issue for younger users.
