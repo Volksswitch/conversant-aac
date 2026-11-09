@@ -184,7 +184,7 @@ Other pages, documents and emails link to the videos and name them. These rules 
 
 6. **Changing the Getting Started set** (adding, removing, or making one much longer or shorter) changes the welcome emails' "six videos ... about four minutes". The checker catches it.
 
-7. **Old copies of the files stay in the website's media library** after each upload, because deleting there is permanent. The publisher lists them by name, and Ken deletes them when he wants to.
+7. **Old copies are deleted after each upload (Ken, November 9 2026).** Once the videos page and its list point at the new files, the publisher deletes the replaced video, guide and course map, but keeps any file that's still in use or that any page or post on the site still links to, and names it. Deleting media is permanent, so `--keep-old` leaves them instead. `python scripts/wordpress/old_copies.py --videos-folder` lists every unused file in the Videos media folder, and `--apply` deletes them.
 
 ## Build order
 

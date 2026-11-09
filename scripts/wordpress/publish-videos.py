@@ -16,8 +16,9 @@ alone, so a later run never un-publishes or re-publishes it.
 The site cannot stream video, so each row offers the file to download and play. Files
 must therefore stay small: the renderer's are about 2 MB per minute.
 
-OLD COPIES ARE NOT DELETED, for the same reason as the documents publisher: deleting
-media is permanent. Replaced files are listed at the end so Ken can delete them.
+OLD COPIES ARE DELETED once the page and the list point at the new ones (Ken, November
+9 2026), through old_copies.py, which keeps any file still in use or still linked from
+any page or post. Deleting media is permanent; --keep-old leaves them instead.
 
 ORDER: uploads first, page once at the end, local list saved only after the page write.
 
@@ -26,6 +27,7 @@ Credentials: .wordpress-credentials at the project root (git-ignored).
 import hashlib, html, json, os, sys
 
 from wp import ROOT, call
+from old_copies import delete_old
 
 LIST = os.path.join(os.path.dirname(__file__), 'videos.json')
 VIDEOS = os.path.join(ROOT, 'Videos')
@@ -370,8 +372,14 @@ def main():
         with open(LIST, 'w', encoding='utf-8', newline='\n') as f:
             json.dump(cfg, f, indent=2, ensure_ascii=False)
             f.write('\n')
-    for m in replaced:
-        print(f'  OLD COPY LEFT IN MEDIA LIBRARY: id {m["id"]} {m["url"]}')
+    # Replaced copies are deleted (Ken, November 9 2026), only now that the page and the
+    # list point at the new ones, and only if nothing on the site still links them.
+    # --keep-old leaves them, as before.
+    if replaced and apply and '--keep-old' not in sys.argv:
+        delete_old([m['id'] for m in replaced], apply=True)
+    else:
+        for m in replaced:
+            print(f'  OLD COPY LEFT IN MEDIA LIBRARY: id {m["id"]} {m["url"]}')
 
 
 main()
