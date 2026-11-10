@@ -56,6 +56,7 @@ the one that quietly waits forever.
 - **Review findings:** a separate review found sixteen problems on 2026-11-09; all were fixed the same day in the proposal and the prototype (section 12 records each). New design questions they raised now sit in the proposal: forgiving a late press, "Pause", and a separate gap between holding phrases for switch users.
 - **Settings prototype:** `prototypes/switch-access-settings.html` (2026-11-09) scans six real Settings tabs in plain page order or grouped, with seven timed tasks. On the website at https://volksswitch.org/index.php/conversant-switch-access-settings-prototype/ (2026-11-09).
 - **How the therapists get the prototype:** by email, and on the website at https://volksswitch.org/index.php/conversant-switch-access-prototype/ (2026-11-09). After changing the prototype, run `python scripts/wordpress/publish-switch-prototype.py --apply` to update the page.
+- **User documentation (Ken, 2026-11-10):** when switch access is built, the User Manuals need clear descriptions with examples of the four stray and mistimed press settings (act on press or release; ignore presses held for less than; ignore repeated presses within; act on the previous stop). The first version is in section 3.6 of the proposal; start from it.
 - **Why not now:** nothing is built until the decisions are made and face-to-face conversation is reliable (the proposal's recommendation). Decisions go in `CLAUDE.md` once made.
 
 ### Stale statements found while writing the FAQ
