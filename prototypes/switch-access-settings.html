@@ -624,6 +624,8 @@ function settingsText() {
   });
   lines.push('', 'Current state:', ...stateLines().map((l) => '  ' + l));
   lines.push('', 'Settings as data: ' + JSON.stringify(cfg));
+  histWatch();
+  lines.push('', 'What happened since the last restart (seconds since it):', ...H.lines);
   return lines.join('\n');
 }
 async function copySettings() {
@@ -642,9 +644,53 @@ async function copySettings() {
   document.getElementById('screen').focus();
 }
 document.getElementById('copySettings').addEventListener('click', copySettings);
-document.querySelectorAll('#presets button').forEach((b) => b.addEventListener('click', () => { presetName = b.textContent; presetEdited = false; }));
+document.querySelectorAll('#presets button').forEach((b) => b.addEventListener('click', () => { presetName = b.textContent; presetEdited = false; hist('example chosen: ' + presetName); }));
 $('panel').addEventListener('change', () => { presetEdited = true; });
 presetName = (document.querySelector('#presets button.on') || {}).textContent || null;
+
+function histSig() {
+  const changed = Object.keys(V).filter((k) => JSON.stringify(V[k]) !== JSON.stringify(START_VALUES[k])).map((k) => k + ' = ' + JSON.stringify(V[k]));
+  return { scan: stopped ? 'stopped' : S.resting ? 'resting' : 'running', tab: tab >= 0 ? TABS[tab].label : 'none',
+    section: tab >= 0 && openSec >= 0 ? TABS[tab].sections[openSec].title : 'none',
+    'on top': overlay ? overlay.kind + (overlay.title ? ' "' + overlay.title + '"' : '') : 'nothing', typed: '"' + typed + '"',
+    'changed settings': changed.join(', ') || 'none', 'tasks done': String(done.filter(Boolean).length), held: S.held ? 'waiting for a second press' : 'no' };
+}
+{ const before = logLine; logLine = function (t) { hist('activity: ' + t); return before.apply(this, arguments); }; }
+
+// ---------------------------------------------------------------- history since the last restart
+// Ken, November 10 2026: the copied report includes what happened since the last
+// restart, not only where things stand now. Presses are recorded where they are
+// accepted; everything else is found by comparing the state every 100 ms, so a
+// change made anywhere in the code is caught without being wired in.
+const H = { t0: performance.now(), lines: [], stops: null, where: '', sig: null, max: 3000 };
+const hSecs = () => ((performance.now() - H.t0) / 1000).toFixed(1).padStart(6) + ' s  ';
+function hist(text) {
+  H.stops = null;
+  if (H.lines.length >= H.max) { H.lines.splice(1, 1); H.lines[0] = '(earlier lines dropped)'; }
+  H.lines.push(hSecs() + text);
+}
+function histStop(label) {
+  if (!H.stops) { H.stops = [label]; H.lines.push(hSecs() + 'stops: ' + label); return; }
+  H.stops.push(label);
+  H.lines[H.lines.length - 1] = H.lines[H.lines.length - 1].replace(/stops: .*/, 'stops: ' + H.stops.join(' → '));
+}
+function histReset(why) { H.t0 = performance.now(); H.lines = []; H.stops = null; H.where = ''; H.sig = histSig(); hist(why); }
+function histWatch() {
+  const sig = histSig();
+  if (H.sig) for (const k of Object.keys(sig)) if (sig[k] !== H.sig[k]) hist(k + ': ' + sig[k]);
+  H.sig = sig;
+  const w = $('where').textContent.trim();
+  if (w && w !== H.where) { H.where = w; histStop(w); }
+}
+setInterval(histWatch, 100);
+{
+  const acceptBefore = accept;
+  accept = function (n) { histWatch(); hist('PRESS switch ' + n + ' on: ' + ($('where').textContent.trim() || '(nothing)')); return acceptBefore.apply(this, arguments); };
+  const restartBefore = restart;
+  restart = function () { const r = restartBefore.apply(this, arguments); histReset('restart'); return r; };
+}
+$('panel').addEventListener('change', (e) => { const el = e.target; const lab = el.closest('label, .field'); hist('setting changed: ' + (lab ? lab.textContent.replace(/\s+/g, ' ').trim().slice(0, 80) : el.id) + ' → ' + (el.type === 'checkbox' ? (el.checked ? 'on' : 'off') : el.value)); });
+histReset('page opened');
 </script>
 </body>
 </html>
