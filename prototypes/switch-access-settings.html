@@ -515,8 +515,23 @@ function schedule() {
   if (cfg.method !== 'auto' || S.resting || S.held || stopped) return;
   S.timer = setTimeout(() => { advance(); schedule(); }, cfg.speed * 1000);
 }
+// Which stops the highlight goes round while it is inside an open section or the chosen
+// tab. With a "Leave" stop or the right button as the way out, the scan stays inside
+// until the user leaves (Ken, November 10 2026); with "After one pass" it carries on.
+const inOpenSection = (id) => openSec >= 0 && (id.startsWith(`ctl-${openSec}-`) || id === `leave-sec-${openSec}`);
+const inChosenTab = (id) => /^(head-|ctl-|leave-sec-|leave-tab$)/.test(id);
 function advance() {
   const L = topL(); if (!L || S.resting || !L.nodes.length) return;
+  if (S.stack.length === 1 && !overlay && exitMode() !== 'pass') {
+    const id = L.nodes[L.idx].id;
+    const scope = inOpenSection(id) ? inOpenSection : inChosenTab(id) ? inChosenTab : null;
+    if (scope) {
+      M.stops++; S.prevIdx = L.idx; S.prevLevel = L; S.lastMove = performance.now();
+      const next = L.idx + 1;
+      L.idx = next < L.nodes.length && scope(L.nodes[next].id) ? next : L.nodes.findIndex((n) => scope(n.id));
+      draw(); return;
+    }
+  }
   M.stops++; S.prevIdx = L.idx; S.prevLevel = L; S.lastMove = performance.now(); L.idx++;
   if (L.idx >= L.nodes.length) L.idx = 0;
   if (L.idx === Math.min(L.start || 0, L.nodes.length - 1)) {
