@@ -873,8 +873,9 @@ function stateLines() {
   if (A.alwaysPage) out.push('Express Panel page (More): ' + (A.alwaysPage + 1));
   if (A.lastSaid) out.push('Last thing said: "' + A.lastSaid + '"');
   out.push($('counts').textContent.trim());
-  const pane = $('pane').innerText.trim().split('\n').filter(Boolean).slice(-8);
-  if (pane.length) { out.push('Conversation so far (last lines):'); pane.forEach((l) => out.push('  ' + l)); }
+  const pane = $('pane').innerText.trim().split('\n').filter(Boolean);
+  out.push('Transcript (everything in the conversation pane):');
+  if (pane.length) pane.forEach((l) => out.push('  ' + l)); else out.push('  (empty)');
   return out;
 }
 let presetName = null;
