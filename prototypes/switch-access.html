@@ -108,6 +108,7 @@
   #log h2 { font-size: 16px; margin: 0 0 6px; }
   #log table { border-collapse: collapse; width: 100%; }
   #log td, #log th { border-bottom: 1px solid #e3e7eb; padding: 3px 6px; text-align: left; font-variant-numeric: tabular-nums; }
+  .pagever { font-size: 12px; color: var(--ink-muted); margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -151,6 +152,7 @@
     <h2>Examples</h2>
     <div id="presets"></div>
     <button id="copySettings" class="stop">Copy these settings</button>
+    <div id="pageVersion" class="pagever"></div>
 
     <h2>Settings</h2>
     <div class="field"><span>Switches</span>
@@ -927,13 +929,18 @@ function stateLines() {
 }
 let presetName = null;
 let presetEdited = false;
+// Which version of the page this is (Ken, November 10 2026), shown under "Copy these
+// settings" and in the copied report, so a page that wasn't reloaded can be spotted. The
+// publish script fills in the placeholder; opened from the computer, the file's own date
+// is used instead.
+function pageVersion() {
+  const PAGE_VERSION = '@@PROTO_VERSION@@';
+  return PAGE_VERSION.startsWith('@@') ? 'file last changed ' + document.lastModified : PAGE_VERSION;
+}
+document.getElementById('pageVersion').textContent = 'Version: ' + pageVersion();
 function settingsText() {
   const own = (el) => Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent).join(' ').replace(/\s+/g, ' ').trim();
-  // Which version of the page this is (Ken, November 10 2026), so a report from a page
-  // that wasn't reloaded can be spotted. The publish script fills in the placeholder;
-  // opened from the computer, the file's own date is used instead.
-  const PAGE_VERSION = '@@PROTO_VERSION@@';
-  const version = PAGE_VERSION.startsWith('@@') ? 'file last changed ' + document.lastModified : PAGE_VERSION;
+  const version = pageVersion();
   const lines = [document.title, 'Page version: ' + version, 'Copied: ' + new Date().toLocaleString()];
   lines.push('', 'Settings:');
   if (document.querySelector('#presets button')) lines.push('Example: ' + (presetName ? presetName + (presetEdited ? ' (then changed by hand)' : '') : 'none'));
