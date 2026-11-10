@@ -139,7 +139,7 @@
       <label><input type="radio" name="exit" value="pass"> After one pass with no press</label>
       <label><input type="radio" name="exit" value="leave"> A “Leave” stop at the end</label>
       <label><input type="radio" name="exit" value="switch2"> The right button (automatic and inverse scanning only)</label>
-      <p class="note">Applies to a tab, a section, a drop-down list and the keyboard.</p></div>
+      <p class="note">Applies to a tab, a section in grouped order, a drop-down list and the keyboard. In plain page order the highlight moves past an open section by itself.</p></div>
     <div class="field"><span>Stray and mistimed presses</span>
       <label>Act on <select id="actOn"><option value="press">press</option><option value="release">release</option></select></label>
       <label>Ignore presses shorter than <select id="minMs"><option value="0">0</option><option value="100">0.1 s</option><option value="250">0.25 s</option><option value="500">0.5 s</option></select></label>
@@ -261,7 +261,7 @@ function renderContent() {
     box.appendChild(h);
     const cs = document.createElement('div'); cs.className = 'controls';
     sec.controls.forEach((c, i) => cs.appendChild(renderControl(c, s, i)));
-    if (exitMode() === 'leave') { const l = document.createElement('div'); l.className = 'leave'; l.id = `leave-sec-${s}`; l.textContent = 'Leave this section'; cs.appendChild(l); }
+    if (cfg.order === 'grouped' && exitMode() === 'leave') { const l = document.createElement('div'); l.className = 'leave'; l.id = `leave-sec-${s}`; l.textContent = 'Leave this section'; cs.appendChild(l); }
     box.appendChild(cs); host.appendChild(box);
   });
   if (exitMode() === 'leave') { const l = document.createElement('div'); l.className = 'leave'; l.id = 'leave-tab'; l.textContent = 'Leave this tab'; host.appendChild(l); }
@@ -407,15 +407,13 @@ function tabNode(i) {
     kids: () => (cfg.order === 'plain' ? tabKidsPlain() : tabKidsGrouped()) };
 }
 // Plain page order inside a tab: each section heading, with the open section's
-// settings straight after it and a "Leave this section" stop at their end.
+// settings straight after it. An open section isn't a group here, so the highlight
+// moves past its last setting by itself and needs no "Leave this section" stop.
 function tabKidsPlain() {
   const nodes = [];
   TABS[tab].sections.forEach((_, s) => {
     nodes.push(headingNode(s, false));
-    if (s === openSec) {
-      nodes.push(...controlNodes(s));
-      if (exitMode() === 'leave') nodes.push({ id: `leave-sec-${s}`, label: 'Leave this section', act: () => leaveSectionPlain(s) });
-    }
+    if (s === openSec) nodes.push(...controlNodes(s));
   });
   if (exitMode() === 'leave') nodes.push(leaveTabNode());
   return nodes;
@@ -423,14 +421,6 @@ function tabKidsPlain() {
 // Grouped inside a tab: each section is one stop; a press enters it.
 function tabKidsGrouped() {
   return [...TABS[tab].sections.map((_, s) => headingNode(s, true)), ...(exitMode() === 'leave' ? [leaveTabNode()] : [])];
-}
-// Leaving an open section in plain order closes it and moves on to the next heading.
-function leaveSectionPlain(s) {
-  openSec = -1; renderContent();
-  const L = topL(); L.nodes = L.build(); L.passes = 0;
-  const next = L.nodes.findIndex((n) => n.id === 'head-' + (s + 1));
-  L.idx = next >= 0 ? next : Math.max(0, L.nodes.findIndex((n) => n.id === 'leave-tab'));
-  draw(); schedule(); return 'handled';
 }
 function headingNode(s, grouped) {
   const sec = TABS[tab].sections[s];
@@ -489,6 +479,8 @@ function advance() {
 }
 function popLevel() {
   const L = S.stack.pop(); const P = topL();
+  if (/^sec-/.test(L.fromId || '')) { openSec = -1; renderContent(); logLine('Left the section'); }
+  else if (/^tab-/.test(L.fromId || '')) logLine('Left the tab');
   rebuildKeepPlace(P);
   const i = P.nodes.findIndex((n) => n.id === L.fromId); if (i >= 0) P.idx = i;
   P.idx = (P.idx + 1) % P.nodes.length; M.stops++; S.prevLevel = null;
