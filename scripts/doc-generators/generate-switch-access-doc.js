@@ -262,7 +262,7 @@ const doc = new Document({
             bullet("When the AI fails. ", "If no options arrive within 15 seconds, or the request fails, the response options region holds only “New 4”, so the user can ask again."),
             h2("3.5 A Switch Access tab in Settings"),
             para("The settings would sit on a new Switch Access tab. The prototype in section 8 has a working version of each one, apart from tap-anywhere."),
-            bullet("Number of switches. ", "None, one or two. None turns switch access off. It comes first because it decides which other choices make sense: with one switch, step scanning and leaving a region with the second switch are grayed out and can’t be chosen. With one or two, every list in Settings puts “Move up”, “Move down” and “Delete” on each row, under the item. The scan then stays with an item after it moves. With none, they stay in the toolbar above the list."),
+            bullet("Number of switches. ", "None, one or two. None, the setting for direct select, turns switch access off and is where the app starts. It comes first because it decides which other choices make sense: with one switch, step scanning and leaving a region with the second switch are grayed out and can’t be chosen. With one or two, every list in Settings puts “Move up”, “Move down” and “Delete” on each row, under the item. The scan then stays with an item after it moves. With none, they stay in the toolbar above the list."),
             bullet("How it scans. ", "The scan method, and whether a tap anywhere on the screen counts as a press."),
             bullet("Speed. ", "The time per stop, and the reading time for new options."),
             bullet("Leaving a region. ", "After a pass with no press, a “Leave” stop, or a second switch."),
