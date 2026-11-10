@@ -67,6 +67,12 @@ const step = (ref, text) => new Paragraph({
 // A numbered source: the citation as plain text, then the link. The number is the one
 // the body quotes in square brackets, so the order of this list is the order of first
 // mention in the body and must not be re-sorted.
+// A finding in section 12: the numbered problem, then what would fix it, indented
+// under it so it reads as part of the same item.
+const fixp = (text) => new Paragraph({
+    spacing: { before: 0, after: 120 }, indent: { left: 720 },
+    children: [new TextRun({ text: "What would fix it: ", italics: true }), new TextRun(text)],
+});
 const source = (citation, url) => new Paragraph({
     numbering: { reference: "sources", level: 0 },
     spacing: { before: 0, after: 80 },
@@ -129,7 +135,7 @@ const doc = new Document({
             { reference: "bullets",
                 levels: [{ level: 0, format: LevelFormat.BULLET, text: "•", alignment: AlignmentType.LEFT,
                     style: { paragraph: { indent: { left: 720, hanging: 360 } } } }] },
-            numbered("regions"), numbered("checks"), numbered("build"), numbered("decisions"),
+            numbered("regions"), numbered("checks"), numbered("build"), numbered("decisions"), numbered("review"),
             { reference: "sources",
                 levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "[%1]", alignment: AlignmentType.LEFT,
                     style: { paragraph: { indent: { left: 720, hanging: 540 } } } }] },
@@ -341,6 +347,41 @@ const doc = new Document({
             source("Ghedira, S., Pino, P., and Bourhis, G. (2009). Conception and experimentation of a communication device with adaptive scanning. ACM Transactions on Accessible Computing, 1(3).", "https://doi.org/10.1145/1497302.1497304"),
             source("A11y Paradise. Review of Ghedira and colleagues (2009).", "https://a11y-paradise.onrender.com/reviews/69ce6148c233c928e86aa6f7"),
             source("Roark, B., Fried-Oken, M., and Gibbons, C. (2015). Huffman and linear scanning methods with statistical language models. Augmentative and Alternative Communication, 31(1), 37–50.", "https://doi.org/10.3109/07434618.2014.997890"),
+
+            h1("12. Problems Found in Review"),
+            para("On November 9, 2026, a separate review looked only for holes in this proposal, checking it against the app’s code and the prototype. Its findings are listed here, most serious first, and haven’t been acted on yet. The claims about the app were spot-checked against the code and hold up. The claims about published sources couldn’t be checked, because the journal pages were closed or wouldn’t load."),
+            num("review", "The scan reaches more than the conversation screen (serious). ", "The Settings button is in the Command Bar, which is region 4, so one press can open Settings, which isn’t scanned and has no scanned way out. The screens before Start, the red confirmation cards and the cover shown when Conversant is open twice aren’t covered either, so a switch-only user can’t get past Start. Speed and the on/off switch are in Settings, so a tired user can’t slow the scan or stop it. Treating a tap anywhere as a switch press also stops a supporter from using the screen normally."),
+            fixp("List every screen and box a switch user can reach and give each a scanned way in and out. Until Settings is scanned, keep it out of the scan, and give a supporter a way to touch the screen normally."),
+            num("review", "New options and AI waits can pull the user away (serious). ", "Section 7 holds a newer set only while the highlight is in the response options. In the prototype, options arriving while the user is in the Express Panel pull the highlight back to the options, and during each AI wait the highlight stops on the empty options region. With a talkative partner the user could keep losing their place, and couldn’t reach “Hold on” or “Ask them to repeat” while waiting. Nothing says what happens when the AI never answers."),
+            fixp("Say where the highlight goes when options arrive, are held or fail, wherever it is. Never pull it out of a region the user has entered, and never park it on an empty region."),
+            num("review", "Nothing covers a mis-press (serious). ", "The table assumes no missed presses, and the only safeguard is “One press or two”. A badly timed press is the usual failure of automatic scanning, and a wrong option is spoken and can’t be taken back. In the Command Bar, one late press can end the conversation or open Settings. A miss also costs a full extra pass, which no timing includes."),
+            fixp("Add a section on mistakes, with the cost of a miss in each region, which buttons need confirming under scanning, and times with a realistic miss rate."),
+            num("review", "The Express Panel isn’t laid out as the proposal says (moderate). ", "The bands run Always, Context, Flex, so the Flex band, where goals and Reframe buttons live, comes last and costs the most stops; section 4 puts the Context band last. The timings assume two rows of about six buttons, but every layout has at least 32 positions and the therapists’ set fills 26 Always positions. The Flex band ships with no rows, so goal buttons don’t show until the bands are resized. Switched-on buttons move to the front of their band, the partner’s choices cover the end of the Context band, and “More” changes what a band shows, so what sits in a position can change even though the positions don’t."),
+            fixp("Correct the band order, say which layout and band sizes the timings assume, add figures for the panel as shipped, and cover topics, the newest kind of Context button."),
+            num("review", "“No limit” holding phrases have costs (moderate). ", "“Wait longer each exchange” exists because a phrase on every turn sounded overbearing, and at a 10-second interval a 30-to-40-second switch turn plays three or four phrases in the user’s own voice. A phrase already playing always finishes, so the user’s chosen sentence can wait up to about 4.5 seconds. “The first one plays 2 seconds after the partner pauses” is true only on the first exchange with default settings."),
+            fixp("Present these settings as a trade-off, and consider a separate holding-phrase interval for switch users."),
+            num("review", "“Ask them to repeat” isn’t the same as the repair option (moderate). ", "The button keeps the partner’s earlier words as their own turn and treats what they say next as the repeat, while choosing a repair option counts as an ordinary reply. There’s no repair option when the partner offers choices, among openers, wrap-ups or goodbyes, or at a talk. When speech recognition garbled the partner’s words, the AI’s clarifying question is built on the garbled words."),
+            fixp("Drop “seldom needed”, or say what is lost, and keep the button easy to reach."),
+            num("review", "The scanner can’t simply press buttons like a finger (moderate). ", "The on-screen keyboard keys, the “Insert” buttons and accepting a word suggestion react to the start of a touch, not to a completed tap, and section 3.5 depends on the keyboard. A switch that sends Space or Enter would also type a space or press whatever button has the keyboard focus, so one press would do two things."),
+            fixp("Say that the scanner must act like a full touch and must keep switch keys away from text boxes and buttons, and test the composer early."),
+            num("review", "Choosing on release may block sound on an iPad (moderate). ", "Browsers let a page start sound or ask for permission only shortly after a press, and letting go may not count, especially after a long hold. Inverse scanning and “act on release” choose on letting go, and Start and the Sound buttons depend on that window. This hasn’t been checked on a device."),
+            fixp("Add it to the checks in section 8."),
+            num("review", "The case against the device’s own switch control is overstated (moderate). ", "iPad Switch Control and Android Switch Access follow the page’s structure and skip anything the page marks hidden, which Conversant controls. So they may be able to skip blanks and treat the regions as groups. This hasn’t been checked on a device, and it is the main argument in the first decision of section 10."),
+            fixp("Test what the device’s own switch control can be made to do before deciding."),
+            num("review", "Combining Reframe buttons is new (moderate). ", "Today a second Reframe replaces the first rather than adding to it. The prototype also uses only the last one, though its message line shows both."),
+            fixp("Mark combining as new, say how a combination is cleared, and make the prototype combine."),
+            num("review", "Some choices don’t fit together, and the prototype differs from section 3.2 (moderate). ", "Leaving a region with the second switch can’t work with step scanning, which already uses both switches. Under step scanning, “a full pass with no press” also means something different, because the highlight doesn’t move by itself. The prototype’s one-button-at-a-time example still treats each Express Panel row and the Command Bar as groups needing an extra press, though section 3.2 says one press per choice."),
+            fixp("List which ways of leaving work with which method, and make the prototype match section 3.2."),
+            num("review", "Talks break the listening assumption (moderate). ", "Automatic listening is off whenever a topic is switched on, so at a talk the user needs “Listen” for every question, and “Listen” is in the last region. At a talk all four options are answers, so there is no repair option. Automatic listening also needs one press of “Listen” each session."),
+            fixp("Cover question sessions explicitly, for example with a quicker way to the next question."),
+            num("review", "The headline times leave out the biggest costs (moderate). ", "The “about 3 seconds” for a response option leaves out reading, about 12 seconds for four full sentences (section 1.1), and missed presses. The “few typed words” row assumes the keyboard arranged by letter use, which isn’t built. With today’s best layout that row is about 66 stops, or 69 seconds at one second per stop, and with QWERTY about 82 stops, or 85 seconds."),
+            fixp("Include reading time in the comparison, and say which keyboard each typing row assumes."),
+            num("review", "Smaller arithmetic slips (minor). ", "By the table’s own counting, “In my own words” takes 2 stops whether or not options are showing. The first draft’s “9 stops” doesn’t follow from the stated layout, which gives about 11.5. The two sentence rows assume slightly different sentence lengths. The keyboard figures, 7.6 and 6.0 stops per letter, check out."),
+            fixp("Use one counting rule and one sentence length throughout."),
+            num("review", "Two settings aren’t covered (minor). ", "With “Suggestions per category” set to two, the user sees eight options, which roughly doubles the stops inside the options region. “One press or two” also covers “New 4” and the Command Bar, not only the response options."),
+            fixp("Recommend one suggestion per category for switch users, or count the eight-option case."),
+            num("review", "Some sources are weaker than the text suggests (minor). ", "The 30% figure rests on a review site [22], and the word prediction figures are secondhand [16]. Source [20] is a paper about humor in AAC, cited for a general claim. The advice to offer all three scan methods rests on six people in one 1992 study [9]."),
+            fixp("Cite the primary papers where possible, or soften the wording to “one small study suggests”."),
         ],
     }],
 });
