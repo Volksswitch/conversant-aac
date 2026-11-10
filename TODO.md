@@ -44,8 +44,9 @@ the one that quietly waits forever.
 
 ### Switch prototypes: looks to carry into the app
 - **Raised:** 2026-11-10 - Ken: changes to the look made in the switch prototypes become part of the app's UI, not only for switch scanning (rule in CLAUDE.md, switch access section).
-- **What is wanted, so far:** (1) the selected Settings tab gets the dark fill and white bold text (today it is a pale blue tint, `.settings-tab.active` in styles.css); (2) an open Settings section's heading gets the same dark fill (the `details[open] > summary` rules); (3) the current value of a drop-down list is shown with the same dark fill. Add to this list as the prototypes settle more.
-- **Two things to settle when building:** the dark fill needs a named color token with a value in all seven color schemes and contrast checks (UI Layout Rule 23 and `tests/theme.test.mjs`); and the app's drop-downs are the browser's own lists, whose open list cannot be restyled on every device (an iPad shows its own picker), so (3) may need the app's own list rather than a style change.
+- **What is wanted, so far:** (1) the selected Settings tab gets the dark fill and white bold text (today it is a pale blue tint, `.settings-tab.active` in styles.css); (2) an open Settings section's heading gets the same dark fill (the `details[open] > summary` rules). Add to this list as the prototypes settle more.
+- **Drop-down lists are already covered and need no change (Ken, 2026-11-10):** his concern was that opening a list leaves no reminder of the last choice, and each device's own list already marks the current value (check mark on iPad and Mac, filled dot on Android, highlight on Windows). Device differences are fine, since users rarely move between devices. The dark fill applies only where the app draws its own list, as switch scanning would.
+- **To settle when building:** the dark fill needs a named color token with a value in all seven color schemes and contrast checks (UI Layout Rule 23 and `tests/theme.test.mjs`).
 - **Why not now:** Ken asked for it to be noted. The switch prototypes are still changing, so carrying looks over one at a time would mean redoing them.
 
 ### Switch access: try the prototype with the therapists, then settle section 10
