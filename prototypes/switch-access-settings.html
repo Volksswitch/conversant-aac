@@ -219,7 +219,7 @@ const TASKS = [
 const KBD = [['Done', 'Delete', 'Cancel'], ['␣', 'e', 't', 'a', 'o', 'i', 'n'], ['s', 'h', 'r', 'd', 'l', 'u', 'c'], ['m', 'w', 'f', 'g', 'y', 'p', 'b'], ['v', 'k', 'j', 'x', 'q', 'z', '.', '?']];
 
 // ---------------------------------------------------------------- settings of the prototype itself
-const DEFAULTS = { method: 'auto', speed: 1, dropdown: 'list', exit: 'pass', rest: 2,
+const DEFAULTS = { method: 'auto', speed: 1, dropdown: 'list', exit: 'pass', rest: 0,
   actOn: 'press', minMs: 0, repeatMs: 250, forgiveMs: 0, twoPress: false, secondMs: 2000 };
 let cfg = { ...DEFAULTS };
 function readCfg() {
