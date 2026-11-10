@@ -149,8 +149,6 @@
       <label><input type="checkbox" id="twoPress"> Two presses to change a setting</label>
       <label>Time for the second press <select id="secondMs"><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option><option value="4000">4 s</option></select></label>
       <p class="note">The app ignores “One tap or two” inside Settings today. This tries applying it for switch users.</p></div>
-    <div class="field"><span>Passes with no press before resting</span>
-      <select id="rest"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="0">Never rest</option></select></div>
     <button id="restart">Start over</button>
     <p class="note">This shows six of the fourteen Settings tabs. The folder picker, like importing a file, opens a window the device draws, which a switch can’t operate, so it only shows a message here.</p>
   </div>
@@ -219,19 +217,19 @@ const TASKS = [
 const KBD = [['Done', 'Delete', 'Cancel'], ['␣', 'e', 't', 'a', 'o', 'i', 'n'], ['s', 'h', 'r', 'd', 'l', 'u', 'c'], ['m', 'w', 'f', 'g', 'y', 'p', 'b'], ['v', 'k', 'j', 'x', 'q', 'z', '.', '?']];
 
 // ---------------------------------------------------------------- settings of the prototype itself
-const DEFAULTS = { method: 'auto', speed: 1, dropdown: 'list', exit: 'pass', rest: 0,
+const DEFAULTS = { method: 'auto', speed: 1, dropdown: 'list', exit: 'pass',
   actOn: 'press', minMs: 0, repeatMs: 250, forgiveMs: 0, twoPress: false, secondMs: 2000 };
 let cfg = { ...DEFAULTS };
 function readCfg() {
   const radio = (n) => (document.querySelector(`input[name=${n}]:checked`) || {}).value;
   cfg.method = radio('method'); cfg.dropdown = radio('dropdown'); cfg.exit = radio('exit');
-  cfg.speed = Math.max(0.3, Number($('speed').value) || 1); cfg.rest = Number($('rest').value);
+  cfg.speed = Math.max(0.3, Number($('speed').value) || 1);
   cfg.actOn = $('actOn').value; cfg.minMs = Number($('minMs').value); cfg.repeatMs = Number($('repeatMs').value);
   cfg.forgiveMs = Number($('forgiveMs').value); cfg.twoPress = $('twoPress').checked; cfg.secondMs = Number($('secondMs').value);
 }
 function writeCfg() {
   for (const n of ['method', 'dropdown', 'exit']) { const el = document.querySelector(`input[name=${n}][value="${cfg[n]}"]`); if (el) el.checked = true; }
-  $('speed').value = cfg.speed; $('rest').value = String(cfg.rest);
+  $('speed').value = cfg.speed;
   $('actOn').value = cfg.actOn; $('minMs').value = String(cfg.minMs); $('repeatMs').value = String(cfg.repeatMs);
   $('forgiveMs').value = String(cfg.forgiveMs); $('twoPress').checked = cfg.twoPress; $('secondMs').value = String(cfg.secondMs);
 }
@@ -462,7 +460,6 @@ function advance() {
     L.idx = 0; L.passes++;
     if (S.stack.length > 1 && L.exitByPass) { popLevel(); return; }
     if (S.stack.length === 1 && L.key === 'overlay' && overlay && overlay.kind === 'list' && exitMode() === 'pass') { logLine('List closed with no choice'); closeOverlay(); return; }
-    if (S.stack.length === 1 && cfg.rest > 0 && L.passes >= cfg.rest && cfg.method === 'auto') { S.resting = true; L.idx = 0; draw(); clearTimeout(S.timer); return; }
   }
   draw();
 }

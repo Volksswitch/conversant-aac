@@ -165,8 +165,6 @@
       <label><input type="radio" name="exit" value="leave"> A “Leave” stop at the end</label>
       <label><input type="radio" name="exit" value="switch2"> The right button (second switch)</label>
       <p class="note">With step scanning the right button chooses, so “The right button” works as a “Leave” stop.</p></div>
-    <div class="field"><span>Passes with no press before resting</span>
-      <select id="rest"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="0">Never rest</option></select></div>
     <div class="field"><span>Stray presses</span>
       <label>Act on <select id="actOn"><option value="press">press</option><option value="release">release</option></select></label>
       <label>Ignore presses shorter than <select id="minMs"><option value="0">0</option><option value="100">0.1 s</option><option value="250">0.25 s</option><option value="500">0.5 s</option></select></label>
@@ -254,7 +252,7 @@ const KBD = [
 ];
 
 // ---------------------------------------------------------------- settings and examples
-const DEFAULTS = { pattern: 'regions', method: 'auto', speed: 1, reading: 4, exit: 'pass', rest: 0, actOn: 'press', minMs: 0, repeatMs: 300,
+const DEFAULTS = { pattern: 'regions', method: 'auto', speed: 1, reading: 4, exit: 'pass', actOn: 'press', minMs: 0, repeatMs: 300,
   forgiveMs: 0, twoPress: false, secondMs: 2000, size: 'small', situationFirst: false, moreFirst: 'last', newopts: 'hold', labels: 'full',
   autoPartner: true, chatty: false, aiWait: 3000, aiFails: false, cue: 'off', aloud: false };
 const PRESETS = [
@@ -274,7 +272,7 @@ function readSettings() {
   cfg.pattern = radio('pattern'); cfg.method = radio('method'); cfg.exit = radio('exit'); cfg.size = radio('size');
   cfg.newopts = radio('newopts'); cfg.labels = radio('labels');
   cfg.speed = Math.max(0.3, Number($('speed').value) || 1); cfg.reading = Math.max(0, Number($('reading').value) || 0);
-  cfg.rest = Number($('rest').value); cfg.actOn = $('actOn').value; cfg.minMs = Number($('minMs').value); cfg.repeatMs = Number($('repeatMs').value);
+  cfg.actOn = $('actOn').value; cfg.minMs = Number($('minMs').value); cfg.repeatMs = Number($('repeatMs').value);
   cfg.forgiveMs = Number($('forgiveMs').value);
   cfg.twoPress = $('twoPress').checked; cfg.secondMs = Number($('secondMs').value);
   cfg.situationFirst = $('situationFirst').checked; cfg.moreFirst = $('moreFirst').value;
@@ -284,7 +282,7 @@ function readSettings() {
 function writeSettings() {
   const setRadio = (n, v) => { const el = document.querySelector(`input[name=${n}][value="${v}"]`); if (el) el.checked = true; };
   ['pattern', 'method', 'exit', 'size', 'newopts', 'labels'].forEach((n) => setRadio(n, cfg[n]));
-  $('speed').value = cfg.speed; $('reading').value = cfg.reading; $('rest').value = String(cfg.rest);
+  $('speed').value = cfg.speed; $('reading').value = cfg.reading;
   $('actOn').value = cfg.actOn; $('minMs').value = String(cfg.minMs); $('repeatMs').value = String(cfg.repeatMs);
   $('forgiveMs').value = String(cfg.forgiveMs);
   $('twoPress').checked = cfg.twoPress; $('secondMs').value = String(cfg.secondMs);
@@ -574,7 +572,6 @@ function passComplete(L) {
   if (S.stack.length > 1 && L.exitByPass) { popLevel(true); return true; }
   if (S.stack.length === 1) {
     if (cfg.pattern === 'items' && pending) applyPending(false);
-    if (cfg.rest > 0 && L.passes >= cfg.rest && cfg.method === 'auto') { S.resting = true; L.idx = 0; draw(); clearTimeout(S.timer); return true; }
   }
   return false;
 }
