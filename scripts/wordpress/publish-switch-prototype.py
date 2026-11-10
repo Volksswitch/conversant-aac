@@ -53,6 +53,7 @@ def build(pg):
     intro = (f'<p>{pg["intro"]}</p>' + NL +
              f'<p>{html.escape(text)} <a href="{SITE}{slug}/">Open it</a>.</p>')
     frame = (f'<iframe title="{html.escape(pg["title"])}" '
+             'allow="clipboard-write" '
              f'style="width:100%;height:{pg["height"]}px;border:1px solid #b9c2ca;border-radius:6px;" '
              f'srcdoc="{html.escape(proto, quote=True)}"></iframe>')
     return '<!-- wp:html -->' + NL + intro + NL + frame + NL + '<!-- /wp:html -->'

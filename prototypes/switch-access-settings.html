@@ -120,6 +120,7 @@
     <button id="stopBtn" class="stop">Stop scanning</button>
     <h2>Examples</h2>
     <div id="presets"></div>
+    <button id="copySettings" class="stop">Copy these settings</button>
     <h2>Tasks</h2>
     <ul id="tasks"></ul>
     <p class="note">A task is checked when the setting reaches its target. The cost is counted from the previous task you finished.</p>
@@ -581,6 +582,48 @@ function setStopped(v) {
 }
 $('stopBtn').addEventListener('click', () => setStopped(!stopped));
 applyPreset(PRESETS[0][0], PRESETS[0][1]); $('screen').focus();
+
+// ---------------------------------------------------------------- copy the settings
+// Ken, November 10 2026: copy the current settings so they can be pasted into a
+// conversation about a particular behavior. Read from the panel itself, so a setting
+// added later is included without anyone remembering to add it here.
+let presetName = null;
+let presetEdited = false;
+function settingsText() {
+  const own = (el) => Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent).join(' ').replace(/\s+/g, ' ').trim();
+  const lines = [document.title, new Date().toLocaleString()];
+  lines.push('Example: ' + (presetName ? presetName + (presetEdited ? ' (then changed by hand)' : '') : 'none'));
+  document.querySelectorAll('#panel .field').forEach((f) => {
+    const head = f.querySelector(':scope > span');
+    const parts = [];
+    f.querySelectorAll('input[type=radio]:checked').forEach((r) => parts.push(own(r.parentElement)));
+    f.querySelectorAll('input[type=checkbox]').forEach((c) => parts.push(own(c.parentElement) + ': ' + (c.checked ? 'on' : 'off')));
+    f.querySelectorAll('select').forEach((s) => { const lab = s.closest('label'); parts.push((lab ? own(lab) + ' ' : '') + s.options[s.selectedIndex].text); });
+    f.querySelectorAll('input[type=number]').forEach((n) => parts.push(n.value));
+    lines.push((head ? head.textContent.trim() + ': ' : '') + parts.join('; '));
+  });
+  lines.push('As data: ' + JSON.stringify(cfg));
+  return lines.join('\n');
+}
+async function copySettings() {
+  const text = settingsText();
+  const btn = document.getElementById('copySettings');
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch (e) { /* try the older way */ }
+  if (!ok) {
+    const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    ta.remove();
+  }
+  if (!ok) { window.prompt('Copy these settings:', text); return; }
+  btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy these settings'; }, 2000);
+  document.getElementById('screen').focus();
+}
+document.getElementById('copySettings').addEventListener('click', copySettings);
+document.querySelectorAll('#presets button').forEach((b) => b.addEventListener('click', () => { presetName = b.textContent; presetEdited = false; }));
+$('panel').addEventListener('change', () => { presetEdited = true; });
+presetName = (document.querySelector('#presets button.on') || {}).textContent || null;
 </script>
 </body>
 </html>
