@@ -4431,7 +4431,7 @@ The proposal is `Documents/Conversant AAC Switch Access Proposal.docx`; the prot
 - **"Topic" is a reserved word in the app** (the Context-band kind for question sessions), so the proposal's buttons holding a saved word are **Reframe buttons**: a saved Reframe, one turn only, Flex band.
 - **How-to-reply buttons ("Keep it short", "Say no") are GOALS**, not a new kind (Ken). The cost, stated once: a goal stays on until switched off.
 - **Dropped:** offering to keep a typed sentence as a button (Ken: low need), and a panel button that presses a Command Bar button.
-- **Prototype inputs (Ken):** left mouse button = switch 1 (one-switch setups), left and right = two switches.
+- **Prototype inputs (Ken):** left mouse button = switch 1 (one-switch setups), left and right = two switches, pressed anywhere on the page except the settings panel.
 - **The prototype is on the website** as a page (`scripts/wordpress/publish-switch-prototype.py --apply` updates it). ⚠ Not as an uploaded file: the site strips every script from an uploaded .html, so it loads and does nothing. The page holds it in an iframe so the theme's styles and the prototype's don't mix.
 - **Every "one study" in a document names the study and cites a numbered source** (Ken's rule for this document; apply it to any document that cites research).
 
