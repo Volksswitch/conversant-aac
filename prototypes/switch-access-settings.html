@@ -436,6 +436,7 @@ function draw() {
   const path = S.stack.slice(1).map((L, i) => S.stack[i].nodes[S.stack[i].idx].label);
   $('where').textContent = S.resting ? 'Resting. Press to start the scan again.'
     : S.held ? 'Press again to confirm: ' + n.label : (path.length ? path.join(' › ') + ' › ' : '') + n.label;
+  if (stopped) $('where').textContent = 'Scanning stopped. Press “Start scanning” on the right.';
 }
 // Keep the highlight visible by scrolling only the box it sits in. Scrolling the page
 // itself (as scrollIntoView does, and on the website the page around the frame too)
@@ -575,13 +576,15 @@ $('restart').addEventListener('click', () => { restart(); $('screen').focus(); }
 // Stop the scan so the panel on the right can be used in peace; start it again here.
 function setStopped(v) {
   stopped = v; clearTimeout(S.timer); clearInterval(inverseTimer);
-  $('stopBtn').textContent = v ? 'Start scanning again' : 'Stop scanning';
+  $('stopBtn').textContent = v ? 'Start scanning' : 'Stop scanning';
   $('stopBtn').classList.toggle('stopped', v);
-  $('where').textContent = v ? 'Scanning stopped. Press “Start scanning again” on the right.' : '';
+  $('where').textContent = v ? 'Scanning stopped. Press “Start scanning” on the right.' : '';
   if (!v) { draw(); schedule(); }
 }
 $('stopBtn').addEventListener('click', () => setStopped(!stopped));
 applyPreset(PRESETS[0][0], PRESETS[0][1]); $('screen').focus();
+// The page opens stopped (Ken, November 10 2026); "Start scanning" begins.
+setStopped(true);
 
 // ---------------------------------------------------------------- copy the settings
 // Ken, November 10 2026: copy the current settings so they can be pasted into a
@@ -680,12 +683,12 @@ function histWatch() {
   if (H.sig) for (const k of Object.keys(sig)) if (sig[k] !== H.sig[k]) hist(k + ': ' + sig[k]);
   H.sig = sig;
   const w = $('where').textContent.trim();
-  if (w && w !== H.where) { H.where = w; histStop(w); }
+  if (w && w !== H.where) { H.where = w; if (!stopped) histStop(w); }
 }
 setInterval(histWatch, 100);
 {
   const acceptBefore = accept;
-  accept = function (n) { histWatch(); hist('PRESS switch ' + n + ' on: ' + ($('where').textContent.trim() || '(nothing)')); return acceptBefore.apply(this, arguments); };
+  accept = function (n) { if (stopped) return acceptBefore.apply(this, arguments); histWatch(); hist('PRESS switch ' + n + ' on: ' + ($('where').textContent.trim() || '(nothing)')); return acceptBefore.apply(this, arguments); };
   const restartBefore = restart;
   restart = function () { const r = restartBefore.apply(this, arguments); histReset('restart'); return r; };
 }

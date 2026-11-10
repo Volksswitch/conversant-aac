@@ -100,6 +100,8 @@
   #panel button { font-size: 14px; padding: 6px 8px; margin: 2px 0; width: 100%; text-align: left; cursor: pointer;
                   border: 1px solid var(--edge); border-radius: 5px; background: #f7f9fb; }
   #panel button.on { background: var(--on); color: #fff; }
+  #panel button.stop { font-weight: bold; text-align: center; padding: 10px; margin-bottom: 6px; }
+  #panel button.stop.stopped { background: #2e7d32; color: #fff; }
   .note { font-size: 12px; color: var(--ink-muted); }
   #log { margin: 0 16px 20px; background: var(--surface); border: 1px solid var(--edge-faint); border-radius: 8px; padding: 8px 12px; font-size: 14px; }
   #log h2 { font-size: 16px; margin: 0 0 6px; }
@@ -143,6 +145,7 @@
   </div>
 
   <div id="panel">
+    <button id="stopBtn" class="stop">Stop scanning</button>
     <h2>Examples</h2>
     <div id="presets"></div>
     <button id="copySettings" class="stop">Copy these settings</button>
@@ -303,6 +306,7 @@ const A = {
   turn: -1, variant: 0, options: [], waitingAI: false, failed: false, reframes: [], goals: new Set(),
   partner: null, place: null, feeling: null, alwaysPage: 0, mode: 'conv', typed: '', lastSaid: '',
 };
+let stopped = false;   // the panel's Stop scanning button; the page opens stopped
 let pending = null;            // a newer set held back while the user is in the options
 let aiTimer = null, partnerTimer = null;
 
@@ -533,7 +537,7 @@ function draw() {
   let where = (path.length ? path.join(' › ') + ' › ' : '') + n.label;
   if (S.resting) where = 'Resting. Press to start the scan again.';
   if (S.held) where = (S.held.confirm ? 'Press again to confirm: ' : 'Press again: ') + n.label;
-  $('where').textContent = where;
+  $('where').textContent = stopped ? 'Scanning stopped. Press “Start scanning” on the right.' : where;
 }
 function updateCounts() {
   $('counts').textContent = `Stops ${M.stops} · Presses ${M.presses} · ${((performance.now() - M.t0) / 1000).toFixed(1)} s`;
@@ -543,13 +547,13 @@ function resetMeter() { M.t0 = performance.now(); M.stops = 0; M.presses = 0; up
 
 function schedule() {
   clearTimeout(S.timer);
-  if (cfg.method !== 'auto' || S.resting || S.held || S.paused) return;
+  if (cfg.method !== 'auto' || S.resting || S.held || S.paused || stopped) return;
   const ms = (S.reading ? cfg.reading : cfg.speed) * 1000;
   S.reading = false;
   S.timer = setTimeout(() => { advance(); schedule(); }, ms);
 }
 function advance() {
-  const L = topL(); if (!L || S.resting || S.paused) return;
+  const L = topL(); if (!L || S.resting || S.paused || stopped) return;
   M.stops++;
   const prev = L.idx;
   L.idx++;
@@ -660,6 +664,7 @@ function pauseScan() {
 const sw = { 1: { down: false, t: 0, minTimer: null, pauseTimer: null }, 2: { down: false, t: 0, minTimer: null, pauseTimer: null } };
 let lastAccept = -1e9, inverseTimer = null;
 function rawDown(n) {
+  if (stopped) return;
   const s = sw[n]; if (s.down) return; s.down = true; s.t = performance.now();
   if (S.paused) {   // only a 2-second hold starts the scan again
     s.pauseTimer = setTimeout(() => { if (s.down && S.paused) { paneLine('n', 'Scanning started again.'); resetScan(); } }, 2000);
@@ -678,7 +683,7 @@ function rawUp(n) {
   if (cfg.actOn === 'release' && performance.now() - s.t >= cfg.minMs) accept(n);
 }
 function accept(n) {
-  if (S.paused) return;
+  if (S.paused || stopped) return;
   const now = performance.now();
   if (now - lastAccept < cfg.repeatMs) return;
   lastAccept = now; S.pressed = true;
@@ -851,6 +856,16 @@ function restart() {
 }
 applyPreset(PRESETS[0][0], PRESETS[0][1]);
 screenEl.focus();
+// Stop the scan so the panel on the right can be used in peace; start it again here.
+// The page opens stopped (Ken, November 10 2026); "Start scanning" begins.
+function setStopped(v) {
+  stopped = v; clearTimeout(S.timer); clearInterval(inverseTimer);
+  $('stopBtn').textContent = v ? 'Start scanning' : 'Stop scanning';
+  $('stopBtn').classList.toggle('stopped', v);
+  draw(); if (!v) { schedule(); screenEl.focus(); }
+}
+$('stopBtn').addEventListener('click', () => setStopped(!stopped));
+setStopped(true);
 
 // ---------------------------------------------------------------- copy the settings
 // Ken, November 10 2026: copy the current settings so they can be pasted into a
@@ -861,7 +876,7 @@ function stateLines() {
   const out = [];
   const name = (x) => (x == null ? 'none' : typeof x === 'object' ? (x.label || x.name || JSON.stringify(x)) : String(x));
   out.push('Highlight: ' + ($('where').textContent.trim() || '(none)'));
-  out.push('Scanning: ' + (S.paused ? 'paused' : S.resting ? 'resting' : S.reading ? 'reading time for new options' : 'running'));
+  out.push('Scanning: ' + (stopped ? 'stopped' : S.paused ? 'paused' : S.resting ? 'resting' : S.reading ? 'reading time for new options' : 'running'));
   out.push('Screen: ' + (A.mode === 'kbd' ? 'keyboard (In my own words)' : 'conversation'));
   if (A.mode === 'kbd') out.push('Typed so far: "' + A.typed + '"');
   out.push('Partner turn: ' + (A.turn + 1) + (A.variant ? ', newer version ' + A.variant : ''));
@@ -921,7 +936,7 @@ $('panel').addEventListener('change', () => { presetEdited = true; });
 presetName = (document.querySelector('#presets button.on') || {}).textContent || null;
 
 function histSig() {
-  return { screen: A.mode === 'kbd' ? 'keyboard' : 'conversation', scan: S.paused ? 'paused' : S.resting ? 'resting' : S.reading ? 'reading time' : 'running',
+  return { screen: A.mode === 'kbd' ? 'keyboard' : 'conversation', scan: stopped ? 'stopped' : S.paused ? 'paused' : S.resting ? 'resting' : S.reading ? 'reading time' : 'running',
     'partner turn': String(A.turn + 1) + (A.variant ? '.' + A.variant : ''),
     options: A.waitingAI ? 'waiting for the AI' : A.failed ? 'the AI failed' : A.options.length ? A.options.map((o) => '"' + o[0] + '"').join(' | ') : 'none',
     'newer set held back': pending ? 'yes' : 'no', partner: String(A.partner), place: String(A.place), feeling: String(A.feeling),
@@ -953,12 +968,12 @@ function histWatch() {
   if (H.sig) for (const k of Object.keys(sig)) if (sig[k] !== H.sig[k]) hist(k + ': ' + sig[k]);
   H.sig = sig;
   const w = $('where').textContent.trim();
-  if (w && w !== H.where) { H.where = w; histStop(w); }
+  if (w && w !== H.where) { H.where = w; if (!stopped) histStop(w); }
 }
 setInterval(histWatch, 100);
 {
   const acceptBefore = accept;
-  accept = function (n) { histWatch(); hist('PRESS switch ' + n + ' on: ' + ($('where').textContent.trim() || '(nothing)')); return acceptBefore.apply(this, arguments); };
+  accept = function (n) { if (stopped) return acceptBefore.apply(this, arguments); histWatch(); hist('PRESS switch ' + n + ' on: ' + ($('where').textContent.trim() || '(nothing)')); return acceptBefore.apply(this, arguments); };
   const restartBefore = restart;
   restart = function () { const r = restartBefore.apply(this, arguments); histReset('restart'); return r; };
 }
