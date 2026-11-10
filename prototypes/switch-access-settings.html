@@ -467,7 +467,9 @@ function advance() {
 }
 function popLevel() {
   const L = S.stack.pop(); const P = topL();
-  if (/^sec-/.test(L.fromId || '')) { openSec = -1; renderContent(); logLine('Left the section'); }
+  // The section stays open after the highlight leaves it (Ken, November 10 2026); it
+  // closes only when another section is entered or another tab is chosen.
+  if (/^sec-/.test(L.fromId || '')) logLine('Left the section');
   else if (/^tab-/.test(L.fromId || '')) logLine('Left the tab');
   rebuildKeepPlace(P);
   const i = P.nodes.findIndex((n) => n.id === L.fromId); if (i >= 0) P.idx = i;
