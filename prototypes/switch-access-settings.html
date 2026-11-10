@@ -149,7 +149,7 @@
       <label>Act on <select id="actOn"><option value="press">press</option><option value="release">release</option></select></label>
       <label>Ignore presses shorter than <select id="minMs"><option value="0">0</option><option value="100">0.1 s</option><option value="250">0.25 s</option><option value="500">0.5 s</option></select></label>
       <label>Ignore repeats within <select id="repeatMs"><option value="0">0</option><option value="300">0.3 s</option><option value="600">0.6 s</option><option value="1000">1 s</option></select></label>
-      <label>Count a late press for the stop before, within <select id="forgiveMs"><option value="0">off</option><option value="200">0.2 s</option><option value="300">0.3 s</option><option value="500">0.5 s</option></select></label></div>
+      <label>Act on the previous stop if pressed within <select id="forgiveMs"><option value="0">off</option><option value="200">0.2 s</option><option value="300">0.3 s</option><option value="500">0.5 s</option></select> after the highlight moves</label></div>
     <div class="field"><span>One press or two</span>
       <label><input type="checkbox" id="twoPress"> Two presses to change a setting</label>
       <label>Time for the second press <select id="secondMs"><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option><option value="4000">4 s</option></select></label>
@@ -660,7 +660,8 @@ function settingsText() {
     const parts = [];
     f.querySelectorAll('input[type=radio]:checked').forEach((r) => parts.push(own(r.parentElement)));
     f.querySelectorAll('input[type=checkbox]').forEach((c) => parts.push(own(c.parentElement) + ': ' + (c.checked ? 'on' : 'off')));
-    f.querySelectorAll('select').forEach((s) => { const lab = s.closest('label'); parts.push((lab ? own(lab) + ' ' : '') + s.options[s.selectedIndex].text); });
+    // A select inside a label is read in place, so "within 0.3 s after the highlight moves" stays in order.
+    f.querySelectorAll('select').forEach((s) => { const lab = s.closest('label'); parts.push(lab ? Array.from(lab.childNodes).map((n) => (n.nodeType === 3 ? n.textContent : n.tagName === 'SELECT' ? n.options[n.selectedIndex].text : '')).join(' ').replace(/\s+/g, ' ').trim() : s.options[s.selectedIndex].text); });
     f.querySelectorAll('input[type=number]').forEach((n) => parts.push(n.value));
     lines.push((head ? head.textContent.trim() + ': ' : '') + parts.join('; '));
   });
