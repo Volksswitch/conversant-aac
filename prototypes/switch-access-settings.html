@@ -144,7 +144,7 @@
       <label><input type="radio" name="exit" value="pass"> After one pass with no press</label>
       <label><input type="radio" name="exit" value="leave"> A “Leave” stop at the end</label>
       <label><input type="radio" name="exit" value="switch2"> The right button (automatic and inverse scanning only)</label>
-      <p class="note">Applies to a drop-down list and the keyboard.</p></div>
+      <p class="note">Applies to an open section, the chosen tab, a drop-down list and the keyboard.</p></div>
     <div class="field"><span>Stray and mistimed presses</span>
       <label>Act on <select id="actOn"><option value="press">press</option><option value="release">release</option></select></label>
       <label>Ignore presses held for less than <select id="minMs"><option value="0">off</option><option value="100">0.1 s</option><option value="250">0.25 s</option><option value="500">0.5 s</option></select></label>
@@ -290,8 +290,10 @@ function renderContent() {
     box.appendChild(h);
     const cs = document.createElement('div'); cs.className = 'controls';
     sec.controls.forEach((c, i) => cs.appendChild(renderControl(c, s, i)));
+    if (exitMode() === 'leave') { const l = document.createElement('div'); l.className = 'leave'; l.id = `leave-sec-${s}`; l.textContent = 'Leave this section'; cs.appendChild(l); }
     box.appendChild(cs); host.appendChild(box);
   });
+  if (exitMode() === 'leave') { const l = document.createElement('div'); l.className = 'leave'; l.id = 'leave-tab'; l.textContent = 'Leave this tab'; host.appendChild(l); }
 }
 function renderControl(c, s, i) {
   const row = document.createElement('div'); row.className = 'ctl';
@@ -441,7 +443,31 @@ function tabNode(i) {
 // take its heading's place in the same cycle (Ken, November 10 2026, the same rule as a
 // chosen tab), so there is no section to enter or leave. Pressing a heading opens that
 // section, closes the one that was open, and moves the highlight to its first setting.
-function tabKids() { return TABS[tab].sections.flatMap((_, s) => (s === openSec ? controlNodes(s) : [headingNode(s)])); }
+// With "A Leave stop at the end" (Ken, November 10 2026): an open section's settings end
+// with "Leave this section", which closes it and moves the highlight to the next
+// heading; the chosen tab's sections end with "Leave this tab", which moves the
+// highlight to the next tab and leaves the tab's sections where they are. With "The
+// right button", that button does the same from wherever the highlight is.
+function tabKids() {
+  const leave = exitMode() === 'leave';
+  return [...TABS[tab].sections.flatMap((_, s) => (s === openSec
+    ? [...controlNodes(s), ...(leave ? [{ id: `leave-sec-${s}`, label: 'Leave this section', act: () => leaveSection(s) }] : [])]
+    : [headingNode(s)])),
+    ...(leave ? [{ id: 'leave-tab', label: 'Leave this tab', act: () => leaveTab() }] : [])];
+}
+function leaveSection(s) {
+  openSec = -1; renderContent(); logLine('Left the section');
+  const L = topL(); L.nodes = L.build(); L.passes = 0;
+  const i = L.nodes.findIndex((n) => n.id === 'head-' + s); L.idx = (i + 1) % L.nodes.length;
+  draw(); schedule(); return 'handled';
+}
+function leaveTab() {
+  logLine('Left the tab');
+  const L = topL(); L.passes = 0;
+  const next = L.nodes.findIndex((n) => n.id === 'tab-' + (tab + 1));
+  L.idx = next >= 0 ? next : L.nodes.findIndex((n) => n.id === 'close');
+  draw(); schedule(); return 'handled';
+}
 function headingNode(s) {
   const sec = TABS[tab].sections[s];
   return { id: 'head-' + s, label: 'Section: ' + sec.title,
@@ -547,7 +573,14 @@ function runNode(n) {
 }
 function leaveGroup() {
   if (S.stack.length > 1) { while (S.stack.length > 2) S.stack.pop(); popLevel(); schedule(); return; }
-  if (overlay && overlay.kind === 'list') { logLine('List closed with no choice'); closeOverlay(); }
+  if (overlay && overlay.kind === 'list') { logLine('List closed with no choice'); closeOverlay(); return; }
+  if (overlay) return;
+  // The right button: inside an open section it leaves the section; on the chosen
+  // tab's section headings it leaves the tab.
+  const id = (cur() || {}).id || '';
+  const m = id.match(/^ctl-(\d+)-/);
+  if (m && Number(m[1]) === openSec) { leaveSection(openSec); return; }
+  if (/^head-/.test(id) && tab >= 0) leaveTab();
 }
 
 // ---------------------------------------------------------------- switches
