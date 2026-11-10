@@ -44,8 +44,11 @@
   #screen:focus { outline: 3px dashed var(--edge); outline-offset: 3px; }
   .status { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--ink-muted); margin-bottom: 6px; min-height: 18px; }
   .status b { color: var(--ink); }
-  #pane { height: 96px; overflow-y: auto; border: 1px solid var(--edge-faint); border-radius: 6px; padding: 6px 8px; font-size: 14px; margin-bottom: 8px; }
-  #pane .p { color: #37474f; } #pane .u { color: #0d47a1; text-align: right; } #pane .n { color: var(--ink-muted); font-style: italic; font-size: 12px; }
+  #pane { height: 140px; overflow-y: auto; border: 1px solid var(--edge-faint); border-radius: 6px; padding: 6px 8px; font-size: 15px; margin-bottom: 8px; }
+  #pane .p { color: #37474f; margin: 3px 0; }
+  #pane .u { color: #0d2f6b; font-weight: bold; background: #dbeafe; border-radius: 8px; padding: 3px 8px; margin: 3px 0 3px 20%; text-align: right; }
+  #pane .n { color: var(--ink-muted); font-style: italic; font-size: 13px; text-align: center; margin: 2px 0; }
+  .chosen { animation: chosen .8s; } @keyframes chosen { 0%, 60% { background: #a5d6a7; box-shadow: 0 0 0 6px #2e7d32; } }
 
   .region { position: relative; border: 2px solid transparent; border-radius: 8px; padding: 12px 6px 6px; margin-bottom: 10px; }
   .region .tag { position: absolute; top: -9px; left: 10px; background: var(--surface); padding: 0 4px; font-size: 11px; color: var(--ink-muted); }
@@ -414,12 +417,12 @@ function optionNodes() {
   return A.options.map((o, i) => ({ id: 'opt' + i, label: cfg.labels === 'short' ? o[1] : o[0], speaks: true, act: () => sayOption(i) }));
 }
 const optionsShowing = () => (A.options.length > 0 && !A.waitingAI) || A.failed;
-const new4Node = () => ({ id: 'new4', label: 'New 4', act: () => { A.variant++; requestOptions('New 4'); return 'handled'; } });
+const new4Node = () => ({ id: 'new4', label: 'New 4', act: () => { paneLine('n', 'New 4: asking for different options'); A.variant++; requestOptions('New 4'); return 'handled'; } });
 function cellNode(row, r, c) {
   const cell = row.cells[c];
   const id = `c${r}_${c}`;
   if (cell.kind === 'phrase') return { id, label: cell.label, speaks: true, act: () => speakUser(cell.label, 'Express Panel') };
-  if (cell.kind === 'more') return { id, label: cell.label, act: () => { A.alwaysPage++; renderPanel(); return 'stay'; } };
+  if (cell.kind === 'more') return { id, label: cell.label, act: () => { A.alwaysPage++; renderPanel(); paneLine('n', cell.label === 'Close' ? 'Back to the first page' : 'More: the next page'); return 'row'; } };
   // Reframe buttons add together within a turn; pressing one again takes it out.
   if (cell.kind === 'rf') return { id, label: cell.label, act: () => {
     const i = A.reframes.indexOf(cell.label);
@@ -427,10 +430,11 @@ function cellNode(row, r, c) {
     paneLine('n', A.reframes.length ? `Reframe: ${A.reframes.join(' + ')}` : 'Reframe cleared');
     renderPanel(); requestOptions('Reframe'); return 'stay'; } };
   if (cell.kind === 'goal') return { id, label: cell.label, act: () => {
-    if (A.goals.has(cell.label)) { A.goals.delete(cell.label); renderPanel(); return 'stay'; }
+    if (A.goals.has(cell.label)) { A.goals.delete(cell.label); renderPanel(); paneLine('n', `Goal off: ${cell.label}`); return 'stay'; }
     A.goals.add(cell.label); paneLine('n', `Goal on: ${cell.label}`); renderPanel(); requestOptions('Goal'); return 'stay'; } };
   if (['partner', 'place', 'feeling'].includes(cell.kind)) return { id, label: cell.label, act: () => {
-    A[cell.kind] = A[cell.kind] === cell.label ? null : cell.label; renderPanel(); return 'stay'; } };
+    A[cell.kind] = A[cell.kind] === cell.label ? null : cell.label; renderPanel();
+    paneLine('n', `${KIND_TAG[cell.kind]}: ${A[cell.kind] ? cell.label : 'cleared'}`); return 'stay'; } };
   return null;
 }
 function rowButtons(r) {
@@ -449,7 +453,7 @@ const ROW_LABEL = { always: 'Always row', context: 'Who, where, feeling', flex: 
 function panelRowNodes() {
   return rowOrder().map(({ r, band }) => ({ id: 'row' + r, label: ROW_LABEL[band], group: true, exitByPass: true, kids: () => rowButtons(r) }));
 }
-const imowNode = () => ({ id: 'imow', label: 'In my own words', act: () => { openKeyboard(); return 'handled'; } });
+const imowNode = () => ({ id: 'imow', label: 'In my own words', act: () => { paneLine('n', 'Opened “In my own words”'); openKeyboard(); return 'handled'; } });
 function commandNodes() {
   return [...CMD_SCAN.map((t) => ({ id: 'cmd' + COMMANDS.indexOf(t), label: t, cmd: true,
             speaks: ['Repeat', 'Hold on', 'Ask to repeat'].includes(t), confirm: CONFIRM.includes(t), act: () => command(t) })),
@@ -592,6 +596,7 @@ function choose() {
   if (n.group) {
     const lvl = mkLevel(n.kids, n.key || 'group', n.exitByPass); lvl.fromId = n.id;
     if (!lvl.nodes.length) return;
+    markChosen(n);
     S.stack.push(lvl); S.prevLevel = null; draw(); cueAloud(cur().label); schedule(); return;
   }
   // "End" and "Don't save" always ask for a second press under scanning. With two
@@ -603,14 +608,27 @@ function choose() {
   }
   run(n);
 }
+// A brief green flash on whatever was chosen, so every press that did something shows.
+function markChosen(n) {
+  const el = $(n.regionId || n.id) || $(n.id); if (!el) return;
+  el.classList.remove('chosen'); void el.offsetWidth; el.classList.add('chosen');
+  setTimeout(() => el.classList.remove('chosen'), 900);
+}
 function run(n) {
+  markChosen(n);
   const r = n.act ? n.act() : null;
   if (r === 'handled') return;                 // the action set the scan itself
-  afterAction();
+  afterAction(r);
 }
 // After a choice the highlight stays in its region (regions) or goes back to the
 // start (one at a time). In a row, it goes back to the rows of that region.
-function afterAction() {
+function afterAction(r) {
+  // After More, stay in the row on its new page, starting at its first phrase.
+  if (r === 'row' && S.stack.length > 2) {
+    const L = topL(); L.nodes = L.build(); L.passes = 0;
+    const first = L.nodes.findIndex((n) => !/^(More|Close)$/.test(n.label)); L.idx = first < 0 ? 0 : first;
+    draw(); schedule(); return;
+  }
   if (A.mode === 'kbd') {
     if (S.stack.length > 1) { S.stack.pop(); topL().idx = 0; }
     draw(); schedule(); return;
@@ -752,7 +770,7 @@ function nextTurn() {
 function userSpoke(text, how) {
   const secs = ((performance.now() - M.t0) / 1000).toFixed(1);
   A.lastSaid = text;
-  paneLine('u', text); sayAloud(text);
+  paneLine('u', 'You: ' + text); sayAloud(text);
   const tr = document.createElement('tr');
   [text, M.stops, M.presses, secs, `${setupLabel()} (${how})`].forEach((v) => { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
   $('logBody').prepend(tr);
@@ -773,15 +791,15 @@ function endTurn() {
   if (cfg.autoPartner) partnerTimer = setTimeout(nextTurn, 2500);
 }
 function command(t) {
-  if (t === 'Repeat') { if (A.lastSaid) { paneLine('u', A.lastSaid); sayAloud(A.lastSaid); } return 'stay'; }
-  if (t === 'Hold on') { paneLine('u', 'Hold on, I’m thinking.'); sayAloud('Hold on, I’m thinking.'); return 'stay'; }
+  if (t === 'Repeat') { if (A.lastSaid) { paneLine('u', 'You: ' + A.lastSaid); sayAloud(A.lastSaid); } return 'stay'; }
+  if (t === 'Hold on') { paneLine('u', 'You: Hold on, I’m thinking.'); sayAloud('Hold on, I’m thinking.'); return 'stay'; }
   if (t === 'Ask to repeat') { userSpoke('Sorry, could you say that again?', 'Command Bar'); return 'stay'; }
   paneLine('n', `“${t}” pressed. (Not part of this prototype.)`); return 'stay';
 }
 function openKeyboard() { A.mode = 'kbd'; A.typed = ''; renderAll(); resetScan(); }
 function closeKeyboard() { A.mode = 'conv'; renderAll(); resetScan(); }
 function key(k) {
-  if (k === 'Cancel') { closeKeyboard(); return 'handled'; }
+  if (k === 'Cancel') { paneLine('n', 'Closed “In my own words”'); closeKeyboard(); return 'handled'; }
   if (k === 'Delete') { A.typed = A.typed.slice(0, -1); $('compose').textContent = A.typed; return 'stay'; }
   if (k === 'Speak') {
     const t = A.typed.trim(); A.mode = 'conv'; renderAll();
