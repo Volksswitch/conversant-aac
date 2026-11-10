@@ -21,7 +21,7 @@ would restyle the whole site page, and the theme's rules would restyle the proto
 srcdoc keeps the two apart and needs no second file. The whole document is escaped
 into the attribute, so nothing in it can end the WordPress block early.
 """
-import html, os, sys
+import html, os, subprocess, sys
 sys.path.insert(0, os.path.dirname(__file__))
 from wp import call, ROOT
 
@@ -49,6 +49,10 @@ PAGES = [
 
 def build(pg):
     proto = open(os.path.join(ROOT, 'prototypes', pg['file']), encoding='utf-8').read()
+    # Stamp the version the copied report shows: the last commit that changed this file.
+    stamp = subprocess.run(['git', 'log', '-1', '--format=%h, %cd', '--date=format:%B %d %Y %H:%M', '--',
+                            os.path.join('prototypes', pg['file'])], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+    proto = proto.replace('@@PROTO_VERSION@@', 'published from ' + (stamp or 'an uncommitted copy'))
     slug, text = pg['other']
     intro = (f'<p>{pg["intro"]}</p>' + NL +
              f'<p>{html.escape(text)} <a href="{SITE}{slug}/">Open it</a>.</p>')

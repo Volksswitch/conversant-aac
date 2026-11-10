@@ -929,7 +929,12 @@ let presetName = null;
 let presetEdited = false;
 function settingsText() {
   const own = (el) => Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent).join(' ').replace(/\s+/g, ' ').trim();
-  const lines = [document.title, new Date().toLocaleString()];
+  // Which version of the page this is (Ken, November 10 2026), so a report from a page
+  // that wasn't reloaded can be spotted. The publish script fills in the placeholder;
+  // opened from the computer, the file's own date is used instead.
+  const PAGE_VERSION = '@@PROTO_VERSION@@';
+  const version = PAGE_VERSION.startsWith('@@') ? 'file last changed ' + document.lastModified : PAGE_VERSION;
+  const lines = [document.title, 'Page version: ' + version, 'Copied: ' + new Date().toLocaleString()];
   lines.push('', 'Settings:');
   if (document.querySelector('#presets button')) lines.push('Example: ' + (presetName ? presetName + (presetEdited ? ' (then changed by hand)' : '') : 'none'));
   document.querySelectorAll('#panel .field').forEach((f) => {
