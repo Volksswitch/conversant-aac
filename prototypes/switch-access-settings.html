@@ -156,7 +156,7 @@
       <label><input type="radio" name="exit" value="pass"> After one pass with no press</label>
       <label><input type="radio" name="exit" value="leave"> A “Leave” stop at the end</label>
       <label><input type="radio" name="exit" value="switch2"> The right button (automatic and inverse scanning only)</label>
-      <p class="note">Applies to an open section, the chosen tab, a drop-down list and the keyboard.</p></div>
+      <p class="note">Applies to an open section, the chosen tab, a row in a list (such as a phrase with its boxes and buttons), a drop-down list and the keyboard.</p></div>
     <div class="field"><span>Stray and mistimed presses</span>
       <label>Act on <select id="actOn"><option value="press">press</option><option value="release">release</option></select></label>
       <label>Ignore presses held for less than <select id="minMs"><option value="0">off</option><option value="100">0.1 s</option><option value="250">0.25 s</option><option value="500">0.5 s</option></select></label>
@@ -166,10 +166,6 @@
       <label><input type="checkbox" id="twoPress"> Two presses to change a setting</label>
       <label>Time for the second press <select id="secondMs"><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option><option value="4000">4 s</option></select></label>
       <p class="note">The app ignores “One tap or two” inside Settings today. This tries applying it for switch users.</p></div>
-    <div class="field"><span>Move up, Move down and Delete in lists</span>
-      <label><input type="radio" name="editTools" value="row"> On each row, under the item</label>
-      <label><input type="radio" name="editTools" value="toolbar"> In a toolbar above the list, acting on the selected row</label>
-      <p class="note">Applies to every list in Settings that has these buttons, such as the Express Panel phrases and the Commands lists. On a row, the scan stays with an item after it moves, so pressing again moves it again. The toolbar is how the app works today.</p></div>
     <p class="note">This shows seven of the fourteen Settings tabs. The folder picker, like importing a file, opens a window the device draws, which a switch can’t operate, so it only shows a message here.</p>
   </div>
 </div>
@@ -263,7 +259,7 @@ const TASKS = [
 const KBD = [['Done', 'Delete', 'Cancel'], ['␣', 'e', 't', 'a', 'o', 'i', 'n'], ['s', 'h', 'r', 'd', 'l', 'u', 'c'], ['m', 'w', 'f', 'g', 'y', 'p', 'b'], ['v', 'k', 'j', 'x', 'q', 'z', '.', '?']];
 
 // ---------------------------------------------------------------- settings of the prototype itself
-const DEFAULTS = { editTools: 'row', switches: 1, method: 'auto', speed: 1.5, dropdown: 'list', exit: 'pass',
+const DEFAULTS = { switches: 1, method: 'auto', speed: 1.5, dropdown: 'list', exit: 'pass',
   actOn: 'press', minMs: 0, repeatMs: 300, forgiveMs: 300, twoPress: false, secondMs: 2000 };
 // Each number of switches has a starting set of other settings, so the scan works out
 // of the box and can be tweaked from there (Ken, November 10 2026). Choosing One or Two
@@ -279,13 +275,13 @@ function readCfg() {
   applySwitchLimits();
   const radio = (n) => (document.querySelector(`input[name=${n}]:checked`) || {}).value;
   cfg.switches = Number(radio('switches')) || 1;
-  cfg.method = radio('method'); cfg.dropdown = radio('dropdown'); cfg.exit = radio('exit'); cfg.editTools = radio('editTools') || 'row';
+  cfg.method = radio('method'); cfg.dropdown = radio('dropdown'); cfg.exit = radio('exit');
   cfg.speed = Math.max(0.3, Number($('speed').value) || 1);
   cfg.actOn = $('actOn').value; cfg.minMs = Number($('minMs').value); cfg.repeatMs = Number($('repeatMs').value);
   cfg.forgiveMs = Number($('forgiveMs').value); cfg.twoPress = $('twoPress').checked; cfg.secondMs = Number($('secondMs').value);
 }
 function writeCfg() {
-  for (const n of ['switches', 'method', 'dropdown', 'exit', 'editTools']) { const el = document.querySelector(`input[name=${n}][value="${cfg[n]}"]`); if (el) el.checked = true; }
+  for (const n of ['switches', 'method', 'dropdown', 'exit']) { const el = document.querySelector(`input[name=${n}][value="${cfg[n]}"]`); if (el) el.checked = true; }
   $('speed').value = cfg.speed;
   $('actOn').value = cfg.actOn; $('minMs').value = String(cfg.minMs); $('repeatMs').value = String(cfg.repeatMs);
   $('forgiveMs').value = String(cfg.forgiveMs); $('twoPress').checked = cfg.twoPress; $('secondMs').value = String(cfg.secondMs);
@@ -384,7 +380,7 @@ function renderBand(band, s, i) {
   const wrap = document.createElement('div'); wrap.className = 'band';
   const mk = (cls, id, text) => { const b = document.createElement('span'); b.className = cls; b.id = id; b.textContent = text; return b; };
   const bar = document.createElement('div'); bar.className = 'ctl';
-  const inline = cfg.editTools === 'row';
+  const inline = ROW_TOOLS;
   [...(inline ? [] : MOVE_TOOLS), ...BAND_TOOLS[band]].forEach(([part, text]) => bar.append(mk('btn' + (toolOff(band, part) ? ' off' : ''), ctlId(s, i, '-' + part), text)));
   wrap.append(bar);
   if (band !== 'context') {
@@ -474,6 +470,11 @@ const BAND_TOOLS = {
   context: [['add-partner', 'Add a partner'], ['add-place', 'Add a place'], ['add-topic', 'Add a topic'], ['add-feeling', 'Add a feeling']],
 };
 const INSERTS = [['ins-name', 'Insert: Their name'], ['ins-time', 'Insert: Time of day']];
+// Move up, Move down and Delete sit on each row, not in the toolbar, whenever switch
+// access is on (Ken, November 10 2026). A switch user always wants them there, since the
+// scan stays with an item after it moves; with switch access off the app keeps its
+// toolbar. So it isn't a setting.
+const ROW_TOOLS = true;
 let pick = null;   // { band, k }: the selected row, which its own band's toolbar acts on; shown with the dark fill
 let flexWho = 'Anyone', flexWhere = 'Anyplace', flexTopic = '';   // which situation the Flex section is editing
 const flexKey = () => (flexTopic ? 'Topic: ' + flexTopic : `${flexWho} at ${flexWhere}`);
@@ -559,7 +560,7 @@ function bandNodes(s, i, band) {
     const at = L().filter((p) => KINDS.indexOf(p.kind) <= KINDS.indexOf(kind)).length;
     return addAt(kind === 'feeling' ? { kind, text: '' } : { kind, name: '' }, at, KIND_LABEL[kind] + ' button added'); }; });
   function insert(tok) { const k = k0(); saveBand(band, L().map((p, j) => (j === k ? { ...p, text: (p.text + ' ' + tok).trim() } : p)), `Inserted ${tok}`); return 'handled'; }
-  const inline = cfg.editTools === 'row';
+  const inline = ROW_TOOLS;
   const rowId = (k) => id('-r' + k);
   // A row's own Move button moves the row, and the scan goes with it: it stays inside
   // that phrase, on the same button, so pressing again moves it again.
