@@ -88,6 +88,8 @@
   #panel .field > span { display: block; font-weight: bold; margin-bottom: 2px; }
   #panel select, #panel input[type=number] { font-size: 14px; padding: 3px; }
   #panel button.on { background: #1f4e79; color: #fff; }
+  #panel button.stop { font-weight: bold; text-align: center; padding: 10px; margin-bottom: 6px; }
+  #panel button.stop.stopped { background: #2e7d32; color: #fff; }
   #panel button { font-size: 14px; padding: 6px 8px; margin: 2px 0; width: 100%; text-align: left; cursor: pointer; border: 1px solid var(--edge); border-radius: 5px; background: #f7f9fb; }
   .note { font-size: 12px; color: var(--ink-muted); }
   #tasks { list-style: none; padding: 0; margin: 0; }
@@ -113,6 +115,7 @@
   </div>
 
   <div id="panel">
+    <button id="stopBtn" class="stop">Stop scanning</button>
     <h2>Examples</h2>
     <div id="presets"></div>
     <h2>Tasks</h2>
@@ -237,6 +240,7 @@ const exitMode = () => (cfg.method === 'step' && cfg.exit === 'switch2' ? 'leave
 
 // ---------------------------------------------------------------- state and rendering
 let V = { ...START_VALUES };
+let stopped = false;   // the panel's Stop scanning button
 let tab = -1, openSec = -1, overlay = null;   // no tab chosen until the user picks one   // overlay: {kind, ...}
 let typed = '';
 const done = TASKS.map(() => null);
@@ -433,17 +437,26 @@ function draw() {
   document.querySelectorAll('.hl, .resting, .held').forEach((e) => e.classList.remove('hl', 'resting', 'held'));
   const n = cur(); if (!n) return;
   const el = $(n.id);
-  if (el) { el.classList.add(S.held ? 'held' : (S.resting ? 'resting' : 'hl')); el.scrollIntoView({ block: 'nearest' }); }
+  if (el) { el.classList.add(S.held ? 'held' : (S.resting ? 'resting' : 'hl')); scrollWithin(el); }
   const path = S.stack.slice(1).map((L, i) => S.stack[i].nodes[S.stack[i].idx].label);
   $('where').textContent = S.resting ? 'Resting. Press to start the scan again.'
     : S.held ? 'Press again to confirm: ' + n.label : (path.length ? path.join(' › ') + ' › ' : '') + n.label;
+}
+// Keep the highlight visible by scrolling only the box it sits in. Scrolling the page
+// itself (as scrollIntoView does, and on the website the page around the frame too)
+// kept dragging the settings out of reach.
+function scrollWithin(el) {
+  const box = el.closest('#content, #tabs, .card'); if (!box) return;
+  const r = el.getBoundingClientRect(), b = box.getBoundingClientRect();
+  if (r.top < b.top) box.scrollTop -= (b.top - r.top) + 8;
+  else if (r.bottom > b.bottom) box.scrollTop += (r.bottom - b.bottom) + 8;
 }
 function updateCounts() { $('counts').textContent = `Stops ${M.stops} · Presses ${M.presses} · ${((performance.now() - M.t0) / 1000).toFixed(1)} s`; }
 setInterval(updateCounts, 200);
 function resetMeter() { M.t0 = performance.now(); M.stops = 0; M.presses = 0; updateCounts(); }
 function schedule() {
   clearTimeout(S.timer);
-  if (cfg.method !== 'auto' || S.resting || S.held) return;
+  if (cfg.method !== 'auto' || S.resting || S.held || stopped) return;
   S.timer = setTimeout(() => { advance(); schedule(); }, cfg.speed * 1000);
 }
 function advance() {
@@ -507,6 +520,7 @@ function leaveGroup() {
 let lastAccept = -1e9, inverseTimer = null;
 const sw = { 1: { down: false, t: 0, minTimer: null }, 2: { down: false, t: 0, minTimer: null } };
 function rawDown(n) {
+  if (stopped) return;
   const s = sw[n]; if (s.down) return; s.down = true; s.t = performance.now();
   if (cfg.method === 'inverse' && n === 1) { if (!S.held && !S.resting) { clearInterval(inverseTimer); inverseTimer = setInterval(advance, cfg.speed * 1000); } return; }
   if (cfg.actOn === 'press') { if (cfg.minMs > 0) s.minTimer = setTimeout(() => { if (s.down) accept(n); }, cfg.minMs); else accept(n); }
@@ -517,6 +531,7 @@ function rawUp(n) {
   if (cfg.actOn === 'release' && performance.now() - s.t >= cfg.minMs) accept(n);
 }
 function accept(n) {
+  if (stopped) return;
   const now = performance.now(); if (now - lastAccept < cfg.repeatMs) return; lastAccept = now;
   M.presses++;
   if (cfg.method === 'step') { if (n === 1) { if (S.resting) choose(); else advance(); } else choose(); return; }
@@ -563,6 +578,15 @@ function applyPreset(name, over) {
 PRESETS.forEach(([name, over]) => { const b = document.createElement('button'); b.textContent = name; b.addEventListener('click', () => { applyPreset(name, over); $('screen').focus(); }); $('presets').appendChild(b); });
 $('panel').addEventListener('change', () => { readCfg(); restart(); document.querySelectorAll('#presets button').forEach((b) => b.classList.remove('on')); });
 $('restart').addEventListener('click', () => { restart(); $('screen').focus(); });
+// Stop the scan so the panel on the right can be used in peace; start it again here.
+function setStopped(v) {
+  stopped = v; clearTimeout(S.timer); clearInterval(inverseTimer);
+  $('stopBtn').textContent = v ? 'Start scanning again' : 'Stop scanning';
+  $('stopBtn').classList.toggle('stopped', v);
+  $('where').textContent = v ? 'Scanning stopped. Press “Start scanning again” on the right.' : '';
+  if (!v) { draw(); schedule(); }
+}
+$('stopBtn').addEventListener('click', () => setStopped(!stopped));
 applyPreset(PRESETS[0][0], PRESETS[0][1]); $('screen').focus();
 </script>
 </body>
