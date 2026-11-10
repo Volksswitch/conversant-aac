@@ -70,6 +70,7 @@
   .card h3 { margin: 0 0 8px; font-size: 18px; }
   .card.danger h3 { color: var(--danger); }
   .card .row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .ctl.phrases { flex-wrap: wrap; gap: 6px; }
   .listitem { border: 1px solid var(--edge); border-radius: 5px; padding: 8px 10px; margin: 4px 0; }
   .listitem.current { background: var(--head); color: #fff; font-weight: bold; }   /* the current value, shown like a selected tab */
   #kbd .krow { display: flex; gap: 6px; margin: 6px 0; padding: 2px; border-radius: 6px; }
@@ -154,7 +155,7 @@
       <label><input type="checkbox" id="twoPress"> Two presses to change a setting</label>
       <label>Time for the second press <select id="secondMs"><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option><option value="4000">4 s</option></select></label>
       <p class="note">The app ignores “One tap or two” inside Settings today. This tries applying it for switch users.</p></div>
-    <p class="note">This shows six of the fourteen Settings tabs. The folder picker, like importing a file, opens a window the device draws, which a switch can’t operate, so it only shows a message here.</p>
+    <p class="note">This shows seven of the fourteen Settings tabs. The folder picker, like importing a file, opens a window the device draws, which a switch can’t operate, so it only shows a message here.</p>
   </div>
 </div>
 
@@ -198,6 +199,14 @@ const TABS = [
       { type: 'select', key: 'easeOff', label: 'Wait longer each exchange', options: ['Never, same every time', '1 second longer', '2 seconds longer', '3 seconds longer', '4 seconds longer'] },
       { type: 'select', key: 'maxPer', label: 'Maximum per turn', options: ['0 (none)', '1', '2', '3', '4', 'No limit'] }]),
   ]),
+  // The Express Panel tab (Ken, November 10 2026). In the app a button is picked by
+  // tapping it in the Express Panel itself; a switch user doesn't need that, so here the
+  // phrases are a list in the tab, and each one opens a card to change or delete it.
+  T('Express Panel and Keyboard', [
+    S_('Band sizes and look', [{ type: 'range', key: 'bandContext', label: 'Context band', min: 0, max: 12 },
+      { type: 'range', key: 'bandFlex', label: 'Flex band', min: 0, max: 12 }]),
+    S_('Always band phrases', [{ type: 'phrases', key: 'always', label: 'Phrase' }]),
+  ]),
   T('Troubleshooting', [
     S_('Who these reports come from', [{ type: 'text', key: 'tester', label: 'Tester name' }]),
     S_('Report a problem', [{ type: 'text', key: 'problem', label: 'What happened?' }, { type: 'button', label: 'Send', act: 'note', note: 'The report would be sent here.' }]),
@@ -208,7 +217,9 @@ const TABS = [
 const START_VALUES = { apiKey: '', persist: true, profile: 'Everyday', taps: 'One tap', tapGap: '0.4 seconds', full: false, scheme: 'Default',
   fRespFull: 'Default', fRespShort: 'Default', fConv: 'Default', fSettings: 'Default', arrange: 'In a row', spacing: 4, noSave: false,
   perCat: '1 (four in all)', shows: 'The full response', silence: '0.5 seconds', resume: false, chime: true, initial: '2 seconds',
-  subsequent: '10 seconds', easeOff: '2 seconds longer', maxPer: '2', tester: '', problem: '', weekly: true, errors: 3, profiles: 3 };
+  subsequent: '10 seconds', easeOff: '2 seconds longer', maxPer: '2', tester: '', problem: '', weekly: true, errors: 3, profiles: 3,
+  bandContext: 4, bandFlex: 0,
+  always: ['Yes', 'No', 'Thank you', 'Please', 'Hold on', 'I don’t know', 'Hi', 'Bye', 'See you later', 'Can you help me?'] };
 const TASKS = [
   ['Turn on “Resume listening automatically after speaking a response” (Conversation).', (v) => v.resume === true],
   ['Set “Silence period” to 1.5 seconds (Conversation).', (v) => v.silence === '1.5 seconds'],
@@ -217,6 +228,7 @@ const TASKS = [
   ['Put “Button spacing” two steps higher, to 6 (Screen Layout).', (v) => v.spacing === 6],
   ['Type a tester name of at least two letters (Troubleshooting).', (v) => v.tester.trim().length >= 2],
   ['Clear the error log (Troubleshooting).', (v) => v.errors === 0],
+  ['Delete the phrase “Hold on” (Express Panel and Keyboard).', (v) => !v.always.includes('Hold on')],
 ];
 const KBD = [['Done', 'Delete', 'Cancel'], ['␣', 'e', 't', 'a', 'o', 'i', 'n'], ['s', 'h', 'r', 'd', 'l', 'u', 'c'], ['m', 'w', 'f', 'g', 'y', 'p', 'b'], ['v', 'k', 'j', 'x', 'q', 'z', '.', '?']];
 
@@ -318,6 +330,10 @@ function renderControl(c, s, i) {
     const b = document.createElement('span'); b.className = 'box text' + (V[c.key] ? '' : ' empty'); b.id = ctlId(s, i);
     b.textContent = V[c.key] ? (c.secret ? V[c.key].slice(0, 7) + '…' + V[c.key].slice(-4) : V[c.key]) : '(empty)';
     row.append(lab(c.label), b);
+  } else if (c.type === 'phrases') {
+    row.className = 'ctl phrases';
+    V[c.key].forEach((p, k) => { const b = document.createElement('span'); b.className = 'box'; b.id = ctlId(s, i, '-p' + k); b.textContent = p; row.append(b); });
+    const add = document.createElement('span'); add.className = 'btn'; add.id = ctlId(s, i, '-add'); add.textContent = 'Add a phrase'; row.append(add);
   } else if (c.type === 'button') {
     const b = document.createElement('span'); b.className = 'btn' + (c.danger ? ' danger' : ''); b.id = ctlId(s, i); b.textContent = c.label;
     row.append(b);
@@ -364,8 +380,27 @@ function controlNodes(s) {
       nodes.push({ id: ctlId(s, i, '-plus'), label: `${c.label}: higher`, changes: true, act: () => { const v = Math.min(c.max, V[c.key] + 1); setValue(c.key, v, `${c.label}: ${v}`); return 'stay'; } });
     } else if (c.type === 'text') nodes.push({ id: ctlId(s, i), label: c.label, act: () => { typed = V[c.key]; openOverlay({ kind: 'kbd', key: c.key, label: c.label }); return 'handled'; } });
     else if (c.type === 'button') nodes.push({ id: ctlId(s, i), label: c.label, changes: !/^confirm|picker/.test(c.act), act: () => buttonAct(c) });
+    else if (c.type === 'phrases') {
+      V[c.key].forEach((p, k) => nodes.push({ id: ctlId(s, i, '-p' + k), label: 'Phrase: ' + p, act: () => phraseCard(c.key, k) }));
+      nodes.push({ id: ctlId(s, i, '-add'), label: 'Add a phrase', act: () => {
+        typed = ''; openOverlay({ kind: 'kbd', label: 'New phrase', onDone: (t) => { if (t.trim()) setValue(c.key, [...V[c.key], t.trim()], `Phrase added: “${t.trim()}”`); } });
+        return 'handled'; } });
+    }
   });
   return nodes;
+}
+// A phrase's card: change its words, delete it, or close the card. Choosing one of the
+// first two closes the card before opening the keyboard or the red confirmation card.
+function phraseCard(key, k) {
+  const p = V[key][k];
+  openOverlay({ kind: 'modal', title: '“' + p + '”', body: 'What would you like to do with this phrase?', buttons: [
+    { label: 'Change the words', run: () => { closeOverlay(); typed = p; openOverlay({ kind: 'kbd', label: 'Change the words',
+      onDone: (t) => { if (t.trim()) setValue(key, V[key].map((x, j) => (j === k ? t.trim() : x)), `Phrase changed to “${t.trim()}”`); } }); return 'open'; } },
+    { label: 'Delete', danger: true, run: () => { closeOverlay(); openOverlay({ kind: 'confirm', title: '⚠ Delete this phrase?', body: `“${p}” will be removed from the Express Panel.`,
+      buttons: [{ label: 'Cancel' }, { label: 'Delete', danger: true, run: () => setValue(key, V[key].filter((_, j) => j !== k), `Phrase deleted: “${p}”`) }] }); return 'open'; } },
+    { label: 'Done' },
+  ] });
+  return 'handled';
 }
 function buttonAct(c) {
   if (c.act === 'paste') { setValue('apiKey', 'sk-ant-api03-example-key-4f2a', 'API key pasted'); return 'stay'; }
@@ -397,10 +432,10 @@ function overlayRoot() {
     ...(exitMode() === 'leave' ? [{ id: 'leave-list', label: 'Leave', act: () => { closeOverlay(); return 'handled'; } }] : [])];
   if (overlay.kind === 'kbd') return KBD.map((keys, r) => ({ id: 'krow-' + r, label: keys.join(' '), group: true, exitByPass: true,
     kids: () => keys.map((k, c) => ({ id: `key-${r}-${c}`, label: k === '␣' ? 'space' : k, act: () => keyAct(k) })) }));
-  return overlay.buttons.map((b, k) => ({ id: 'mbtn-' + k, label: b.label, act: () => { if (b.run) b.run(); closeOverlay(); return 'handled'; } }));
+  return overlay.buttons.map((b, k) => ({ id: 'mbtn-' + k, label: b.label, act: () => { const r = b.run ? b.run() : null; if (r !== 'open') closeOverlay(); return 'handled'; } }));
 }
 function keyAct(k) {
-  if (k === 'Done') { setValue(overlay.key, typed, `${overlay.label}: “${typed}”`); closeOverlay(); return 'handled'; }
+  if (k === 'Done') { const o = overlay; closeOverlay(); if (o.onDone) o.onDone(typed); else setValue(o.key, typed, `${o.label}: “${typed}”`); renderContent(); for (const L of S.stack) rebuildKeepPlace(L); draw(); return 'handled'; }
   if (k === 'Cancel') { logLine('Typing canceled'); closeOverlay(); return 'handled'; }
   if (k === 'Delete') typed = typed.slice(0, -1); else typed += k === '␣' ? ' ' : k;
   const c = document.getElementById('compose'); if (c) c.textContent = typed;
