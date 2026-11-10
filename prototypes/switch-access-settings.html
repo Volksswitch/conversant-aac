@@ -349,7 +349,10 @@ function buttonAct(c) {
 function openOverlay(o) {
   overlay = o; renderOverlay();
   S.saved = S.stack; S.stack = [mkLevel(overlayRoot, 'overlay', false)];
-  if (o.kind === 'list') { const i = o.options.indexOf(V[o.key]); if (i >= 0) S.stack[0].idx = i; }   // start on the current choice
+  // Start on the current choice. The scan wraps from the bottom to the top, and a pass
+  // ends only when it is back at the current choice, so every value can be reached
+  // (Ken, November 10 2026: values above the current one could not be reached).
+  if (o.kind === 'list') { const i = o.options.indexOf(V[o.key]); if (i >= 0) { S.stack[0].idx = i; S.stack[0].start = i; } }
   S.resting = false; draw(); schedule();
 }
 function closeOverlay() {
@@ -423,7 +426,7 @@ const S = { stack: [], resting: false, timer: null, saved: null, held: null, hol
 const M = { t0: performance.now(), stops: 0, presses: 0 };
 const topL = () => S.stack[S.stack.length - 1];
 const cur = () => { const L = topL(); return L ? L.nodes[L.idx] : null; };
-function mkLevel(build, key, exitByPass) { return { build, nodes: build(), idx: 0, passes: 0, key, exitByPass }; }
+function mkLevel(build, key, exitByPass) { return { build, nodes: build(), idx: 0, start: 0, passes: 0, key, exitByPass }; }
 function rebuildKeepPlace(L) { const id = L.nodes[L.idx] && L.nodes[L.idx].id; L.nodes = L.build(); const i = L.nodes.findIndex((n) => n.id === id); L.idx = i < 0 ? Math.min(L.idx, Math.max(0, L.nodes.length - 1)) : i; }
 function resetScan() { clearTimeout(S.timer); clearTimeout(S.holdTimer); S.held = null; S.resting = false; S.saved = null; S.prevLevel = null; S.stack = [mkLevel(rootBuild, 'root', false)]; draw(); schedule(); }
 function draw() {
@@ -456,8 +459,9 @@ function schedule() {
 function advance() {
   const L = topL(); if (!L || S.resting || !L.nodes.length) return;
   M.stops++; S.prevIdx = L.idx; S.prevLevel = L; S.lastMove = performance.now(); L.idx++;
-  if (L.idx >= L.nodes.length) {
-    L.idx = 0; L.passes++;
+  if (L.idx >= L.nodes.length) L.idx = 0;
+  if (L.idx === Math.min(L.start || 0, L.nodes.length - 1)) {
+    L.passes++;
     if (S.stack.length > 1 && L.exitByPass) { popLevel(); return; }
     if (S.stack.length === 1 && L.key === 'overlay' && overlay && overlay.kind === 'list' && exitMode() === 'pass') { logLine('List closed with no choice'); closeOverlay(); return; }
   }
