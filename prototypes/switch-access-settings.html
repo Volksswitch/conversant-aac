@@ -75,6 +75,8 @@
 
   .hl { outline: 5px solid var(--hl) !important; outline-offset: 1px; box-shadow: 0 0 0 9px var(--hl-ring); position: relative; z-index: 2; }
   .resting { outline: 5px dashed var(--rest) !important; outline-offset: 2px; }
+  .held { outline: 5px solid #2e7d32 !important; outline-offset: 1px; box-shadow: 0 0 0 9px #a5d6a7; position: relative; z-index: 2; }
+  .hint { margin: 60px auto; max-width: 360px; text-align: center; font-size: 18px; color: var(--ink-muted); border: 2px dashed var(--edge-faint); border-radius: 10px; padding: 24px; }
   .chosen { animation: chosen .8s; } @keyframes chosen { 0%, 60% { background: #a5d6a7; box-shadow: 0 0 0 6px #2e7d32; } }
   #log { height: 74px; overflow-y: auto; font-size: 13px; color: var(--ink-muted); padding: 4px 10px; border-top: 1px solid var(--edge-faint); }
 
@@ -119,11 +121,13 @@
 
     <h2>How the scan works</h2>
     <div class="field"><span>Order</span>
-      <label><input type="radio" name="order" value="plain"> Plain page order (normal tab order)</label>
-      <label><input type="radio" name="order" value="grouped"> Grouped: tabs, then a section, then its controls</label></div>
+      <label><input type="radio" name="order" value="plain"> Plain page order: the tabs, then the chosen tab’s section headings with the open section’s settings, then Close</label>
+      <label><input type="radio" name="order" value="grouped"> Grouped: the same, but each section is one stop until you enter it</label>
+      <p class="note">Until a tab is chosen, the scan visits only the tabs and Close.</p></div>
     <div class="field"><span>Scan method</span>
       <label><input type="radio" name="method" value="auto"> Automatic: the highlight moves by itself</label>
-      <label><input type="radio" name="method" value="step"> Step: left button moves, right button chooses</label></div>
+      <label><input type="radio" name="method" value="step"> Step: left button moves, right button chooses</label>
+      <label><input type="radio" name="method" value="inverse"> Inverse: hold the left button to move, let go to choose</label></div>
     <div class="field"><span>Seconds per stop</span><input type="number" id="speed" min="0.3" max="3" step="0.1"></div>
     <div class="field"><span>Drop-down lists</span>
       <label><input type="radio" name="dropdown" value="cycle"> Each press moves to the next choice</label>
@@ -131,8 +135,17 @@
     <div class="field"><span>Leaving a group</span>
       <label><input type="radio" name="exit" value="pass"> After one pass with no press</label>
       <label><input type="radio" name="exit" value="leave"> A “Leave” stop at the end</label>
-      <label><input type="radio" name="exit" value="switch2"> The right button (automatic scanning only)</label>
+      <label><input type="radio" name="exit" value="switch2"> The right button (automatic and inverse scanning only)</label>
       <p class="note">Applies to grouped order, drop-down lists and the keyboard.</p></div>
+    <div class="field"><span>Stray and mistimed presses</span>
+      <label>Act on <select id="actOn"><option value="press">press</option><option value="release">release</option></select></label>
+      <label>Ignore presses shorter than <select id="minMs"><option value="0">0</option><option value="100">0.1 s</option><option value="250">0.25 s</option><option value="500">0.5 s</option></select></label>
+      <label>Ignore repeats within <select id="repeatMs"><option value="0">0</option><option value="250">0.25 s</option><option value="600">0.6 s</option><option value="1000">1 s</option></select></label>
+      <label>Count a late press for the stop before, within <select id="forgiveMs"><option value="0">off</option><option value="200">0.2 s</option><option value="300">0.3 s</option><option value="500">0.5 s</option></select></label></div>
+    <div class="field"><span>One press or two</span>
+      <label><input type="checkbox" id="twoPress"> Two presses to change a setting</label>
+      <label>Time for the second press <select id="secondMs"><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option><option value="4000">4 s</option></select></label>
+      <p class="note">The app ignores “One tap or two” inside Settings today. This tries applying it for switch users.</p></div>
     <div class="field"><span>Passes with no press before resting</span>
       <select id="rest"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="0">Never rest</option></select></div>
     <button id="restart">Start over</button>
@@ -203,23 +216,28 @@ const TASKS = [
 const KBD = [['Done', 'Delete', 'Cancel'], ['␣', 'e', 't', 'a', 'o', 'i', 'n'], ['s', 'h', 'r', 'd', 'l', 'u', 'c'], ['m', 'w', 'f', 'g', 'y', 'p', 'b'], ['v', 'k', 'j', 'x', 'q', 'z', '.', '?']];
 
 // ---------------------------------------------------------------- settings of the prototype itself
-const DEFAULTS = { order: 'grouped', method: 'auto', speed: 1, dropdown: 'list', exit: 'pass', rest: 2 };
+const DEFAULTS = { order: 'grouped', method: 'auto', speed: 1, dropdown: 'list', exit: 'pass', rest: 2,
+  actOn: 'press', minMs: 0, repeatMs: 250, forgiveMs: 0, twoPress: false, secondMs: 2000 };
 let cfg = { ...DEFAULTS };
 function readCfg() {
   const radio = (n) => (document.querySelector(`input[name=${n}]:checked`) || {}).value;
   cfg.order = radio('order'); cfg.method = radio('method'); cfg.dropdown = radio('dropdown'); cfg.exit = radio('exit');
   cfg.speed = Math.max(0.3, Number($('speed').value) || 1); cfg.rest = Number($('rest').value);
+  cfg.actOn = $('actOn').value; cfg.minMs = Number($('minMs').value); cfg.repeatMs = Number($('repeatMs').value);
+  cfg.forgiveMs = Number($('forgiveMs').value); cfg.twoPress = $('twoPress').checked; cfg.secondMs = Number($('secondMs').value);
 }
 function writeCfg() {
   for (const n of ['order', 'method', 'dropdown', 'exit']) { const el = document.querySelector(`input[name=${n}][value="${cfg[n]}"]`); if (el) el.checked = true; }
   $('speed').value = cfg.speed; $('rest').value = String(cfg.rest);
+  $('actOn').value = cfg.actOn; $('minMs').value = String(cfg.minMs); $('repeatMs').value = String(cfg.repeatMs);
+  $('forgiveMs').value = String(cfg.forgiveMs); $('twoPress').checked = cfg.twoPress; $('secondMs').value = String(cfg.secondMs);
 }
 // Step scanning already uses the right button to choose.
 const exitMode = () => (cfg.method === 'step' && cfg.exit === 'switch2' ? 'leave' : cfg.exit);
 
 // ---------------------------------------------------------------- state and rendering
 let V = { ...START_VALUES };
-let tab = 0, openSec = -1, overlay = null;   // overlay: {kind, ...}
+let tab = -1, openSec = -1, overlay = null;   // no tab chosen until the user picks one   // overlay: {kind, ...}
 let typed = '';
 const done = TASKS.map(() => null);
 function logLine(t) { const d = document.createElement('div'); d.textContent = t; $('log').appendChild(d); $('log').scrollTop = $('log').scrollHeight; }
@@ -228,10 +246,10 @@ function ctlId(s, c, part = '') { return `ctl-${s}-${c}${part}`; }
 function renderTabs() {
   const host = $('tabs'); host.textContent = '';
   TABS.forEach((t, i) => { const d = document.createElement('div'); d.className = 'tab' + (i === tab ? ' current' : ''); d.id = 'tab-' + i; d.textContent = t.label; host.appendChild(d); });
-  if (cfg.order === 'grouped' && exitMode() === 'leave') { const l = document.createElement('div'); l.className = 'leave'; l.id = 'leave-tabs'; l.textContent = 'Leave'; host.appendChild(l); }
 }
 function renderContent() {
   const host = $('content'); host.textContent = '';
+  if (tab < 0) { const h = document.createElement('div'); h.className = 'hint'; h.textContent = 'Choose a tab on the left to see its settings.'; host.appendChild(h); return; }
   TABS[tab].sections.forEach((sec, s) => {
     const box = document.createElement('div'); box.className = 'section' + (s === openSec ? ' open' : ''); box.id = 'sec-' + s;
     const h = document.createElement('div'); h.className = 'heading'; h.id = 'head-' + s;
@@ -302,16 +320,16 @@ function setValue(key, value, note) { V[key] = value; logLine(note || `${key} se
 function controlNodes(s) {
   const nodes = [];
   TABS[tab].sections[s].controls.forEach((c, i) => {
-    if (c.type === 'check') nodes.push({ id: ctlId(s, i), label: c.label, act: () => { setValue(c.key, !V[c.key], `${c.label}: ${!V[c.key] ? 'on' : 'off'}`); return 'stay'; } });
-    else if (c.type === 'radio') nodes.push({ id: ctlId(s, i), label: c.label, act: () => { setValue(c.key, c.value, `${c.label}: chosen`); return 'stay'; } });
-    else if (c.type === 'select') nodes.push({ id: ctlId(s, i), label: `${c.label}: ${V[c.key]}`, act: () => {
+    if (c.type === 'check') nodes.push({ id: ctlId(s, i), label: c.label, changes: true, act: () => { setValue(c.key, !V[c.key], `${c.label}: ${!V[c.key] ? 'on' : 'off'}`); return 'stay'; } });
+    else if (c.type === 'radio') nodes.push({ id: ctlId(s, i), label: c.label, changes: true, act: () => { setValue(c.key, c.value, `${c.label}: chosen`); return 'stay'; } });
+    else if (c.type === 'select') nodes.push({ id: ctlId(s, i), label: `${c.label}: ${V[c.key]}`, changes: cfg.dropdown === 'cycle', act: () => {
       if (cfg.dropdown === 'cycle') { const k = (c.options.indexOf(V[c.key]) + 1) % c.options.length; setValue(c.key, c.options[k], `${c.label}: ${c.options[k]}`); return 'stay'; }
       openOverlay({ kind: 'list', key: c.key, label: c.label, options: c.options }); return 'handled'; } });
     else if (c.type === 'range') {
-      nodes.push({ id: ctlId(s, i, '-minus'), label: `${c.label}: lower`, act: () => { const v = Math.max(c.min, V[c.key] - 1); setValue(c.key, v, `${c.label}: ${v}`); return 'stay'; } });
-      nodes.push({ id: ctlId(s, i, '-plus'), label: `${c.label}: higher`, act: () => { const v = Math.min(c.max, V[c.key] + 1); setValue(c.key, v, `${c.label}: ${v}`); return 'stay'; } });
+      nodes.push({ id: ctlId(s, i, '-minus'), label: `${c.label}: lower`, changes: true, act: () => { const v = Math.max(c.min, V[c.key] - 1); setValue(c.key, v, `${c.label}: ${v}`); return 'stay'; } });
+      nodes.push({ id: ctlId(s, i, '-plus'), label: `${c.label}: higher`, changes: true, act: () => { const v = Math.min(c.max, V[c.key] + 1); setValue(c.key, v, `${c.label}: ${v}`); return 'stay'; } });
     } else if (c.type === 'text') nodes.push({ id: ctlId(s, i), label: c.label, act: () => { typed = V[c.key]; openOverlay({ kind: 'kbd', key: c.key, label: c.label }); return 'handled'; } });
-    else if (c.type === 'button') nodes.push({ id: ctlId(s, i), label: c.label, act: () => buttonAct(c) });
+    else if (c.type === 'button') nodes.push({ id: ctlId(s, i), label: c.label, changes: !/^confirm|picker/.test(c.act), act: () => buttonAct(c) });
   });
   return nodes;
 }
@@ -340,7 +358,7 @@ function closeOverlay() {
 }
 function overlayRoot() {
   if (!overlay) return [];
-  if (overlay.kind === 'list') return [...overlay.options.map((opt, k) => ({ id: 'opt-' + k, label: opt, act: () => { setValue(overlay.key, opt, `${overlay.label}: ${opt}`); closeOverlay(); return 'handled'; } })),
+  if (overlay.kind === 'list') return [...overlay.options.map((opt, k) => ({ id: 'opt-' + k, label: opt, changes: true, act: () => { setValue(overlay.key, opt, `${overlay.label}: ${opt}`); closeOverlay(); return 'handled'; } })),
     ...(exitMode() === 'leave' ? [{ id: 'leave-list', label: 'Leave', act: () => { closeOverlay(); return 'handled'; } }] : [])];
   if (overlay.kind === 'kbd') return KBD.map((keys, r) => ({ id: 'krow-' + r, label: keys.join(' '), group: true, exitByPass: true,
     kids: () => keys.map((k, c) => ({ id: `key-${r}-${c}`, label: k === '␣' ? 'space' : k, act: () => keyAct(k) })) }));
@@ -373,62 +391,64 @@ function renderTasks() {
 
 // ---------------------------------------------------------------- the scan tree
 const closeNode = () => ({ id: 'close', label: 'Close Settings', act: () => { logLine('Close pressed. (Settings stays open in this prototype.)'); return 'stay'; } });
+// Choosing a tab adds its sections to the scan and moves the highlight to the first.
 function tabNode(i) {
-  return { id: 'tab-' + i, label: 'Tab: ' + TABS[i].label, act: () => {
+  return { id: 'tab-' + i, label: 'Tab: ' + TABS[i].label, changes: true, act: () => {
     tab = i; openSec = -1; renderAll(); logLine('Tab: ' + TABS[i].label);
-    if (cfg.order === 'grouped') { S.stack = [mkLevel(rootBuild, 'root', false)]; const r = S.stack[0]; r.idx = Math.min(1, r.nodes.length - 1); draw(); schedule(); return 'handled'; }
-    return 'stay'; } };
+    S.stack = [mkLevel(rootBuild, 'root', false)]; S.stack[0].idx = TABS.length; S.prevLevel = null;
+    draw(); schedule(); return 'handled'; } };
 }
 function headingNode(s, grouped) {
   const sec = TABS[tab].sections[s];
-  if (!grouped) return { id: 'head-' + s, label: (s === openSec ? 'Close: ' : 'Open: ') + sec.title, act: () => {
+  if (!grouped) return { id: 'head-' + s, label: (s === openSec ? 'Close: ' : 'Open: ') + sec.title, changes: false, act: () => {
     openSec = openSec === s ? -1 : s; renderContent(); return 'stay'; } };
   return { id: 'sec-' + s, label: 'Section: ' + sec.title, group: true, exitByPass: exitMode() === 'pass',
     onEnter: () => { openSec = s; renderContent(); },
     kids: () => [...controlNodes(s), ...(exitMode() === 'leave' ? [{ id: `leave-sec-${s}`, label: 'Leave', leave: true }] : [])] };
 }
-// Plain page order: the close button, every tab, then each section heading with the
-// open section's controls straight after it - what pressing Tab would visit.
+// Plain page order: every tab, then the chosen tab's section headings with the open
+// section's settings straight after its heading, then Close. Before a tab is chosen
+// that is just the tabs and Close.
 function rootPlain() {
-  const nodes = [closeNode(), ...TABS.map((_, i) => tabNode(i))];
-  TABS[tab].sections.forEach((_, s) => { nodes.push(headingNode(s, false)); if (s === openSec) nodes.push(...controlNodes(s)); });
+  const nodes = TABS.map((_, i) => tabNode(i));
+  if (tab >= 0) TABS[tab].sections.forEach((_, s) => { nodes.push(headingNode(s, false)); if (s === openSec) nodes.push(...controlNodes(s)); });
+  nodes.push(closeNode());
   return nodes;
 }
-// Grouped: the tabs as one group, then each section of the current tab as a group,
-// then the close button.
+// Grouped: the same, but each section is one stop; a press enters it.
 function rootGrouped() {
-  return [{ id: 'tabs', label: 'Tabs', group: true, exitByPass: exitMode() === 'pass', kids: () => [...TABS.map((_, i) => tabNode(i)), ...(exitMode() === 'leave' ? [{ id: 'leave-tabs', label: 'Leave', leave: true }] : [])] },
-    ...TABS[tab].sections.map((_, s) => headingNode(s, true)), closeNode()];
+  return [...TABS.map((_, i) => tabNode(i)), ...(tab >= 0 ? TABS[tab].sections.map((_, s) => headingNode(s, true)) : []), closeNode()];
 }
 function rootBuild() { return cfg.order === 'plain' ? rootPlain() : rootGrouped(); }
 
 // ---------------------------------------------------------------- the scanner
-const S = { stack: [], resting: false, timer: null, saved: null };
+const S = { stack: [], resting: false, timer: null, saved: null, held: null, holdTimer: null, lastMove: 0, prevIdx: null, prevLevel: null };
 const M = { t0: performance.now(), stops: 0, presses: 0 };
 const topL = () => S.stack[S.stack.length - 1];
 const cur = () => { const L = topL(); return L ? L.nodes[L.idx] : null; };
 function mkLevel(build, key, exitByPass) { return { build, nodes: build(), idx: 0, passes: 0, key, exitByPass }; }
 function rebuildKeepPlace(L) { const id = L.nodes[L.idx] && L.nodes[L.idx].id; L.nodes = L.build(); const i = L.nodes.findIndex((n) => n.id === id); L.idx = i < 0 ? Math.min(L.idx, Math.max(0, L.nodes.length - 1)) : i; }
-function resetScan() { clearTimeout(S.timer); S.resting = false; S.saved = null; S.stack = [mkLevel(rootBuild, 'root', false)]; draw(); schedule(); }
+function resetScan() { clearTimeout(S.timer); clearTimeout(S.holdTimer); S.held = null; S.resting = false; S.saved = null; S.prevLevel = null; S.stack = [mkLevel(rootBuild, 'root', false)]; draw(); schedule(); }
 function draw() {
-  document.querySelectorAll('.hl, .resting').forEach((e) => e.classList.remove('hl', 'resting'));
+  document.querySelectorAll('.hl, .resting, .held').forEach((e) => e.classList.remove('hl', 'resting', 'held'));
   const n = cur(); if (!n) return;
   const el = $(n.id);
-  if (el) { el.classList.add(S.resting ? 'resting' : 'hl'); el.scrollIntoView({ block: 'nearest' }); }
+  if (el) { el.classList.add(S.held ? 'held' : (S.resting ? 'resting' : 'hl')); el.scrollIntoView({ block: 'nearest' }); }
   const path = S.stack.slice(1).map((L, i) => S.stack[i].nodes[S.stack[i].idx].label);
-  $('where').textContent = S.resting ? 'Resting. Press to start the scan again.' : (path.length ? path.join(' › ') + ' › ' : '') + n.label;
+  $('where').textContent = S.resting ? 'Resting. Press to start the scan again.'
+    : S.held ? 'Press again to confirm: ' + n.label : (path.length ? path.join(' › ') + ' › ' : '') + n.label;
 }
 function updateCounts() { $('counts').textContent = `Stops ${M.stops} · Presses ${M.presses} · ${((performance.now() - M.t0) / 1000).toFixed(1)} s`; }
 setInterval(updateCounts, 200);
 function resetMeter() { M.t0 = performance.now(); M.stops = 0; M.presses = 0; updateCounts(); }
 function schedule() {
   clearTimeout(S.timer);
-  if (cfg.method !== 'auto' || S.resting) return;
+  if (cfg.method !== 'auto' || S.resting || S.held) return;
   S.timer = setTimeout(() => { advance(); schedule(); }, cfg.speed * 1000);
 }
 function advance() {
   const L = topL(); if (!L || S.resting || !L.nodes.length) return;
-  M.stops++; L.idx++;
+  M.stops++; S.prevIdx = L.idx; S.prevLevel = L; S.lastMove = performance.now(); L.idx++;
   if (L.idx >= L.nodes.length) {
     L.idx = 0; L.passes++;
     if (S.stack.length > 1 && L.exitByPass) { popLevel(); return; }
@@ -441,13 +461,23 @@ function popLevel() {
   const L = S.stack.pop(); const P = topL();
   rebuildKeepPlace(P);
   const i = P.nodes.findIndex((n) => n.id === L.fromId); if (i >= 0) P.idx = i;
-  P.idx = (P.idx + 1) % P.nodes.length; M.stops++;
+  P.idx = (P.idx + 1) % P.nodes.length; M.stops++; S.prevLevel = null;
   draw();
 }
 function markChosen(n) { const el = $(n.id); if (!el) return; el.classList.remove('chosen'); void el.offsetWidth; el.classList.add('chosen'); setTimeout(() => el.classList.remove('chosen'), 900); }
 function choose() {
   if (S.resting) { S.resting = false; topL().passes = 0; draw(); schedule(); return; }
+  // A late press counts for the stop the highlight has just left.
+  const L0 = topL();
+  if (cfg.method === 'auto' && cfg.forgiveMs > 0 && !S.held && S.prevLevel === L0 && S.prevIdx != null
+      && performance.now() - S.lastMove < cfg.forgiveMs) { L0.idx = S.prevIdx; S.prevLevel = null; logLine('Late press counted for the stop before.'); }
+  if (S.held) { const h = S.held; S.held = null; clearTimeout(S.holdTimer); markChosen(h); return runNode(h); }
   const n = cur(); if (!n) return;
+  if (cfg.twoPress && n.changes && !n.group && !n.leave) {
+    S.held = n; clearTimeout(S.timer); draw();
+    S.holdTimer = setTimeout(() => { S.held = null; draw(); schedule(); }, cfg.secondMs);
+    return;
+  }
   markChosen(n);
   if (n.leave) { popLevel(); schedule(); return; }
   if (n.group) {
@@ -456,6 +486,9 @@ function choose() {
     if (!lvl.nodes.length) return;
     S.stack.push(lvl); draw(); schedule(); return;
   }
+  runNode(n);
+}
+function runNode(n) {
   const r = n.act ? n.act() : null;
   if (r === 'handled') return;
   // Stay where you are: in plain order the scan goes on from this control, in a
@@ -471,12 +504,23 @@ function leaveGroup() {
 }
 
 // ---------------------------------------------------------------- switches
-let lastAccept = -1e9;
+let lastAccept = -1e9, inverseTimer = null;
+const sw = { 1: { down: false, t: 0, minTimer: null }, 2: { down: false, t: 0, minTimer: null } };
+function rawDown(n) {
+  const s = sw[n]; if (s.down) return; s.down = true; s.t = performance.now();
+  if (cfg.method === 'inverse' && n === 1) { if (!S.held && !S.resting) { clearInterval(inverseTimer); inverseTimer = setInterval(advance, cfg.speed * 1000); } return; }
+  if (cfg.actOn === 'press') { if (cfg.minMs > 0) s.minTimer = setTimeout(() => { if (s.down) accept(n); }, cfg.minMs); else accept(n); }
+}
+function rawUp(n) {
+  const s = sw[n]; if (!s.down) return; s.down = false; clearTimeout(s.minTimer);
+  if (cfg.method === 'inverse' && n === 1) { clearInterval(inverseTimer); accept(1); return; }
+  if (cfg.actOn === 'release' && performance.now() - s.t >= cfg.minMs) accept(n);
+}
 function accept(n) {
-  const now = performance.now(); if (now - lastAccept < 250) return; lastAccept = now;
+  const now = performance.now(); if (now - lastAccept < cfg.repeatMs) return; lastAccept = now;
   M.presses++;
   if (cfg.method === 'step') { if (n === 1) { if (S.resting) choose(); else advance(); } else choose(); return; }
-  if (n === 2 && exitMode() === 'switch2') { leaveGroup(); return; }
+  if (n === 2 && exitMode() === 'switch2' && !S.held) { leaveGroup(); return; }
   choose();
 }
 const inPanel = (e) => !!(e.target.closest && e.target.closest('#panel'));
@@ -484,18 +528,23 @@ document.addEventListener('contextmenu', (e) => { if (!inPanel(e)) e.preventDefa
 document.addEventListener('pointerdown', (e) => {
   if (inPanel(e)) return;
   e.preventDefault(); $('screen').focus();
-  if (e.button === 0) accept(1); else if (e.button === 2) accept(2);
+  if (e.button === 0) rawDown(1); else if (e.button === 2) rawDown(2);
 });
+window.addEventListener('pointerup', (e) => { if (e.button === 0) rawUp(1); else if (e.button === 2) rawUp(2); });
 document.addEventListener('keydown', (e) => {
   if (e.target.closest && e.target.closest('#panel')) return;
   if (e.repeat) return;
-  if (e.code === 'Space') { e.preventDefault(); accept(1); }
-  else if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); accept(2); }
+  if (e.code === 'Space') { e.preventDefault(); rawDown(1); }
+  else if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); rawDown(2); }
+});
+document.addEventListener('keyup', (e) => {
+  if (e.target.closest && e.target.closest('#panel')) return;
+  if (e.code === 'Space') rawUp(1); else if (e.code === 'Enter' || e.code === 'NumpadEnter') rawUp(2);
 });
 
 // ---------------------------------------------------------------- wiring
 function restart() {
-  V = { ...START_VALUES }; tab = 0; openSec = -1; overlay = null; typed = '';
+  V = { ...START_VALUES }; tab = -1; openSec = -1; overlay = null; typed = '';
   done.fill(null); $('log').textContent = '';
   renderAll(); renderTasks(); resetMeter(); resetScan();
 }
@@ -505,6 +554,7 @@ const PRESETS = [
   ['2. Grouped, one switch', { order: 'grouped', method: 'auto' }],
   ['3. Plain page order, two switches (step)', { order: 'plain', method: 'step' }],
   ['4. Grouped, two switches (step)', { order: 'grouped', method: 'step' }],
+  ['5. Grouped, one switch, two presses to change a setting', { order: 'grouped', method: 'auto', twoPress: true }],
 ];
 function applyPreset(name, over) {
   cfg = { ...DEFAULTS, ...over }; writeCfg(); restart();
