@@ -155,7 +155,8 @@
     <h2>Settings</h2>
     <div class="field"><span>Switches</span>
       <label><input type="radio" name="switches" value="1"> One switch (the left button)</label>
-      <label><input type="radio" name="switches" value="2"> Two switches (left and right buttons)</label></div>
+      <label><input type="radio" name="switches" value="2"> Two switches (left and right buttons)</label>
+      <p class="note">Choosing One or Two puts the other scan settings back to that choice’s starting values.</p></div>
     <div class="field"><span>How the scan moves</span>
       <label><input type="radio" name="pattern" value="regions"> By region: options, Express Panel, In my own words, Command Bar</label>
       <label><input type="radio" name="pattern" value="items"> One button at a time</label></div>
@@ -256,9 +257,17 @@ const KBD = [
 ];
 
 // ---------------------------------------------------------------- settings and examples
-const DEFAULTS = { switches: 1, pattern: 'regions', method: 'auto', speed: 1, reading: 4, exit: 'pass', actOn: 'press', minMs: 0, repeatMs: 300,
-  forgiveMs: 0, twoPress: false, secondMs: 2000, size: 'small', situationFirst: false, moreFirst: 'last', newopts: 'hold', labels: 'full',
+const DEFAULTS = { switches: 1, pattern: 'regions', method: 'auto', speed: 1.5, reading: 4, exit: 'pass', actOn: 'press', minMs: 0, repeatMs: 300,
+  forgiveMs: 300, twoPress: false, secondMs: 2000, size: 'small', situationFirst: false, moreFirst: 'last', newopts: 'hold', labels: 'full',
   autoPartner: true, chatty: false, aiWait: 3000, aiFails: false, cue: 'off', aloud: false };
+// Each number of switches has a starting set of other settings, so the scan works out
+// of the box and can be tweaked from there (Ken, November 10 2026). Choosing One or Two
+// puts these back, replacing any tweaks. These are Claude's judgment, not published
+// guidance, and are in the proposal for the therapists to review.
+const SWITCH_DEFAULTS = {
+  1: { method: 'auto', speed: 1.5, exit: 'pass', forgiveMs: 300, repeatMs: 300, twoPress: false },
+  2: { method: 'step', exit: 'pass', forgiveMs: 0, repeatMs: 300, twoPress: false },
+};
 const PRESETS = [
   ['1. One switch, by region', { pattern: 'regions', method: 'auto', exit: 'pass' }],
   ['2. One switch, one button at a time', { pattern: 'items', method: 'auto' }],
@@ -858,12 +867,17 @@ setInterval(() => {
 
 // ---------------------------------------------------------------- wiring
 function applyPreset(name, over) {
-  cfg = { ...DEFAULTS, ...over }; writeSettings(); restart();
+  cfg = { ...DEFAULTS, ...SWITCH_DEFAULTS[over.switches || 1], ...over }; writeSettings(); restart();
   document.querySelectorAll('#presets button').forEach((b) => b.classList.toggle('on', b.textContent === name));
 }
 PRESETS.forEach(([name, over]) => {
   const b = document.createElement('button'); b.textContent = name; b.addEventListener('click', () => applyPreset(name, over)); $('presets').appendChild(b);
 });
+// Choosing One or Two applies that number's starting settings before anything reads the panel.
+$('panel').addEventListener('change', (e) => {
+  if (e.target.name !== 'switches') return;
+  const n = Number(e.target.value); cfg = { ...cfg, ...SWITCH_DEFAULTS[n], switches: n }; writeSettings();
+}, true);
 $('panel').addEventListener('change', () => { readSettings(); renderAll(); resetScan(); document.querySelectorAll('#presets button').forEach((b) => b.classList.remove('on')); });
 $('nextTurn').addEventListener('click', () => { if (A.mode === 'kbd') closeKeyboard(); nextTurn(); screenEl.focus(); });
 $('restart').addEventListener('click', () => { restart(); screenEl.focus(); });

@@ -130,7 +130,8 @@
     <p class="note">The scan starts on the tabs and Close. Choosing a tab puts its sections in the tab’s place, so the scan goes round the other tabs, the chosen tab’s sections and Close in one cycle. Pressing a section heading opens that section, and its settings take the heading’s place in the same cycle.</p>
     <div class="field"><span>Switches</span>
       <label><input type="radio" name="switches" value="1"> One switch (the left button)</label>
-      <label><input type="radio" name="switches" value="2"> Two switches (left and right buttons)</label></div>
+      <label><input type="radio" name="switches" value="2"> Two switches (left and right buttons)</label>
+      <p class="note">Choosing One or Two puts the other scan settings back to that choice’s starting values.</p></div>
     <div class="field"><span>Scan method</span>
       <label><input type="radio" name="method" value="auto"> Automatic: the highlight moves by itself</label>
       <label><input type="radio" name="method" value="step"> Step: left button moves, right button chooses</label>
@@ -147,7 +148,7 @@
     <div class="field"><span>Stray and mistimed presses</span>
       <label>Act on <select id="actOn"><option value="press">press</option><option value="release">release</option></select></label>
       <label>Ignore presses shorter than <select id="minMs"><option value="0">0</option><option value="100">0.1 s</option><option value="250">0.25 s</option><option value="500">0.5 s</option></select></label>
-      <label>Ignore repeats within <select id="repeatMs"><option value="0">0</option><option value="250">0.25 s</option><option value="600">0.6 s</option><option value="1000">1 s</option></select></label>
+      <label>Ignore repeats within <select id="repeatMs"><option value="0">0</option><option value="300">0.3 s</option><option value="600">0.6 s</option><option value="1000">1 s</option></select></label>
       <label>Count a late press for the stop before, within <select id="forgiveMs"><option value="0">off</option><option value="200">0.2 s</option><option value="300">0.3 s</option><option value="500">0.5 s</option></select></label></div>
     <div class="field"><span>One press or two</span>
       <label><input type="checkbox" id="twoPress"> Two presses to change a setting</label>
@@ -220,8 +221,17 @@ const TASKS = [
 const KBD = [['Done', 'Delete', 'Cancel'], ['␣', 'e', 't', 'a', 'o', 'i', 'n'], ['s', 'h', 'r', 'd', 'l', 'u', 'c'], ['m', 'w', 'f', 'g', 'y', 'p', 'b'], ['v', 'k', 'j', 'x', 'q', 'z', '.', '?']];
 
 // ---------------------------------------------------------------- settings of the prototype itself
-const DEFAULTS = { switches: 1, method: 'auto', speed: 1, dropdown: 'list', exit: 'pass',
-  actOn: 'press', minMs: 0, repeatMs: 250, forgiveMs: 0, twoPress: false, secondMs: 2000 };
+const DEFAULTS = { switches: 1, method: 'auto', speed: 1.5, dropdown: 'list', exit: 'pass',
+  actOn: 'press', minMs: 0, repeatMs: 300, forgiveMs: 300, twoPress: false, secondMs: 2000 };
+// Each number of switches has a starting set of other settings, so the scan works out
+// of the box and can be tweaked from there (Ken, November 10 2026). Choosing One or Two
+// puts these back, replacing any tweaks. These are Claude's judgment, not published
+// guidance, and are in the proposal for the therapists to review.
+const SWITCH_DEFAULTS = {
+  1: { method: 'auto', speed: 1.5, exit: 'pass', forgiveMs: 300, repeatMs: 300, twoPress: false },
+  2: { method: 'step', exit: 'pass', forgiveMs: 0, repeatMs: 300, twoPress: false },
+};
+
 let cfg = { ...DEFAULTS };
 function readCfg() {
   applySwitchLimits();
@@ -595,6 +605,11 @@ function applyPreset(name, over) {
   document.querySelectorAll('#presets button').forEach((b) => b.classList.toggle('on', b.textContent === name));
 }
 PRESETS.forEach(([name, over]) => { const b = document.createElement('button'); b.textContent = name; b.addEventListener('click', () => { applyPreset(name, over); $('screen').focus(); }); $('presets').appendChild(b); });
+// Choosing One or Two applies that number's starting settings before anything reads the panel.
+$('panel').addEventListener('change', (e) => {
+  if (e.target.name !== 'switches') return;
+  const n = Number(e.target.value); cfg = { ...cfg, ...SWITCH_DEFAULTS[n], switches: n }; writeCfg();
+}, true);
 $('panel').addEventListener('change', () => { readCfg(); restart(); document.querySelectorAll('#presets button').forEach((b) => b.classList.remove('on')); });
 $('restart').addEventListener('click', () => { restart(); $('screen').focus(); });
 // Stop the scan so the panel on the right can be used in peace; start it again here.
