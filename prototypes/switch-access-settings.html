@@ -10,8 +10,8 @@
   panel").
 
   Six of the real Settings tabs, with their real labels and choices. The scan starts
-  on the tabs and Close; choosing a tab enters it, and each section in it is a group
-  the scan stays in until it leaves (Ken settled this; the earlier plain-versus-grouped
+  on the tabs and Close; choosing a tab puts its sections in the tab's place in the
+  same cycle, and each section is a group the scan stays in until it leaves (Ken settled this; the earlier plain-versus-grouped
   choice was dropped once the two behaved the same). It shows the controls that don't
   fit "highlight it and press": drop-down lists, radio buttons, sliders, text boxes,
   red confirmation cards and the device's own folder window. Tasks on the right are
@@ -126,7 +126,7 @@
     <p class="note">A task is checked when the setting reaches its target. The cost is counted from the previous task you finished.</p>
 
     <h2>How the scan works</h2>
-    <p class="note">The scan starts on the tabs and Close. Choosing a tab enters it, and pressing a section heading enters that section. The scan stays in a tab or section until it leaves.</p>
+    <p class="note">The scan starts on the tabs and Close. Choosing a tab puts its sections in the tab’s place, so the scan goes round the other tabs, the chosen tab’s sections and Close in one cycle. Pressing a section heading enters that section, and the scan stays in it until it leaves.</p>
     <div class="field"><span>Scan method</span>
       <label><input type="radio" name="method" value="auto"> Automatic: the highlight moves by itself</label>
       <label><input type="radio" name="method" value="step"> Step: left button moves, right button chooses</label>
@@ -264,7 +264,6 @@ function renderContent() {
     if (exitMode() === 'leave') { const l = document.createElement('div'); l.className = 'leave'; l.id = `leave-sec-${s}`; l.textContent = 'Leave this section'; cs.appendChild(l); }
     box.appendChild(cs); host.appendChild(box);
   });
-  if (exitMode() === 'leave') { const l = document.createElement('div'); l.className = 'leave'; l.id = 'leave-tab'; l.textContent = 'Leave this tab'; host.appendChild(l); }
 }
 function renderControl(c, s, i) {
   const row = document.createElement('div'); row.className = 'ctl';
@@ -396,29 +395,30 @@ function renderTasks() {
 
 // ---------------------------------------------------------------- the scan tree
 const closeNode = () => ({ id: 'close', label: 'Close Settings', act: () => { logLine('Close pressed. (Settings stays open in this prototype.)'); return 'stay'; } });
-// Choosing a tab adds its sections to the scan and moves the highlight to the first.
-// The scan starts on the tabs and Close. Choosing a tab enters it: the scan then
-// stays inside that tab until it leaves (after a pass with no press, a "Leave this
-// tab" stop, or the right button) and goes back to the tabs.
-const leaveTabNode = () => ({ id: 'leave-tab', label: 'Leave this tab', leave: true });
+// One cycle, no tab level to enter or leave (Ken, November 10 2026): the chosen tab's
+// sections take the tab's place among the other tabs, so the scan goes General, ...,
+// the chosen tab's sections, ..., the remaining tabs, Close. Choosing another tab
+// swaps its sections in instead. The highlight moves to the chosen tab's first section.
 function tabNode(i) {
-  return { id: 'tab-' + i, label: 'Tab: ' + TABS[i].label, group: true, exitByPass: exitMode() === 'pass',
-    onEnter: () => { tab = i; openSec = -1; renderAll(); logLine('Tab: ' + TABS[i].label); },
-    kids: () => tabKids() };
+  return { id: 'tab-' + i, label: 'Tab: ' + TABS[i].label,
+    act: () => {
+      tab = i; openSec = -1; renderAll(); logLine('Tab: ' + TABS[i].label);
+      const L = topL(); L.nodes = L.build(); L.passes = 0;
+      const first = L.nodes.findIndex((n) => n.id === 'sec-0'); if (first >= 0) L.idx = first;
+      draw(); schedule(); return 'handled';
+    } };
 }
 // Inside a tab: each section heading is one stop, and a press enters the section.
 // Inside a section the scan goes round its settings until it leaves (a pass with no
 // press, "Leave this section", or the right button), then moves to the next heading.
-function tabKids() {
-  return [...TABS[tab].sections.map((_, s) => headingNode(s)), ...(exitMode() === 'leave' ? [leaveTabNode()] : [])];
-}
+function tabKids() { return TABS[tab].sections.map((_, s) => headingNode(s)); }
 function headingNode(s) {
   const sec = TABS[tab].sections[s];
   return { id: 'sec-' + s, label: 'Section: ' + sec.title, group: true, exitByPass: exitMode() === 'pass',
     onEnter: () => { openSec = s; renderContent(); },
     kids: () => [...controlNodes(s), ...(exitMode() === 'leave' ? [{ id: `leave-sec-${s}`, label: 'Leave this section', leave: true }] : [])] };
 }
-function rootBuild() { return [...TABS.map((_, i) => tabNode(i)), closeNode()]; }
+function rootBuild() { return [...TABS.flatMap((_, i) => (i === tab ? tabKids() : [tabNode(i)])), closeNode()]; }
 
 // ---------------------------------------------------------------- the scanner
 const S = { stack: [], resting: false, timer: null, saved: null, held: null, holdTimer: null, lastMove: 0, prevIdx: null, prevLevel: null };
