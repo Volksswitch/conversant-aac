@@ -309,7 +309,7 @@ const doc = new Document({
             bullet("Where “More” sits. ", "In a band that runs over, “More” could sit in the first position and be the first stop, or stay last. Its position would be a setting."),
             bullet("No blanks. ", "Blank positions would be closed up, so nothing is drawn that the scan skips."),
             bullet("Flex rows first, if wanted. ", "The partner’s and place’s rows could sit above the Always rows."),
-            bullet("The Command Bar in scan order. ", "“Ask them to repeat”, “Listen” and “Hold on” would come first, “Pause” would be shown, and “Settings” would be hidden rather than drawn and skipped."),
+            bullet("The Command Bar in scan order. ", "“Ask them to repeat”, “Listen” and “Hold on” would come first, and “Pause” would be shown. “Settings” would be hidden during a conversation and shown between conversations, so a supporter can open it. Until Settings itself is scanned, the scan would skip it even then (section 3.7)."),
             bullet("“In my own words” after the Express Panel. ", "It would sit where the scan reaches it, as region 3."),
             bullet("The small panel as the layout. ", "The panel in section 4.2 would be the switch layout itself, rather than something a supporter carves out of the direct-select setup."),
             para("Some movement is acceptable without a keyguard, but it has a cost. A switch user gets faster by knowing how many stops away something is and timing the press, and if stops change order while the highlight is moving, mistimed presses go up. Changes between turns, such as a switched-on button moving to the front or a page turning, would be fine, but reordering the stops in the middle of a pass wouldn’t."),
