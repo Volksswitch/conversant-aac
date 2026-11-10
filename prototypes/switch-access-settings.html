@@ -551,7 +551,9 @@ function bandNodes(s, i, band) {
     del: needPick(() => { const k = k0(), p = L()[k]; openOverlay({ kind: 'confirm', title: '⚠ Delete this button?',
       body: `${labelOf(p) ? `“${labelOf(p)}” will be removed` : 'This button will be removed'}, and every button after it moves up one place.`,
       buttons: [{ label: 'Cancel' }, { label: 'Delete it', danger: true, run: () => { pick = null; saveBand(band, L().filter((_, j) => j !== k), `Deleted: “${labelOf(p)}”`); } }] }); return 'handled'; }),
-    add: () => addAt({ text: '', speak: '' }, k0() >= 0 ? k0() + 1 : L().length, 'Phrase added'),
+    // With switch access the Add buttons stay in the toolbar and add to the end (Ken,
+    // November 10 2026), not after the selected row as in the app.
+    add: () => addAt({ text: '', speak: '' }, !inline && k0() >= 0 ? k0() + 1 : L().length, 'Phrase added'),
     sound: () => { openOverlay({ kind: 'modal', title: 'Add a sound', body: 'This opens the device’s own window for choosing a file. A switch can’t operate it, so a supporter would do this step.', buttons: [{ label: 'OK' }] }); return 'handled'; },
     reset: () => { openOverlay({ kind: 'confirm', title: '⚠ Replace the Always phrases?', body: `All ${L().length} buttons in the Always band will be replaced with the set the app comes with.`,
       buttons: [{ label: 'Cancel' }, { label: 'Replace them', danger: true, run: () => { pick = null; saveBand('always', START_VALUES.always, 'Always phrases reset'); } }] }); return 'handled'; },
