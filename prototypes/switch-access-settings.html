@@ -139,7 +139,7 @@
       <label><input type="radio" name="exit" value="pass"> After one pass with no press</label>
       <label><input type="radio" name="exit" value="leave"> A “Leave” stop at the end</label>
       <label><input type="radio" name="exit" value="switch2"> The right button (automatic and inverse scanning only)</label>
-      <p class="note">Applies to a tab, a section in grouped order, a drop-down list and the keyboard. In plain page order the highlight moves past an open section by itself.</p></div>
+      <p class="note">Applies to a tab, a section, a drop-down list and the keyboard.</p></div>
     <div class="field"><span>Stray and mistimed presses</span>
       <label>Act on <select id="actOn"><option value="press">press</option><option value="release">release</option></select></label>
       <label>Ignore presses shorter than <select id="minMs"><option value="0">0</option><option value="100">0.1 s</option><option value="250">0.25 s</option><option value="500">0.5 s</option></select></label>
@@ -261,7 +261,7 @@ function renderContent() {
     box.appendChild(h);
     const cs = document.createElement('div'); cs.className = 'controls';
     sec.controls.forEach((c, i) => cs.appendChild(renderControl(c, s, i)));
-    if (cfg.order === 'grouped' && exitMode() === 'leave') { const l = document.createElement('div'); l.className = 'leave'; l.id = `leave-sec-${s}`; l.textContent = 'Leave this section'; cs.appendChild(l); }
+    if (exitMode() === 'leave') { const l = document.createElement('div'); l.className = 'leave'; l.id = `leave-sec-${s}`; l.textContent = 'Leave this section'; cs.appendChild(l); }
     box.appendChild(cs); host.appendChild(box);
   });
   if (exitMode() === 'leave') { const l = document.createElement('div'); l.className = 'leave'; l.id = 'leave-tab'; l.textContent = 'Leave this tab'; host.appendChild(l); }
@@ -404,28 +404,16 @@ const leaveTabNode = () => ({ id: 'leave-tab', label: 'Leave this tab', leave: t
 function tabNode(i) {
   return { id: 'tab-' + i, label: 'Tab: ' + TABS[i].label, group: true, exitByPass: exitMode() === 'pass',
     onEnter: () => { tab = i; openSec = -1; renderAll(); logLine('Tab: ' + TABS[i].label); },
-    kids: () => (cfg.order === 'plain' ? tabKidsPlain() : tabKidsGrouped()) };
+    kids: () => tabKids() };
 }
-// Plain page order inside a tab: each section heading, with the open section's
-// settings straight after it. An open section isn't a group here, so the highlight
-// moves past its last setting by itself and needs no "Leave this section" stop.
-function tabKidsPlain() {
-  const nodes = [];
-  TABS[tab].sections.forEach((_, s) => {
-    nodes.push(headingNode(s, false));
-    if (s === openSec) nodes.push(...controlNodes(s));
-  });
-  if (exitMode() === 'leave') nodes.push(leaveTabNode());
-  return nodes;
+// Inside a tab: each section heading is one stop, and a press enters the section.
+// Inside a section the scan goes round its settings until it leaves (a pass with no
+// press, "Leave this section", or the right button), then moves to the next heading.
+function tabKids() {
+  return [...TABS[tab].sections.map((_, s) => headingNode(s)), ...(exitMode() === 'leave' ? [leaveTabNode()] : [])];
 }
-// Grouped inside a tab: each section is one stop; a press enters it.
-function tabKidsGrouped() {
-  return [...TABS[tab].sections.map((_, s) => headingNode(s, true)), ...(exitMode() === 'leave' ? [leaveTabNode()] : [])];
-}
-function headingNode(s, grouped) {
+function headingNode(s) {
   const sec = TABS[tab].sections[s];
-  if (!grouped) return { id: 'head-' + s, label: (s === openSec ? 'Close: ' : 'Open: ') + sec.title, changes: false, act: () => {
-    openSec = openSec === s ? -1 : s; renderContent(); return 'stay'; } };
   return { id: 'sec-' + s, label: 'Section: ' + sec.title, group: true, exitByPass: exitMode() === 'pass',
     onEnter: () => { openSec = s; renderContent(); },
     kids: () => [...controlNodes(s), ...(exitMode() === 'leave' ? [{ id: `leave-sec-${s}`, label: 'Leave this section', leave: true }] : [])] };
