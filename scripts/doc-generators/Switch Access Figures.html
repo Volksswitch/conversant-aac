@@ -34,6 +34,8 @@
   .panel { flex: 1 1 0; min-width: 0; }
   .imow-wrap { flex: 0 0 150px; }
   .imow-wrap .b { height: 78px; }
+  .skip { color: #8a96a1; border-style: dashed; }
+  .pause { border-style: dotted; font-weight: bold; }
   .rf { background: #fff7e0; }
   .goal { background: #e6f4ea; }
 </style>
@@ -60,15 +62,15 @@
   <div class="pair">
     <div class="region scanned panel">
       <span class="stop">2</span>
-      <div class="label">Express Panel: rows, then the buttons in a row. Blanks are skipped.</div>
+      <div class="label">Express Panel: Always, Context and Flex rows, then the buttons in a row.</div>
       <div class="row">
         <div class="b">Yes</div><div class="b">No</div><div class="b">Thank you</div><div class="b">I need help</div><div class="b">Maybe</div><div class="b">More</div>
       </div>
       <div class="row">
-        <div class="b rf">Tyler</div><div class="b rf">therapy</div><div class="b rf">my shoulder</div><div class="b goal">Keep it short</div><div class="b goal">Say no</div><div class="b blank">.</div>
+        <div class="b ctx">Mom</div><div class="b ctx">Devon</div><div class="b ctx">At home</div><div class="b ctx">Tired</div><div class="b ctx">Happy</div><div class="b blank">.</div>
       </div>
       <div class="row">
-        <div class="b ctx">Mom</div><div class="b ctx">Devon</div><div class="b ctx">At home</div><div class="b ctx">Tired</div><div class="b ctx">Happy</div><div class="b blank">.</div>
+        <div class="b rf">Tyler</div><div class="b rf">therapy</div><div class="b rf">my shoulder</div><div class="b goal">Keep it short</div><div class="b goal">Say no</div><div class="b blank">.</div>
       </div>
     </div>
     <div class="region scanned imow-wrap">
@@ -80,9 +82,9 @@
 
   <div class="region scanned" style="margin-bottom:0">
     <span class="stop">4</span>
-    <div class="label">Command Bar</div>
+    <div class="label">Command Bar: &ldquo;Ask to repeat&rdquo;, &ldquo;Listen&rdquo; and &ldquo;Hold on&rdquo; first. Settings is skipped, and &ldquo;Pause&rdquo; comes last.</div>
     <div class="row">
-      <div class="b">Listen</div><div class="b">Start</div><div class="b">End</div><div class="b">Repeat</div><div class="b">Hold on</div><div class="b">Ask to repeat</div><div class="b">Wrap up</div><div class="b">Don&rsquo;t save</div><div class="b">Settings</div>
+      <div class="b">Listen</div><div class="b">Start</div><div class="b">End</div><div class="b">Repeat</div><div class="b">Hold on</div><div class="b">Ask to repeat</div><div class="b">Wrap up</div><div class="b">Don&rsquo;t save</div><div class="b skip">Settings</div><div class="b pause">Pause</div>
     </div>
   </div>
 </div>

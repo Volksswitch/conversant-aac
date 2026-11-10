@@ -66,6 +66,7 @@
   .cell.rf, .cell.goal, .cell.ctx { padding-top: 13px; }
   .cell.on .kind { color: #dfe8f1; }
   .leave { flex: 0 0 70px; border-style: dotted; font-size: 13px; color: var(--ink-muted); }
+  .cell.skip { color: var(--ink-muted); border-style: dashed; }
   .hidden { display: none !important; }
 
   .lower { display: flex; gap: 8px; }
@@ -145,7 +146,7 @@
     <h2>Settings</h2>
     <div class="field"><span>How the scan moves</span>
       <label><input type="radio" name="pattern" value="regions"> By region: options, Express Panel, In my own words, Command Bar</label>
-      <label><input type="radio" name="pattern" value="items"> One button at a time (the first draft)</label></div>
+      <label><input type="radio" name="pattern" value="items"> One button at a time</label></div>
     <div class="field"><span>Scan method</span>
       <label><input type="radio" name="method" value="auto"> Automatic: the highlight moves by itself</label>
       <label><input type="radio" name="method" value="step"> Step: left button moves, right button chooses</label>
@@ -155,13 +156,15 @@
     <div class="field"><span>Leaving a region</span>
       <label><input type="radio" name="exit" value="pass"> After one pass with no press</label>
       <label><input type="radio" name="exit" value="leave"> A “Leave” stop at the end</label>
-      <label><input type="radio" name="exit" value="switch2"> The right button (second switch)</label></div>
+      <label><input type="radio" name="exit" value="switch2"> The right button (second switch)</label>
+      <p class="note">With step scanning the right button chooses, so “The right button” works as a “Leave” stop.</p></div>
     <div class="field"><span>Passes with no press before resting</span>
       <select id="rest"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="0">Never rest</option></select></div>
     <div class="field"><span>Stray presses</span>
       <label>Act on <select id="actOn"><option value="press">press</option><option value="release">release</option></select></label>
       <label>Ignore presses shorter than <select id="minMs"><option value="0">0</option><option value="100">0.1 s</option><option value="250">0.25 s</option><option value="500">0.5 s</option></select></label>
-      <label>Ignore repeats within <select id="repeatMs"><option value="0">0</option><option value="300">0.3 s</option><option value="600">0.6 s</option><option value="1000">1 s</option></select></label></div>
+      <label>Ignore repeats within <select id="repeatMs"><option value="0">0</option><option value="300">0.3 s</option><option value="600">0.6 s</option><option value="1000">1 s</option></select></label>
+      <label>Count a late press for the stop before, within <select id="forgiveMs"><option value="0">off</option><option value="200">0.2 s</option><option value="300">0.3 s</option><option value="500">0.5 s</option></select></label></div>
     <div class="field"><span>One press or two</span>
       <label><input type="checkbox" id="twoPress"> Two presses to speak</label>
       <label>Time for the second press <select id="secondMs"><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option><option value="4000">4 s</option></select></label></div>
@@ -179,13 +182,14 @@
     <div class="field"><span>The partner</span>
       <label><input type="checkbox" id="autoPartner"> Replies by itself after you speak</label>
       <label><input type="checkbox" id="chatty"> Keeps talking (newer options every 8 s)</label>
+      <label><input type="checkbox" id="aiFails"> The AI fails to answer</label>
       <label>AI wait <select id="aiWait"><option value="1500">1.5 s</option><option value="3000">3 s</option><option value="5000">5 s</option></select></label></div>
     <div class="field"><span>Sound</span>
       <label><input type="checkbox" id="cue"> Say each stop aloud</label>
       <label><input type="checkbox" id="aloud"> Say chosen words aloud</label></div>
     <button id="nextTurn">The partner says something new</button>
     <button id="restart">Start over</button>
-    <p class="note">Settings take effect at once and restart the scan. Partner, place and feeling buttons only light up here; in the app they also refresh the options.</p>
+    <p class="note">Settings take effect at once and restart the scan. “Pause”, at the end of the Command Bar, stops the scan; hold a switch for 2 seconds to start it again. “Settings” on the Command Bar is skipped. “End” and “Don’t save” always ask for a second press. Partner, place and feeling buttons only light up here; in the app they also refresh the options.</p>
   </div>
 </div>
 
@@ -219,7 +223,7 @@ const REFRAMES = {
   'my shoulder': [['My shoulder is much better.', 'Shoulder better'], ['My shoulder still hurts.', 'Still hurts'], ['Can you help me with my jacket? My shoulder hurts.', 'Help with jacket?'], ['The doctor wants to check my shoulder again.', 'Doctor check']],
 };
 const SAY_NO = [['No, thanks.', 'No, thanks'], ['I’d rather not, sorry.', 'Rather not'], ['Not this time.', 'Not this time'], ['Can I think about it?', 'Think about it?']];
-const ALWAYS = ['Yes', 'No', 'Thank you', 'I need help', 'Maybe', 'I don’t know', 'Hi!', 'Bye!', 'Please', 'Wait a minute', 'That’s funny', 'I agree', 'Good idea', 'Love you', 'Excuse me', 'Sounds good'];
+const ALWAYS = ['Yes', 'No', 'Thank you', 'I need help', 'Maybe', 'I don’t know', 'Hi!', 'Bye!', 'Please', 'Wait a minute', 'That’s funny', 'I agree', 'Good idea', 'Love you', 'Excuse me', 'Sorry, that’s not what I meant.'];
 const FLEX = [
   { label: 'Tyler', kind: 'rf' }, { label: 'therapy', kind: 'rf' }, { label: 'my shoulder', kind: 'rf' },
   { label: 'Keep it short', kind: 'goal' }, { label: 'Say no', kind: 'goal' }, { label: 'I’m so tired today.', kind: 'phrase' },
@@ -228,7 +232,12 @@ const CONTEXT = [
   { label: 'Mom', kind: 'partner' }, { label: 'Devon', kind: 'partner' }, { label: 'At home', kind: 'place' },
   { label: 'At the clinic', kind: 'place' }, { label: 'Tired', kind: 'feeling' }, { label: 'Happy', kind: 'feeling' },
 ];
+// The Command Bar as it sits on screen, and the order the scan visits it. Settings is
+// never scanned (a stray press would open a panel the user can't leave), and the
+// scan-only "Pause" stop comes last.
 const COMMANDS = ['Listen', 'Start', 'End', 'Repeat', 'Hold on', 'Ask to repeat', 'Wrap up', 'Don’t save', 'Settings'];
+const CMD_SCAN = ['Ask to repeat', 'Listen', 'Hold on', 'Start', 'End', 'Repeat', 'Wrap up', 'Don’t save'];
+const CONFIRM = ['End', 'Don’t save'];
 const KBD = [
   ['Speak', 'Reframe', 'Delete', 'Cancel'],
   ['␣', 'e', 't', 'a', 'o', 'i', 'n'],
@@ -239,8 +248,8 @@ const KBD = [
 
 // ---------------------------------------------------------------- settings and examples
 const DEFAULTS = { pattern: 'regions', method: 'auto', speed: 1, reading: 4, exit: 'pass', rest: 2, actOn: 'press', minMs: 0, repeatMs: 300,
-  twoPress: false, secondMs: 2000, size: 'small', situationFirst: false, moreFirst: 'last', newopts: 'hold', labels: 'full',
-  autoPartner: true, chatty: false, aiWait: 3000, cue: false, aloud: false };
+  forgiveMs: 0, twoPress: false, secondMs: 2000, size: 'small', situationFirst: false, moreFirst: 'last', newopts: 'hold', labels: 'full',
+  autoPartner: true, chatty: false, aiWait: 3000, aiFails: false, cue: false, aloud: false };
 const PRESETS = [
   ['1. One switch, by region', { pattern: 'regions', method: 'auto', exit: 'pass' }],
   ['2. One switch, one button at a time', { pattern: 'items', method: 'auto' }],
@@ -252,7 +261,6 @@ const PRESETS = [
   ['8. Talkative partner, short labels', { pattern: 'regions', method: 'auto', chatty: true, labels: 'short' }],
 ];
 let cfg = { ...DEFAULTS };
-let presetName = PRESETS[0][0];
 
 function readSettings() {
   const radio = (n) => (document.querySelector(`input[name=${n}]:checked`) || {}).value;
@@ -260,21 +268,26 @@ function readSettings() {
   cfg.newopts = radio('newopts'); cfg.labels = radio('labels');
   cfg.speed = Math.max(0.3, Number($('speed').value) || 1); cfg.reading = Math.max(0, Number($('reading').value) || 0);
   cfg.rest = Number($('rest').value); cfg.actOn = $('actOn').value; cfg.minMs = Number($('minMs').value); cfg.repeatMs = Number($('repeatMs').value);
+  cfg.forgiveMs = Number($('forgiveMs').value);
   cfg.twoPress = $('twoPress').checked; cfg.secondMs = Number($('secondMs').value);
   cfg.situationFirst = $('situationFirst').checked; cfg.moreFirst = $('moreFirst').value;
   cfg.autoPartner = $('autoPartner').checked; cfg.chatty = $('chatty').checked; cfg.aiWait = Number($('aiWait').value);
-  cfg.cue = $('cue').checked; cfg.aloud = $('aloud').checked;
+  cfg.aiFails = $('aiFails').checked; cfg.cue = $('cue').checked; cfg.aloud = $('aloud').checked;
 }
 function writeSettings() {
   const setRadio = (n, v) => { const el = document.querySelector(`input[name=${n}][value="${v}"]`); if (el) el.checked = true; };
   ['pattern', 'method', 'exit', 'size', 'newopts', 'labels'].forEach((n) => setRadio(n, cfg[n]));
   $('speed').value = cfg.speed; $('reading').value = cfg.reading; $('rest').value = String(cfg.rest);
   $('actOn').value = cfg.actOn; $('minMs').value = String(cfg.minMs); $('repeatMs').value = String(cfg.repeatMs);
+  $('forgiveMs').value = String(cfg.forgiveMs);
   $('twoPress').checked = cfg.twoPress; $('secondMs').value = String(cfg.secondMs);
   $('situationFirst').checked = cfg.situationFirst; $('moreFirst').value = cfg.moreFirst;
   $('autoPartner').checked = cfg.autoPartner; $('chatty').checked = cfg.chatty; $('aiWait').value = String(cfg.aiWait);
-  $('cue').checked = cfg.cue; $('aloud').checked = cfg.aloud;
+  $('aiFails').checked = cfg.aiFails; $('cue').checked = cfg.cue; $('aloud').checked = cfg.aloud;
 }
+// Step scanning already uses the right button to choose, so "the right button
+// leaves a region" can't work there; it behaves as a "Leave" stop instead.
+function exitMode() { return cfg.method === 'step' && cfg.exit === 'switch2' ? 'leave' : cfg.exit; }
 function setupLabel() {
   const m = { auto: 'automatic', step: 'step', inverse: 'inverse' }[cfg.method];
   const p = cfg.pattern === 'regions' ? 'regions' : 'one at a time';
@@ -283,11 +296,11 @@ function setupLabel() {
 
 // ---------------------------------------------------------------- app state
 const A = {
-  turn: -1, variant: 0, options: [], waitingAI: false, reframes: [], goals: new Set(),
+  turn: -1, variant: 0, options: [], waitingAI: false, failed: false, reframes: [], goals: new Set(),
   partner: null, place: null, feeling: null, alwaysPage: 0, mode: 'conv', typed: '', lastSaid: '',
 };
 let pending = null;            // a newer set held back while the user is in the options
-let aiTimer = null, partnerTimer = null, chattyTimer = null;
+let aiTimer = null, partnerTimer = null;
 
 function sayAloud(text) {
   if (!cfg.aloud || !('speechSynthesis' in window)) return;
@@ -308,13 +321,14 @@ function renderOptions() {
     const el = $('opt' + i);
     el.classList.remove('waiting', 'empty');
     if (A.waitingAI) { el.textContent = i === 0 ? 'Getting new options…' : ''; el.classList.add('waiting'); }
+    else if (A.failed) { el.textContent = i === 0 ? 'Couldn’t get options. Press “New 4” to ask again.' : ''; el.classList.add('waiting'); }
     else if (!A.options.length) { el.textContent = '.'; el.classList.add('empty'); }
     else el.textContent = cfg.labels === 'short' ? A.options[i][1] : A.options[i][0];
   }
-  $('leave-r1').classList.toggle('hidden', !(cfg.pattern === 'regions' && cfg.exit === 'leave'));
+  $('leave-r1').classList.toggle('hidden', !(cfg.pattern === 'regions' && exitMode() === 'leave'));
 }
 
-// The Express Panel as rows of cells. Visual order never changes; scan order may.
+// The Express Panel as rows, in the app's band order: Always, Context, Flex.
 function panelRows() {
   const cols = cfg.size === 'small' ? 6 : 10;
   const rows = [];
@@ -334,11 +348,12 @@ function panelRows() {
     }
   }
   const pad = (list) => { const c = list.map((x) => ({ ...x })); while (c.length < cols) c.push({ kind: 'blank' }); return c; };
-  rows.push({ band: 'flex', cells: pad(FLEX) });
   rows.push({ band: 'context', cells: pad(CONTEXT) });
+  rows.push({ band: 'flex', cells: pad(FLEX) });
   return rows;
 }
 function isOn(cell) {
+  if (cell.kind === 'rf') return A.reframes.includes(cell.label);
   if (cell.kind === 'goal') return A.goals.has(cell.label);
   if (cell.kind === 'partner') return A.partner === cell.label;
   if (cell.kind === 'place') return A.place === cell.label;
@@ -362,7 +377,7 @@ function renderPanel() {
     });
     host.appendChild(rowEl);
   });
-  if (cfg.pattern === 'regions' && cfg.exit === 'leave') {
+  if (cfg.pattern === 'regions' && exitMode() === 'leave') {
     const lr = document.createElement('div'); lr.className = 'row';
     const l = document.createElement('div'); l.className = 'cell leave'; l.id = 'leave-r2'; l.textContent = 'Leave';
     lr.appendChild(l); host.appendChild(lr);
@@ -370,8 +385,9 @@ function renderPanel() {
 }
 function renderCommands() {
   const row = $('cmdrow'); row.textContent = '';
-  COMMANDS.forEach((t, i) => { const el = document.createElement('div'); el.className = 'cell'; el.id = 'cmd' + i; el.textContent = t; row.appendChild(el); });
-  if (cfg.pattern === 'regions' && cfg.exit === 'leave') { const l = document.createElement('div'); l.className = 'cell leave'; l.id = 'leave-r4'; l.textContent = 'Leave'; row.appendChild(l); }
+  COMMANDS.forEach((t, i) => { const el = document.createElement('div'); el.className = 'cell' + (t === 'Settings' ? ' skip' : ''); el.id = 'cmd' + i; el.textContent = t; row.appendChild(el); });
+  const p = document.createElement('div'); p.className = 'cell leave'; p.id = 'pause'; p.textContent = 'Pause'; row.appendChild(p);
+  if (cfg.pattern === 'regions' && exitMode() === 'leave') { const l = document.createElement('div'); l.className = 'cell leave'; l.id = 'leave-r4'; l.textContent = 'Leave'; row.appendChild(l); }
 }
 function renderKbd() {
   $('compose').textContent = A.typed;
@@ -394,66 +410,72 @@ function renderAll() {
 // A node is a stop. A group holds stops inside it; an item does something.
 const leaveNode = (id) => ({ id, label: 'Leave', leave: true });
 function optionNodes() {
-  const n = A.options.map((o, i) => ({ id: 'opt' + i, label: cfg.labels === 'short' ? o[1] : o[0], speaks: true, act: () => sayOption(i) }));
-  return n;
+  if (A.waitingAI || A.failed) return [];
+  return A.options.map((o, i) => ({ id: 'opt' + i, label: cfg.labels === 'short' ? o[1] : o[0], speaks: true, act: () => sayOption(i) }));
 }
+const optionsShowing = () => (A.options.length > 0 && !A.waitingAI) || A.failed;
 const new4Node = () => ({ id: 'new4', label: 'New 4', act: () => { A.variant++; requestOptions('New 4'); return 'handled'; } });
 function cellNode(row, r, c) {
   const cell = row.cells[c];
   const id = `c${r}_${c}`;
   if (cell.kind === 'phrase') return { id, label: cell.label, speaks: true, act: () => speakUser(cell.label, 'Express Panel') };
   if (cell.kind === 'more') return { id, label: cell.label, act: () => { A.alwaysPage++; renderPanel(); return 'stay'; } };
-  if (cell.kind === 'rf') return { id, label: cell.label, act: () => { A.reframes.push(cell.label); paneLine('n', `Reframe: ${A.reframes.join(' + ')}`); requestOptions('Reframe'); return 'handled'; } };
+  // Reframe buttons add together within a turn; pressing one again takes it out.
+  if (cell.kind === 'rf') return { id, label: cell.label, act: () => {
+    const i = A.reframes.indexOf(cell.label);
+    if (i >= 0) A.reframes.splice(i, 1); else A.reframes.push(cell.label);
+    paneLine('n', A.reframes.length ? `Reframe: ${A.reframes.join(' + ')}` : 'Reframe cleared');
+    renderPanel(); requestOptions('Reframe'); return 'stay'; } };
   if (cell.kind === 'goal') return { id, label: cell.label, act: () => {
     if (A.goals.has(cell.label)) { A.goals.delete(cell.label); renderPanel(); return 'stay'; }
-    A.goals.add(cell.label); paneLine('n', `Goal on: ${cell.label}`); requestOptions('Goal'); return 'handled'; } };
+    A.goals.add(cell.label); paneLine('n', `Goal on: ${cell.label}`); renderPanel(); requestOptions('Goal'); return 'stay'; } };
   if (['partner', 'place', 'feeling'].includes(cell.kind)) return { id, label: cell.label, act: () => {
     A[cell.kind] = A[cell.kind] === cell.label ? null : cell.label; renderPanel(); return 'stay'; } };
   return null;
 }
-function rowNode(row, r) {
-  return { id: 'row' + r, label: rowLabel(row), group: true, exitByPass: true,
-    kids: () => {
-      const rows = panelRows(); const rr = rows[r];
-      let order = rr.cells.map((_, c) => c).filter((c) => rr.cells[c].kind !== 'blank');
-      if (cfg.moreFirst === 'first') { const m = order.filter((c) => rr.cells[c].kind === 'more'); order = m.concat(order.filter((c) => rr.cells[c].kind !== 'more')); }
-      return order.map((c) => cellNode(rr, r, c)).filter(Boolean);
-    } };
+function rowButtons(r) {
+  const rr = panelRows()[r];
+  let order = rr.cells.map((_, c) => c).filter((c) => rr.cells[c].kind !== 'blank');
+  if (cfg.moreFirst === 'first') { const m = order.filter((c) => rr.cells[c].kind === 'more'); order = m.concat(order.filter((c) => rr.cells[c].kind !== 'more')); }
+  return order.map((c) => cellNode(rr, r, c)).filter(Boolean);
 }
-function rowLabel(row) { return { always: 'Always row', flex: 'Partner and place row', context: 'Who, where, feeling' }[row.band]; }
-function panelRowNodes() {
+function rowOrder() {
   const rows = panelRows();
   let idx = rows.map((_, r) => r);
   if (cfg.situationFirst) { const f = idx.filter((r) => rows[r].band === 'flex'); idx = f.concat(idx.filter((r) => rows[r].band !== 'flex')); }
-  return idx.map((r) => rowNode(rows[r], r));
+  return idx.map((r) => ({ r, band: rows[r].band }));
+}
+const ROW_LABEL = { always: 'Always row', context: 'Who, where, feeling', flex: 'Goals and Reframe row' };
+function panelRowNodes() {
+  return rowOrder().map(({ r, band }) => ({ id: 'row' + r, label: ROW_LABEL[band], group: true, exitByPass: true, kids: () => rowButtons(r) }));
 }
 const imowNode = () => ({ id: 'imow', label: 'In my own words', act: () => { openKeyboard(); return 'handled'; } });
 function commandNodes() {
-  return COMMANDS.map((t, i) => ({ id: 'cmd' + i, label: t, speaks: ['Repeat', 'Hold on', 'Ask to repeat'].includes(t), act: () => command(t) }));
+  return [...CMD_SCAN.map((t) => ({ id: 'cmd' + COMMANDS.indexOf(t), label: t, cmd: true,
+            speaks: ['Repeat', 'Hold on', 'Ask to repeat'].includes(t), confirm: CONFIRM.includes(t), act: () => command(t) })),
+          { id: 'pause', label: 'Pause', act: () => { pauseScan(); return 'handled'; } }];
 }
 
 function rootRegions() {
+  const ex = exitMode();
   const nodes = [];
-  if (A.options.length || A.waitingAI) nodes.push({ id: 'r1', label: 'Response options', group: true, key: 'R1', exitByPass: cfg.exit === 'pass',
-    kids: () => [...optionNodes(), new4Node(), ...(cfg.exit === 'leave' ? [leaveNode('leave-r1')] : [])] });
-  nodes.push({ id: 'r2', label: 'Express Panel', group: true, key: 'R2', exitByPass: cfg.exit === 'pass',
-    kids: () => [...panelRowNodes(), ...(cfg.exit === 'leave' ? [leaveNode('leave-r2')] : [])] });
+  if (optionsShowing()) nodes.push({ id: 'r1', label: 'Response options', group: true, key: 'R1', exitByPass: ex === 'pass',
+    kids: () => [...optionNodes(), new4Node(), ...(ex === 'leave' ? [leaveNode('leave-r1')] : [])] });
+  nodes.push({ id: 'r2', label: 'Express Panel', group: true, key: 'R2', exitByPass: ex === 'pass',
+    kids: () => [...panelRowNodes(), ...(ex === 'leave' ? [leaveNode('leave-r2')] : [])] });
   nodes.push({ ...imowNode(), id: 'imow', regionId: 'r3' });
-  nodes.push({ id: 'r4', label: 'Command Bar', group: true, key: 'R4', exitByPass: cfg.exit === 'pass',
-    kids: () => [...commandNodes(), ...(cfg.exit === 'leave' ? [leaveNode('leave-r4')] : [])] });
+  nodes.push({ id: 'r4', label: 'Command Bar', group: true, key: 'R4', exitByPass: ex === 'pass',
+    kids: () => [...commandNodes(), ...(ex === 'leave' ? [leaveNode('leave-r4')] : [])] });
   return nodes;
 }
-// One button at a time: the four options and New 4 (Ken: New 4 belongs with the
-// options it replaces), then the Express Panel rows, In my own words, the Context
-// row and the Command Bar.
+// One button at a time: every button is its own stop, one press per choice, in the
+// same order as the regions.
 function rootItems() {
-  const rows = panelRows();
   const nodes = [...optionNodes()];
-  if (A.options.length) nodes.push(new4Node());
-  rows.forEach((row, r) => { if (row.band !== 'context') nodes.push(rowNode(row, r)); });
+  if (optionsShowing()) nodes.push(new4Node());
+  rowOrder().forEach(({ r }) => nodes.push(...rowButtons(r)));
   nodes.push(imowNode());
-  rows.forEach((row, r) => { if (row.band === 'context') nodes.push(rowNode(row, r)); });
-  nodes.push({ id: 'cmdrow', label: 'Command Bar', group: true, exitByPass: true, kids: commandNodes });
+  nodes.push(...commandNodes());
   return nodes;
 }
 function rootKeyboard() {
@@ -463,28 +485,38 @@ function rootKeyboard() {
 function rootBuild() { return A.mode === 'kbd' ? rootKeyboard() : (cfg.pattern === 'regions' ? rootRegions() : rootItems()); }
 
 // ---------------------------------------------------------------- the scanner
-const S = { stack: [], resting: false, timer: null, held: null, holdTimer: null, reading: false };
+const S = { stack: [], resting: false, paused: false, timer: null, held: null, holdTimer: null, reading: false,
+            readOnOptions: false, pressed: false, lastMove: 0, prevIdx: null, prevLevel: null };
 const M = { t0: performance.now(), stops: 0, presses: 0 };
 function topL() { return S.stack[S.stack.length - 1]; }
 function cur() { const L = topL(); return L ? L.nodes[L.idx] : null; }
 function mkLevel(build, key, exitByPass) { return { build, nodes: build(), idx: 0, passes: 0, key, exitByPass }; }
+const isOptionStop = (n) => !!n && (n.id === 'r1' || /^opt/.test(n.id) || n.id === 'new4');
 
 function resetScan(opts = {}) {
-  clearTimeout(S.timer); clearTimeout(S.holdTimer); S.held = null; S.resting = false;
+  clearTimeout(S.timer); clearTimeout(S.holdTimer); S.held = null; S.resting = false; S.paused = false;
   S.stack = [mkLevel(rootBuild, 'root', false)];
-  S.reading = !!opts.reading;
+  S.reading = !!opts.reading && isOptionStop(cur());
+  S.readOnOptions = false; S.pressed = false; S.prevLevel = null;
   draw(); schedule();
+}
+// Rebuild a level after the screen changed, keeping the highlight on the same stop.
+function rebuildKeepPlace(L) {
+  const id = L.nodes[L.idx] && L.nodes[L.idx].id;
+  L.nodes = L.build();
+  const i = L.nodes.findIndex((n) => n.id === id);
+  L.idx = i < 0 ? 0 : i;
 }
 function draw() {
   document.querySelectorAll('.hl, .held, .resting').forEach((e) => e.classList.remove('hl', 'held', 'resting'));
+  if (S.paused) { $('where').textContent = 'Paused. Hold a switch for 2 seconds to start again.'; return; }
   const n = cur(); if (!n) return;
   const el = $(n.regionId || n.id) || $(n.id);
   if (el) el.classList.add(S.held ? 'held' : (S.resting ? 'resting' : 'hl'));
   const path = S.stack.slice(1).map((L, i) => S.stack[i].nodes[S.stack[i].idx].label);
   let where = (path.length ? path.join(' › ') + ' › ' : '') + n.label;
   if (S.resting) where = 'Resting. Press to start the scan again.';
-  if (S.held) where = 'Press again to speak: ' + n.label;
-  if (A.waitingAI && n.id === 'r1') where = 'Waiting for the AI…';
+  if (S.held) where = (S.held.confirm ? 'Press again to confirm: ' : 'Press again: ') + n.label;
   $('where').textContent = where;
 }
 function updateCounts() {
@@ -495,22 +527,25 @@ function resetMeter() { M.t0 = performance.now(); M.stops = 0; M.presses = 0; up
 
 function schedule() {
   clearTimeout(S.timer);
-  if (cfg.method !== 'auto' || S.resting || S.held) return;
-  if (A.waitingAI && cur() && cur().id === 'r1') return;      // parked on the options while the AI works
+  if (cfg.method !== 'auto' || S.resting || S.held || S.paused) return;
   const ms = (S.reading ? cfg.reading : cfg.speed) * 1000;
   S.reading = false;
   S.timer = setTimeout(() => { advance(); schedule(); }, ms);
 }
 function advance() {
-  const L = topL(); if (!L || S.resting) return;
+  const L = topL(); if (!L || S.resting || S.paused) return;
   M.stops++;
+  const prev = L.idx;
   L.idx++;
+  S.lastMove = performance.now(); S.prevLevel = L; S.prevIdx = prev;
   if (L.idx >= L.nodes.length) {
     L.idx = 0; L.passes++;
     if (passComplete(L)) return;
   }
-  // One-at-a-time: leaving the options lets a held set through.
-  if (cfg.pattern === 'items' && S.stack.length === 1 && pending && L.idx > A.options.length) applyPending(false);
+  // One at a time: leaving the options lets a held set through.
+  if (cfg.pattern === 'items' && pending && !isOptionStop(cur())) applyPending(false);
+  // Options that arrived while the user was elsewhere get their reading time now.
+  if (S.readOnOptions && isOptionStop(cur()) && (cur().id === 'r1' || cur().id === 'opt0')) { S.reading = true; S.readOnOptions = false; }
   draw(); cueAloud(cur() ? cur().label : '');
 }
 // Returns true when it has already redrawn.
@@ -529,10 +564,10 @@ function popLevel(advanceParent) {
   const P = topL();
   P.nodes = P.build();
   const ids = P.nodes.map((n) => n.id);
-  // Keep the parent on the group just left, then step past it.
-  const fromId = L.fromId; let i = ids.indexOf(fromId); if (i < 0) i = Math.min(P.idx, P.nodes.length - 1);
+  let i = ids.indexOf(L.fromId); if (i < 0) i = Math.min(P.idx, P.nodes.length - 1);
   P.idx = i;
   if (advanceParent) { P.idx = (P.idx + 1) % P.nodes.length; M.stops++; }
+  S.prevLevel = null;
   draw(); cueAloud(cur() ? cur().label : '');
 }
 function leaveToRoot() {
@@ -542,17 +577,26 @@ function leaveToRoot() {
 }
 
 function choose() {
-  const n = cur(); if (!n) return;
+  if (S.paused) return;
   if (S.resting) { S.resting = false; topL().passes = 0; draw(); schedule(); return; }
-  if (A.waitingAI && n.id === 'r1') return;
+  // Forgiving a late press: a press just after the highlight moved counts for the
+  // stop it has just left.
+  const L = topL();
+  if (cfg.method === 'auto' && cfg.forgiveMs > 0 && !S.held && S.prevLevel === L && S.prevIdx != null
+      && performance.now() - S.lastMove < cfg.forgiveMs) {
+    L.idx = S.prevIdx; S.prevLevel = null; paneLine('n', 'Late press counted for the stop before.');
+  }
+  const n = cur(); if (!n) return;
   if (S.held) { const h = S.held; S.held = null; clearTimeout(S.holdTimer); run(h); return; }
   if (n.leave) { popLevel(true); schedule(); return; }
   if (n.group) {
     const lvl = mkLevel(n.kids, n.key || 'group', n.exitByPass); lvl.fromId = n.id;
     if (!lvl.nodes.length) return;
-    S.stack.push(lvl); draw(); cueAloud(cur().label); schedule(); return;
+    S.stack.push(lvl); S.prevLevel = null; draw(); cueAloud(cur().label); schedule(); return;
   }
-  if (n.speaks && cfg.twoPress) {
+  // "End" and "Don't save" always ask for a second press under scanning. With two
+  // presses set, so does everything that speaks or changes the screen.
+  if (n.confirm || (cfg.twoPress && (n.speaks || n.id === 'new4' || n.cmd))) {
     S.held = n; draw(); clearTimeout(S.timer);
     S.holdTimer = setTimeout(() => { S.held = null; draw(); schedule(); }, cfg.secondMs);
     return;
@@ -561,28 +605,36 @@ function choose() {
 }
 function run(n) {
   const r = n.act ? n.act() : null;
-  if (r === 'handled') return;                 // the action reset the scan itself
-  afterAction(r === 'stay');
+  if (r === 'handled') return;                 // the action set the scan itself
+  afterAction();
 }
 // After a choice the highlight stays in its region (regions) or goes back to the
 // start (one at a time). In a row, it goes back to the rows of that region.
 function afterAction() {
-  if (cfg.pattern === 'items' || A.mode === 'kbd') {
-    if (A.mode === 'kbd' && S.stack.length > 1) { const L = S.stack.pop(); const P = topL(); P.idx = 0; }
-    if (cfg.pattern === 'items' && A.mode !== 'kbd') { resetScan(); return; }
+  if (A.mode === 'kbd') {
+    if (S.stack.length > 1) { S.stack.pop(); topL().idx = 0; }
     draw(); schedule(); return;
   }
-  if (S.stack.length > 2) { S.stack.pop(); }
+  if (cfg.pattern === 'items') { resetScan(); return; }
+  if (S.stack.length > 2) S.stack.pop();
   const L = topL(); L.nodes = L.build(); L.idx = 0; L.passes = 0;
   if (!L.nodes.length) { resetScan(); return; }
   draw(); schedule();
 }
+function pauseScan() {
+  clearTimeout(S.timer); S.paused = true; S.held = null; draw();
+  paneLine('n', 'Scanning paused.');
+}
 
 // ---------------------------------------------------------------- switches
-const sw = { 1: { down: false, t: 0, minTimer: null }, 2: { down: false, t: 0, minTimer: null } };
+const sw = { 1: { down: false, t: 0, minTimer: null, pauseTimer: null }, 2: { down: false, t: 0, minTimer: null, pauseTimer: null } };
 let lastAccept = -1e9, inverseTimer = null;
 function rawDown(n) {
   const s = sw[n]; if (s.down) return; s.down = true; s.t = performance.now();
+  if (S.paused) {   // only a 2-second hold starts the scan again
+    s.pauseTimer = setTimeout(() => { if (s.down && S.paused) { paneLine('n', 'Scanning started again.'); resetScan(); } }, 2000);
+    return;
+  }
   if (cfg.method === 'inverse' && n === 1) { inverseDown(); return; }
   if (cfg.actOn === 'press') {
     if (cfg.minMs > 0) s.minTimer = setTimeout(() => { if (s.down) accept(n); }, cfg.minMs);
@@ -590,19 +642,20 @@ function rawDown(n) {
   }
 }
 function rawUp(n) {
-  const s = sw[n]; if (!s.down) return; s.down = false; clearTimeout(s.minTimer);
+  const s = sw[n]; if (!s.down) return; s.down = false; clearTimeout(s.minTimer); clearTimeout(s.pauseTimer);
+  if (S.paused) return;
   if (cfg.method === 'inverse' && n === 1) { inverseUp(); return; }
   if (cfg.actOn === 'release' && performance.now() - s.t >= cfg.minMs) accept(n);
 }
 function accept(n) {
+  if (S.paused) return;
   const now = performance.now();
   if (now - lastAccept < cfg.repeatMs) return;
-  lastAccept = now;
+  lastAccept = now; S.pressed = true;
   $('screen').classList.remove('pressflash'); void $('screen').offsetWidth; $('screen').classList.add('pressflash');
   M.presses++;
   if (cfg.method === 'step') { if (n === 1) { if (S.resting) { choose(); return; } advance(); } else choose(); return; }
-  // automatic
-  if (n === 2) { if (cfg.exit === 'switch2' && !S.held) leaveToRoot(); else choose(); return; }
+  if (n === 2) { if (exitMode() === 'switch2' && !S.held) leaveToRoot(); else choose(); return; }
   choose();
 }
 function inverseDown() {
@@ -613,7 +666,7 @@ function inverseDown() {
 function inverseUp() {
   clearInterval(inverseTimer);
   const now = performance.now(); if (now - lastAccept < cfg.repeatMs) return; lastAccept = now;
-  M.presses++; choose();
+  S.pressed = true; M.presses++; choose();
 }
 const screenEl = $('screen');
 // A press anywhere outside the settings panel is a switch press, so a slightly
@@ -640,7 +693,8 @@ document.addEventListener('keyup', (e) => {
 function compute() {
   const t = TURNS[A.turn % TURNS.length];
   let set = t.sets[A.variant % t.sets.length];
-  if (A.reframes.length) set = REFRAMES[A.reframes[A.reframes.length - 1]] || reframeTyped(A.reframes[A.reframes.length - 1]);
+  if (A.reframes.length === 1) set = REFRAMES[A.reframes[0]] || reframeTyped(A.reframes[0]);
+  else if (A.reframes.length > 1) set = reframeTyped(A.reframes.join(' and '));
   if (A.goals.has('Say no')) set = SAY_NO;
   if (A.goals.has('Keep it short')) set = set.map(([, s]) => [s, s]);
   return set;
@@ -649,22 +703,38 @@ function reframeTyped(words) {
   return [[`I wanted to tell you about ${words}.`, `About ${words}`], [`I’d rather not talk about ${words}.`, 'Rather not'],
           [`What do you think about ${words}?`, 'What do you think?'], [`Did you hear about ${words}?`, 'Did you hear?']];
 }
-function requestOptions(reason) {
+// Asking the AI. While it works, the response options region is skipped, so the rest
+// of the screen stays within reach.
+function requestOptions() {
   clearTimeout(aiTimer); pending = null;
-  A.options = []; A.waitingAI = true; renderOptions();
-  if (A.mode !== 'kbd') { resetScan(); }
-  aiTimer = setTimeout(() => { A.waitingAI = false; showOptions(compute()); }, cfg.aiWait);
+  A.options = []; A.waitingAI = true; A.failed = false; renderOptions();
+  if (A.mode !== 'kbd') {
+    if (S.stack.some((L) => L.key === 'R1') || (cfg.pattern === 'items' && isOptionStop(cur()))) resetScan();
+    else { rebuildKeepPlace(S.stack[0]); draw(); }
+  }
+  aiTimer = setTimeout(() => {
+    A.waitingAI = false;
+    if (cfg.aiFails) {
+      A.failed = true; renderOptions(); paneLine('n', 'The AI didn’t answer.');
+      if (A.mode !== 'kbd') { rebuildKeepPlace(S.stack[0]); draw(); }
+      return;
+    }
+    showOptions(compute());
+  }, cfg.aiWait);
 }
-// New options arriving. If the user is choosing among the current ones and the
-// setting says hold, they wait.
+// New options arriving. Inside the options a newer set waits (if the setting says
+// hold); between regions the highlight moves to the options; inside another region
+// it stays put and the reading time comes when the scan reaches the options.
 function showOptions(set, fromPartner) {
   const inOptions = cfg.pattern === 'regions' ? S.stack.some((L) => L.key === 'R1')
-                                              : (S.stack.length === 1 && topL().idx <= A.options.length) || (S.held && /^opt/.test(S.held.id));
+                                              : (S.stack.length === 1 && isOptionStop(cur())) || (S.held && /^opt/.test(S.held.id));
   if (fromPartner && cfg.newopts === 'hold' && A.options.length && inOptions) { pending = set; paneLine('n', 'Newer options are waiting.'); return; }
-  A.options = set; renderOptions();
+  A.options = set; A.failed = false; renderOptions();
   if (!fromPartner) resetMeter();
   if (A.mode === 'kbd') return;
-  resetScan({ reading: true });
+  const betweenRegions = cfg.pattern === 'regions' ? S.stack.length === 1 : !S.pressed;
+  if (inOptions || betweenRegions) { resetScan({ reading: true }); return; }
+  rebuildKeepPlace(S.stack[0]); S.readOnOptions = true; draw();
 }
 function applyPending(restartInside) {
   if (!pending) return;
@@ -677,7 +747,7 @@ function nextTurn() {
   A.turn++; A.variant = 0; A.reframes = []; pending = null;
   paneLine('p', 'Partner: ' + TURNS[A.turn % TURNS.length].partner);
   sayAloud(TURNS[A.turn % TURNS.length].partner);
-  requestOptions('partner');
+  renderPanel(); requestOptions();
 }
 function userSpoke(text, how) {
   const secs = ((performance.now() - M.t0) / 1000).toFixed(1);
@@ -689,18 +759,17 @@ function userSpoke(text, how) {
   resetMeter();
 }
 function sayOption(i) {
-  const o = A.options[i];
-  userSpoke(o[0], 'response option');
+  userSpoke(A.options[i][0], 'response option');
   endTurn(); return 'handled';
 }
 function speakUser(text, how) {
   userSpoke(text, how);
-  if (A.options.length) { endTurn(); return 'handled'; }
+  if (A.options.length || A.waitingAI || A.failed) { endTurn(); return 'handled'; }
   return 'stay';
 }
 function endTurn() {
-  clearTimeout(aiTimer); A.options = []; A.waitingAI = false; pending = null; A.reframes = [];
-  renderOptions(); resetScan();
+  clearTimeout(aiTimer); A.options = []; A.waitingAI = false; A.failed = false; pending = null; A.reframes = [];
+  renderOptions(); renderPanel(); resetScan();
   if (cfg.autoPartner) partnerTimer = setTimeout(nextTurn, 2500);
 }
 function command(t) {
@@ -714,21 +783,29 @@ function closeKeyboard() { A.mode = 'conv'; renderAll(); resetScan(); }
 function key(k) {
   if (k === 'Cancel') { closeKeyboard(); return 'handled'; }
   if (k === 'Delete') { A.typed = A.typed.slice(0, -1); $('compose').textContent = A.typed; return 'stay'; }
-  if (k === 'Speak') { const t = A.typed.trim(); A.mode = 'conv'; renderAll(); if (t) { userSpoke(t, 'typed'); if (A.options.length) { endTurn(); return 'handled'; } } resetScan(); return 'handled'; }
-  if (k === 'Reframe') { const t = A.typed.trim(); A.mode = 'conv'; renderAll(); if (t) { A.reframes.push(t); paneLine('n', 'Reframe: ' + t); requestOptions('Reframe'); } else resetScan(); return 'handled'; }
+  if (k === 'Speak') {
+    const t = A.typed.trim(); A.mode = 'conv'; renderAll();
+    if (t) { userSpoke(t, 'typed'); if (A.options.length || A.waitingAI || A.failed) { endTurn(); return 'handled'; } }
+    resetScan(); return 'handled';
+  }
+  if (k === 'Reframe') {
+    const t = A.typed.trim(); A.mode = 'conv'; renderAll(); resetScan();
+    if (t) { A.reframes.push(t); paneLine('n', 'Reframe: ' + A.reframes.join(' + ')); requestOptions(); }
+    return 'handled';
+  }
   A.typed += k === '␣' ? ' ' : k; $('compose').textContent = A.typed; return 'stay';
 }
 
 // Talkative partner: newer options every 8 seconds while a set is showing.
-chattyTimer = setInterval(() => {
-  if (!cfg.chatty || !A.options.length || A.waitingAI || A.mode === 'kbd') return;
+setInterval(() => {
+  if (!cfg.chatty || !A.options.length || A.waitingAI || A.failed || A.mode === 'kbd') return;
   A.variant++; paneLine('p', 'Partner: (adds a little more)');
   showOptions(compute(), true);
 }, 8000);
 
 // ---------------------------------------------------------------- wiring
 function applyPreset(name, over) {
-  cfg = { ...DEFAULTS, ...over }; presetName = name; writeSettings(); restart();
+  cfg = { ...DEFAULTS, ...over }; writeSettings(); restart();
   document.querySelectorAll('#presets button').forEach((b) => b.classList.toggle('on', b.textContent === name));
 }
 PRESETS.forEach(([name, over]) => {
@@ -739,8 +816,8 @@ $('nextTurn').addEventListener('click', () => { if (A.mode === 'kbd') closeKeybo
 $('restart').addEventListener('click', () => { restart(); screenEl.focus(); });
 function restart() {
   clearTimeout(aiTimer); clearTimeout(partnerTimer); pending = null;
-  Object.assign(A, { turn: -1, variant: 0, options: [], waitingAI: false, reframes: [], goals: new Set(), partner: null, place: null, feeling: null, alwaysPage: 0, mode: 'conv', typed: '', lastSaid: '' });
-  $('pane').textContent = ''; renderAll(); resetMeter(); nextTurn();
+  Object.assign(A, { turn: -1, variant: 0, options: [], waitingAI: false, failed: false, reframes: [], goals: new Set(), partner: null, place: null, feeling: null, alwaysPage: 0, mode: 'conv', typed: '', lastSaid: '' });
+  $('pane').textContent = ''; renderAll(); resetMeter(); resetScan(); nextTurn();
 }
 applyPreset(PRESETS[0][0], PRESETS[0][1]);
 screenEl.focus();
