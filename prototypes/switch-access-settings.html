@@ -70,7 +70,11 @@
   .card h3 { margin: 0 0 8px; font-size: 18px; }
   .card.danger h3 { color: var(--danger); }
   .card .row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-  .ctl.phrases { flex-wrap: wrap; gap: 6px; }
+  .always .ctl { flex-wrap: wrap; gap: 6px; }
+  .btn.off { opacity: 0.45; }
+  .eerow { display: flex; gap: 6px; align-items: center; padding: 4px; border-radius: 6px; margin: 3px 0; }
+  .eerow .box { flex: 1 1 0; min-width: 0; }
+  .eerow.picked { background: var(--head); }   /* the selected row, shown like a selected tab */
   .listitem { border: 1px solid var(--edge); border-radius: 5px; padding: 8px 10px; margin: 4px 0; }
   .listitem.current { background: var(--head); color: #fff; font-weight: bold; }   /* the current value, shown like a selected tab */
   #kbd .krow { display: flex; gap: 6px; margin: 6px 0; padding: 2px; border-radius: 6px; }
@@ -199,13 +203,19 @@ const TABS = [
       { type: 'select', key: 'easeOff', label: 'Wait longer each exchange', options: ['Never, same every time', '1 second longer', '2 seconds longer', '3 seconds longer', '4 seconds longer'] },
       { type: 'select', key: 'maxPer', label: 'Maximum per turn', options: ['0 (none)', '1', '2', '3', '4', 'No limit'] }]),
   ]),
-  // The Express Panel tab (Ken, November 10 2026). In the app a button is picked by
-  // tapping it in the Express Panel itself; a switch user doesn't need that, so here the
-  // phrases are a list in the tab, and each one opens a card to change or delete it.
+  // The Express Panel tab, laid out as the app lays it out (Ken, November 10 2026: the
+  // scanning layout should look the same as the direct-select layout). The Always
+  // section is the app's: a fixed toolbar acting on the selected row, the two "Insert"
+  // buttons, then one row per phrase with what it says, how to say it, and a speaker.
+  // Choosing a row selects it and enters it. Not shown: picking a button by tapping it
+  // in the Express Panel, sound buttons' own rows, and the Flex and Context sections.
   T('Express Panel and Keyboard', [
     S_('Band sizes and look', [{ type: 'range', key: 'bandContext', label: 'Context band', min: 0, max: 12 },
-      { type: 'range', key: 'bandFlex', label: 'Flex band', min: 0, max: 12 }]),
-    S_('Always band phrases', [{ type: 'phrases', key: 'always', label: 'Phrase' }]),
+      { type: 'range', key: 'bandFlex', label: 'Flex band', min: 0, max: 12 },
+      { type: 'select', key: 'bandShape', label: 'Measured in', options: ['Buttons', 'Whole rows'] },
+      { type: 'select', key: 'contextMark', label: 'Telling context buttons apart', options: ['A shape before the label', 'The bar’s color', 'The bar’s thickness', 'Which side the bar is on'] },
+      { type: 'select', key: 'moreScope', label: 'Tapping More shows the rest', options: ['In that band only', 'Across the whole panel'] }]),
+    S_('Always — the words that never move', [{ type: 'always', key: 'always' }]),
   ]),
   T('Troubleshooting', [
     S_('Who these reports come from', [{ type: 'text', key: 'tester', label: 'Tester name' }]),
@@ -218,8 +228,8 @@ const START_VALUES = { apiKey: '', persist: true, profile: 'Everyday', taps: 'On
   fRespFull: 'Default', fRespShort: 'Default', fConv: 'Default', fSettings: 'Default', arrange: 'In a row', spacing: 4, noSave: false,
   perCat: '1 (four in all)', shows: 'The full response', silence: '0.5 seconds', resume: false, chime: true, initial: '2 seconds',
   subsequent: '10 seconds', easeOff: '2 seconds longer', maxPer: '2', tester: '', problem: '', weekly: true, errors: 3, profiles: 3,
-  bandContext: 4, bandFlex: 0,
-  always: ['Yes', 'No', 'Thank you', 'Please', 'Hold on', 'I don’t know', 'Hi', 'Bye', 'See you later', 'Can you help me?'] };
+  bandContext: 4, bandFlex: 0, bandShape: 'Buttons', contextMark: 'A shape before the label', moreScope: 'In that band only',
+  always: ['Yes', 'No', 'Thank you', 'Please', 'Hold on', 'I don’t know', 'Hi', 'Bye', 'See you later', 'Can you help me?'].map((text) => ({ text, speak: '' })) };
 const TASKS = [
   ['Turn on “Resume listening automatically after speaking a response” (Conversation).', (v) => v.resume === true],
   ['Set “Silence period” to 1.5 seconds (Conversation).', (v) => v.silence === '1.5 seconds'],
@@ -228,7 +238,7 @@ const TASKS = [
   ['Put “Button spacing” two steps higher, to 6 (Screen Layout).', (v) => v.spacing === 6],
   ['Type a tester name of at least two letters (Troubleshooting).', (v) => v.tester.trim().length >= 2],
   ['Clear the error log (Troubleshooting).', (v) => v.errors === 0],
-  ['Delete the phrase “Hold on” (Express Panel and Keyboard).', (v) => !v.always.includes('Hold on')],
+  ['Delete the phrase “Hold on” (Express Panel and Keyboard).', (v) => !v.always.some((p) => p.text === 'Hold on')],
 ];
 const KBD = [['Done', 'Delete', 'Cancel'], ['␣', 'e', 't', 'a', 'o', 'i', 'n'], ['s', 'h', 'r', 'd', 'l', 'u', 'c'], ['m', 'w', 'f', 'g', 'y', 'p', 'b'], ['v', 'k', 'j', 'x', 'q', 'z', '.', '?']];
 
@@ -330,10 +340,23 @@ function renderControl(c, s, i) {
     const b = document.createElement('span'); b.className = 'box text' + (V[c.key] ? '' : ' empty'); b.id = ctlId(s, i);
     b.textContent = V[c.key] ? (c.secret ? V[c.key].slice(0, 7) + '…' + V[c.key].slice(-4) : V[c.key]) : '(empty)';
     row.append(lab(c.label), b);
-  } else if (c.type === 'phrases') {
-    row.className = 'ctl phrases';
-    V[c.key].forEach((p, k) => { const b = document.createElement('span'); b.className = 'box'; b.id = ctlId(s, i, '-p' + k); b.textContent = p; row.append(b); });
-    const add = document.createElement('span'); add.className = 'btn'; add.id = ctlId(s, i, '-add'); add.textContent = 'Add a phrase'; row.append(add);
+  } else if (c.type === 'always') {
+    const wrap = document.createElement('div'); wrap.className = 'always';
+    const bar = document.createElement('div'); bar.className = 'ctl';
+    ALWAYS_TOOLS.forEach(([part, text]) => { const b = document.createElement('span'); b.className = 'btn' + (/^(up|down|del)$/.test(part) && picked < 0 ? ' off' : ''); b.id = ctlId(s, i, '-' + part); b.textContent = text; bar.append(b); });
+    const ins = document.createElement('div'); ins.className = 'ctl';
+    [['name', 'Insert: Their name'], ['time', 'Insert: Time of day']].forEach(([part, text]) => { const b = document.createElement('span'); b.className = 'btn' + (picked < 0 ? ' off' : ''); b.id = ctlId(s, i, '-ins-' + part); b.textContent = text; ins.append(b); });
+    wrap.append(bar, ins);
+    V[c.key].forEach((p, k) => {
+      const r = document.createElement('div'); r.className = 'eerow' + (k === picked ? ' picked' : ''); r.id = ctlId(s, i, '-r' + k);
+      const t = document.createElement('span'); t.className = 'box text' + (p.text ? '' : ' empty'); t.id = ctlId(s, i, `-r${k}-t`); t.textContent = p.text || 'What the button says';
+      const sp = document.createElement('span'); sp.className = 'box text' + (p.speak ? '' : ' empty'); sp.id = ctlId(s, i, `-r${k}-s`); sp.textContent = p.speak || 'How to say it (optional)';
+      const h = document.createElement('span'); h.className = 'btn'; h.id = ctlId(s, i, `-r${k}-h`); h.textContent = '\u{1F50A}';
+      r.append(t, sp, h);
+      if (exitMode() === 'leave') { const l = document.createElement('span'); l.className = 'leave'; l.id = ctlId(s, i, `-r${k}-leave`); l.textContent = 'Leave'; r.append(l); }
+      wrap.append(r);
+    });
+    row.className = ''; row.append(wrap);
   } else if (c.type === 'button') {
     const b = document.createElement('span'); b.className = 'btn' + (c.danger ? ' danger' : ''); b.id = ctlId(s, i); b.textContent = c.label;
     row.append(b);
@@ -380,27 +403,45 @@ function controlNodes(s) {
       nodes.push({ id: ctlId(s, i, '-plus'), label: `${c.label}: higher`, changes: true, act: () => { const v = Math.min(c.max, V[c.key] + 1); setValue(c.key, v, `${c.label}: ${v}`); return 'stay'; } });
     } else if (c.type === 'text') nodes.push({ id: ctlId(s, i), label: c.label, act: () => { typed = V[c.key]; openOverlay({ kind: 'kbd', key: c.key, label: c.label }); return 'handled'; } });
     else if (c.type === 'button') nodes.push({ id: ctlId(s, i), label: c.label, changes: !/^confirm|picker/.test(c.act), act: () => buttonAct(c) });
-    else if (c.type === 'phrases') {
-      V[c.key].forEach((p, k) => nodes.push({ id: ctlId(s, i, '-p' + k), label: 'Phrase: ' + p, act: () => phraseCard(c.key, k) }));
-      nodes.push({ id: ctlId(s, i, '-add'), label: 'Add a phrase', act: () => {
-        typed = ''; openOverlay({ kind: 'kbd', label: 'New phrase', onDone: (t) => { if (t.trim()) setValue(c.key, [...V[c.key], t.trim()], `Phrase added: “${t.trim()}”`); } });
-        return 'handled'; } });
-    }
+    else if (c.type === 'always') nodes.push(...alwaysNodes(s, i, c.key));
   });
   return nodes;
 }
-// A phrase's card: change its words, delete it, or close the card. Choosing one of the
-// first two closes the card before opening the keyboard or the red confirmation card.
-function phraseCard(key, k) {
-  const p = V[key][k];
-  openOverlay({ kind: 'modal', title: '“' + p + '”', body: 'What would you like to do with this phrase?', buttons: [
-    { label: 'Change the words', run: () => { closeOverlay(); typed = p; openOverlay({ kind: 'kbd', label: 'Change the words',
-      onDone: (t) => { if (t.trim()) setValue(key, V[key].map((x, j) => (j === k ? t.trim() : x)), `Phrase changed to “${t.trim()}”`); } }); return 'open'; } },
-    { label: 'Delete', danger: true, run: () => { closeOverlay(); openOverlay({ kind: 'confirm', title: '⚠ Delete this phrase?', body: `“${p}” will be removed from the Express Panel.`,
-      buttons: [{ label: 'Cancel' }, { label: 'Delete', danger: true, run: () => setValue(key, V[key].filter((_, j) => j !== k), `Phrase deleted: “${p}”`) }] }); return 'open'; } },
-    { label: 'Done' },
-  ] });
-  return 'handled';
+// ---- The Always section, as the app has it.
+const ALWAYS_TOOLS = [['up', 'Move up'], ['down', 'Move down'], ['del', 'Delete'], ['add', 'Add a phrase'], ['sound', 'Add a sound'], ['reset', 'Reset to the app’s phrases']];
+let picked = -1;   // the selected row, which the toolbar acts on; shown with the dark fill
+function setAlways(list, note) { setValue('always', list, note); renderContent(); for (const L of S.stack) rebuildKeepPlace(L); draw(); }
+function alwaysNodes(s, i, key) {
+  const id = (part) => ctlId(s, i, part);
+  const L = () => V[key];
+  const needPick = (fn) => () => { if (picked < 0) { logLine('Select a phrase first.'); return 'stay'; } return fn(); };
+  const tools = {
+    up: needPick(() => { if (picked > 0) { const a = L().slice(); [a[picked - 1], a[picked]] = [a[picked], a[picked - 1]]; picked--; setAlways(a, 'Moved up'); } return 'handled'; }),
+    down: needPick(() => { if (picked < L().length - 1) { const a = L().slice(); [a[picked + 1], a[picked]] = [a[picked], a[picked + 1]]; picked++; setAlways(a, 'Moved down'); } return 'handled'; }),
+    del: needPick(() => { const p = L()[picked]; openOverlay({ kind: 'confirm', title: '⚠ Delete this button?', body: `“${p.text}” will be removed, and every button after it moves up one place.`,
+      buttons: [{ label: 'Cancel' }, { label: 'Delete it', danger: true, run: () => { const k = picked; picked = -1; setValue(key, L().filter((_, j) => j !== k), `Phrase deleted: “${p.text}”`); } }] }); return 'handled'; }),
+    add: () => { const a = L().slice(); const at = picked >= 0 ? picked + 1 : a.length; a.splice(at, 0, { text: '', speak: '' }); picked = at; setAlways(a, 'Phrase added');
+      const R = topL(); const n = R.nodes.findIndex((x) => x.id === id('-r' + at)); if (n >= 0) { R.idx = n; draw(); } return 'handled'; },
+    sound: () => { openOverlay({ kind: 'modal', title: 'Add a sound', body: 'This opens the device’s own window for choosing a file. A switch can’t operate it, so a supporter would do this step.', buttons: [{ label: 'OK' }] }); return 'handled'; },
+    reset: () => { openOverlay({ kind: 'confirm', title: '⚠ Replace the Always phrases?', body: `All ${L().length} buttons in the Always band will be replaced with the set the app comes with.`,
+      buttons: [{ label: 'Cancel' }, { label: 'Replace them', danger: true, run: () => { picked = -1; setValue(key, START_VALUES.always, 'Always phrases reset'); } }] }); return 'handled'; },
+  };
+  const insert = (tok) => needPick(() => { const a = L().map((p, j) => (j === picked ? { ...p, text: (p.text + ' ' + tok).trim() } : p)); setAlways(a, `Inserted ${tok}`); return 'handled'; });
+  const nodes = ALWAYS_TOOLS.map(([part, text]) => ({ id: id('-' + part), label: text, changes: part !== 'sound', act: tools[part] }));
+  nodes.push({ id: id('-ins-name'), label: 'Insert: Their name', changes: true, act: insert('{name}') },
+    { id: id('-ins-time'), label: 'Insert: Time of day', changes: true, act: insert('{time of day}') });
+  L().forEach((p, k) => nodes.push({ id: id('-r' + k), label: 'Phrase: ' + (p.text || '(empty)'), group: true, exitByPass: exitMode() === 'pass',
+    onEnter: () => { picked = k; renderContent(); logLine('Selected: ' + (p.text || '(empty)')); },
+    kids: () => {
+      const q = L()[k];
+      const field = (f, part, label) => ({ id: id(`-r${k}-${part}`), label: `${label}: ${q[f] || '(empty)'}`, act: () => { typed = q[f]; openOverlay({ kind: 'kbd', label,
+        onDone: (t) => setAlways(L().map((x, j) => (j === k ? { ...x, [f]: t.trim() } : x)), `${label}: “${t.trim()}”`) }); return 'handled'; } });
+      return [field('text', 't', 'What the button says'), field('speak', 's', 'How to say it'),
+        { id: id(`-r${k}-h`), label: 'Hear it', act: () => { const said = (q.speak || q.text).replace(/\{name\}/g, '').replace(/\{time of day\}/g, 'morning');
+          logLine('Says: ' + said); try { speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance(said)); } catch (e) { /* no speech here */ } return 'stay'; } },
+        ...(exitMode() === 'leave' ? [{ id: id(`-r${k}-leave`), label: 'Leave', leave: true }] : [])];
+    } }));
+  return nodes;
 }
 function buttonAct(c) {
   if (c.act === 'paste') { setValue('apiKey', 'sk-ant-api03-example-key-4f2a', 'API key pasted'); return 'stay'; }
@@ -676,7 +717,7 @@ document.addEventListener('keyup', (e) => {
 
 // ---------------------------------------------------------------- wiring
 function restart() {
-  V = { ...START_VALUES }; tab = -1; openSec = -1; overlay = null; typed = '';
+  V = { ...START_VALUES }; tab = -1; openSec = -1; overlay = null; typed = ''; picked = -1;
   done.fill(null); $('log').textContent = '';
   renderAll(); renderTasks(); resetMeter(); resetScan();
 }
