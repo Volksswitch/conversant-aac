@@ -188,7 +188,7 @@
       <label><input type="checkbox" id="aiFails"> The AI fails to answer</label>
       <label>AI wait <select id="aiWait"><option value="1500">1.5 s</option><option value="3000">3 s</option><option value="5000">5 s</option></select></label></div>
     <div class="field"><span>Sound</span>
-      <label><input type="checkbox" id="cue"> Say each stop aloud</label>
+      <label>Say each stop <select id="cue"><option value="off">off</option><option value="whisper">in a whisper</option><option value="quiet">quietly</option><option value="normal">at normal volume</option></select></label>
       <label><input type="checkbox" id="aloud"> Say chosen words aloud</label></div>
     <button id="nextTurn">The partner says something new</button>
     <button id="restart">Start over</button>
@@ -252,7 +252,7 @@ const KBD = [
 // ---------------------------------------------------------------- settings and examples
 const DEFAULTS = { pattern: 'regions', method: 'auto', speed: 1, reading: 4, exit: 'pass', rest: 2, actOn: 'press', minMs: 0, repeatMs: 300,
   forgiveMs: 0, twoPress: false, secondMs: 2000, size: 'small', situationFirst: false, moreFirst: 'last', newopts: 'hold', labels: 'full',
-  autoPartner: true, chatty: false, aiWait: 3000, aiFails: false, cue: false, aloud: false };
+  autoPartner: true, chatty: false, aiWait: 3000, aiFails: false, cue: 'off', aloud: false };
 const PRESETS = [
   ['1. One switch, by region', { pattern: 'regions', method: 'auto', exit: 'pass' }],
   ['2. One switch, one button at a time', { pattern: 'items', method: 'auto' }],
@@ -275,7 +275,7 @@ function readSettings() {
   cfg.twoPress = $('twoPress').checked; cfg.secondMs = Number($('secondMs').value);
   cfg.situationFirst = $('situationFirst').checked; cfg.moreFirst = $('moreFirst').value;
   cfg.autoPartner = $('autoPartner').checked; cfg.chatty = $('chatty').checked; cfg.aiWait = Number($('aiWait').value);
-  cfg.aiFails = $('aiFails').checked; cfg.cue = $('cue').checked; cfg.aloud = $('aloud').checked;
+  cfg.aiFails = $('aiFails').checked; cfg.cue = $('cue').value; cfg.aloud = $('aloud').checked;
 }
 function writeSettings() {
   const setRadio = (n, v) => { const el = document.querySelector(`input[name=${n}][value="${v}"]`); if (el) el.checked = true; };
@@ -286,7 +286,7 @@ function writeSettings() {
   $('twoPress').checked = cfg.twoPress; $('secondMs').value = String(cfg.secondMs);
   $('situationFirst').checked = cfg.situationFirst; $('moreFirst').value = cfg.moreFirst;
   $('autoPartner').checked = cfg.autoPartner; $('chatty').checked = cfg.chatty; $('aiWait').value = String(cfg.aiWait);
-  $('aiFails').checked = cfg.aiFails; $('cue').checked = cfg.cue; $('aloud').checked = cfg.aloud;
+  $('aiFails').checked = cfg.aiFails; $('cue').value = cfg.cue; $('aloud').checked = cfg.aloud;
 }
 // Step scanning already uses the right button to choose, so "the right button
 // leaves a region" can't work there; it behaves as a "Leave" stop instead.
@@ -309,9 +309,20 @@ function sayAloud(text) {
   if (!cfg.aloud || !('speechSynthesis' in window)) return;
   speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance(text));
 }
+// Saying each stop. A browser can't truly whisper, so "in a whisper" uses the
+// device's whisper voice where it has one (Apple devices do) and otherwise plays the
+// ordinary voice very quietly. Some browsers, notably on an iPad, ignore the volume.
+const CUE_VOLUME = { whisper: 0.12, quiet: 0.3, normal: 1 };
+function whisperVoice() {
+  return speechSynthesis.getVoices().find((v) => /whisper/i.test(v.name) && /^en/i.test(v.lang)) || null;
+}
 function cueAloud(text) {
-  if (!cfg.cue || !('speechSynthesis' in window)) return;
-  speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = 1.3; speechSynthesis.speak(u);
+  if (cfg.cue === 'off' || !text || !('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 1.3; u.volume = CUE_VOLUME[cfg.cue] || 1;
+  if (cfg.cue === 'whisper') { const v = whisperVoice(); if (v) { try { u.voice = v; u.volume = 0.5; } catch (e) { /* keep the quiet ordinary voice */ } } }
+  speechSynthesis.speak(u);
 }
 function paneLine(cls, text) {
   const d = document.createElement('div'); d.className = cls; d.textContent = text; $('pane').appendChild(d);
