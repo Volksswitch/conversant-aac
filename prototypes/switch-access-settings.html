@@ -147,8 +147,8 @@
       <p class="note">Applies to a drop-down list and the keyboard.</p></div>
     <div class="field"><span>Stray and mistimed presses</span>
       <label>Act on <select id="actOn"><option value="press">press</option><option value="release">release</option></select></label>
-      <label>Ignore presses shorter than <select id="minMs"><option value="0">0</option><option value="100">0.1 s</option><option value="250">0.25 s</option><option value="500">0.5 s</option></select></label>
-      <label>Ignore repeats within <select id="repeatMs"><option value="0">0</option><option value="300">0.3 s</option><option value="600">0.6 s</option><option value="1000">1 s</option></select></label>
+      <label>Ignore presses held for less than <select id="minMs"><option value="0">off</option><option value="100">0.1 s</option><option value="250">0.25 s</option><option value="500">0.5 s</option></select></label>
+      <label>Ignore repeated presses within <select id="repeatMs"><option value="0">off</option><option value="300">0.3 s</option><option value="600">0.6 s</option><option value="1000">1 s</option></select> of the last</label>
       <label>Act on the previous stop if pressed within <select id="forgiveMs"><option value="0">off</option><option value="200">0.2 s</option><option value="300">0.3 s</option><option value="500">0.5 s</option></select> after the highlight moves</label></div>
     <div class="field"><span>One press or two</span>
       <label><input type="checkbox" id="twoPress"> Two presses to change a setting</label>
