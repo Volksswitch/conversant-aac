@@ -70,10 +70,15 @@
   .card h3 { margin: 0 0 8px; font-size: 18px; }
   .card.danger h3 { color: var(--danger); }
   .card .row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-  .always .ctl { flex-wrap: wrap; gap: 6px; }
+  .band .ctl { flex-wrap: wrap; gap: 6px; }
+  .eenote { color: var(--ink-muted); font-size: 14px; margin: 4px 0 8px; }
+  .eerow .kind { flex: 0 0 72px; font-weight: 600; }
+  .ctl.hidden { display: none; }
   .btn.off { opacity: 0.45; }
   .eerow { display: flex; gap: 6px; align-items: center; padding: 4px; border-radius: 6px; margin: 3px 0; }
   .eerow .box { flex: 1 1 0; min-width: 0; }
+  .eerow.inline { flex-wrap: wrap; }
+  .eerow .rowtools { flex: 1 0 100%; display: flex; gap: 6px; }
   .eerow.picked { background: var(--head); }   /* the selected row, shown like a selected tab */
   .listitem { border: 1px solid var(--edge); border-radius: 5px; padding: 8px 10px; margin: 4px 0; }
   .listitem.current { background: var(--head); color: #fff; font-weight: bold; }   /* the current value, shown like a selected tab */
@@ -204,18 +209,28 @@ const TABS = [
       { type: 'select', key: 'maxPer', label: 'Maximum per turn', options: ['0 (none)', '1', '2', '3', '4', 'No limit'] }]),
   ]),
   // The Express Panel tab, laid out as the app lays it out (Ken, November 10 2026: the
-  // scanning layout should look the same as the direct-select layout). The Always
-  // section is the app's: a fixed toolbar acting on the selected row, the two "Insert"
-  // buttons, then one row per phrase with what it says, how to say it, and a speaker.
-  // Choosing a row selects it and enters it. Not shown: picking a button by tapping it
-  // in the Express Panel, sound buttons' own rows, and the Flex and Context sections.
+  // scanning layout should look the same as the direct-select layout). Each band is the
+  // app's: a fixed toolbar acting on the selected row, the two "Insert" buttons where
+  // the band has phrases, then one row per button. Choosing a row selects it and enters
+  // it. The sections come in the app's order, which is the bands' order on screen:
+  // Always, Context, Flex. Not shown: picking a button by tapping it in the Express
+  // Panel (a switch user doesn't need it, Ken), and sound buttons' own rows.
   T('Express Panel and Keyboard', [
     S_('Band sizes and look', [{ type: 'range', key: 'bandContext', label: 'Context band', min: 0, max: 12 },
       { type: 'range', key: 'bandFlex', label: 'Flex band', min: 0, max: 12 },
       { type: 'select', key: 'bandShape', label: 'Measured in', options: ['Buttons', 'Whole rows'] },
       { type: 'select', key: 'contextMark', label: 'Telling context buttons apart', options: ['A shape before the label', 'The bar’s color', 'The bar’s thickness', 'Which side the bar is on'] },
-      { type: 'select', key: 'moreScope', label: 'Tapping More shows the rest', options: ['In that band only', 'Across the whole panel'] }]),
-    S_('Always — the words that never move', [{ type: 'always', key: 'always' }]),
+      { type: 'select', key: 'moreScope', label: 'Tapping More shows the rest', options: ['In that band only', 'Across the whole panel'] },
+      // Ken, November 10 2026: for switch access, Move and Delete may be better beside
+      // each phrase than in a toolbar the scan has to come back round to. A setting, since
+      // on a touch screen the toolbar keeps the rows uncluttered.
+      { type: 'select', key: 'editTools', label: 'Move up, Move down and Delete', options: ['In a toolbar above the list', 'On each row'] }]),
+    S_('Always — the words that never move', [{ type: 'band', band: 'always' }]),
+    S_('Context — describing the conversation context', [
+      { type: 'note', text: () => 'Partners, places, topics and feelings, always in that order. This is also where the choices the other person offers appear, at the far end, for one exchange.' },
+      { type: 'band', band: 'context' }]),
+    S_('Flex — phrases that suit who you are with and where you are', [{ type: 'flexScope' }, { type: 'situations' }, { type: 'band', band: 'flex' },
+      { type: 'note', text: () => `The Flex band has ${V.bandFlex} button${V.bandFlex === 1 ? '' : 's'} right now. Phrases are filled in from the most specific list to the least: the topic switched on, then this partner in this place, then this partner anywhere, then anyone in this place, then Anyone at Anyplace.` }]),
   ]),
   T('Troubleshooting', [
     S_('Who these reports come from', [{ type: 'text', key: 'tester', label: 'Tester name' }]),
@@ -228,8 +243,10 @@ const START_VALUES = { apiKey: '', persist: true, profile: 'Everyday', taps: 'On
   fRespFull: 'Default', fRespShort: 'Default', fConv: 'Default', fSettings: 'Default', arrange: 'In a row', spacing: 4, noSave: false,
   perCat: '1 (four in all)', shows: 'The full response', silence: '0.5 seconds', resume: false, chime: true, initial: '2 seconds',
   subsequent: '10 seconds', easeOff: '2 seconds longer', maxPer: '2', tester: '', problem: '', weekly: true, errors: 3, profiles: 3,
-  bandContext: 4, bandFlex: 0, bandShape: 'Buttons', contextMark: 'A shape before the label', moreScope: 'In that band only',
-  always: ['Yes', 'No', 'Thank you', 'Please', 'Hold on', 'I don’t know', 'Hi', 'Bye', 'See you later', 'Can you help me?'].map((text) => ({ text, speak: '' })) };
+  bandContext: 4, bandFlex: 0, bandShape: 'Buttons', contextMark: 'A shape before the label', moreScope: 'In that band only', editTools: 'In a toolbar above the list',
+  always: ['Yes', 'No', 'Thank you', 'Please', 'Hold on', 'I don’t know', 'Hi', 'Bye', 'See you later', 'Can you help me?'].map((text) => ({ text, speak: '' })),
+  context: [{ kind: 'partner', name: 'Mom' }, { kind: 'partner', name: 'Devon' }, { kind: 'place', name: 'Home' }, { kind: 'feeling', text: 'Happy' }, { kind: 'feeling', text: 'Tired' }],
+  flex: { 'Mom at Anyplace': [{ text: 'Love you', speak: '' }, { text: 'How was your day?', speak: '' }] } };
 const TASKS = [
   ['Turn on “Resume listening automatically after speaking a response” (Conversation).', (v) => v.resume === true],
   ['Set “Silence period” to 1.5 seconds (Conversation).', (v) => v.silence === '1.5 seconds'],
@@ -239,6 +256,7 @@ const TASKS = [
   ['Type a tester name of at least two letters (Troubleshooting).', (v) => v.tester.trim().length >= 2],
   ['Clear the error log (Troubleshooting).', (v) => v.errors === 0],
   ['Delete the phrase “Hold on” (Express Panel and Keyboard).', (v) => !v.always.some((p) => p.text === 'Hold on')],
+  ['Add a Flex phrase, any words, for Devon at the Coffee shop (Express Panel and Keyboard).', (v) => (v.flex['Devon at Coffee shop'] || []).some((p) => p.text.trim())],
 ];
 const KBD = [['Done', 'Delete', 'Cancel'], ['␣', 'e', 't', 'a', 'o', 'i', 'n'], ['s', 'h', 'r', 'd', 'l', 'u', 'c'], ['m', 'w', 'f', 'g', 'y', 'p', 'b'], ['v', 'k', 'j', 'x', 'q', 'z', '.', '?']];
 
@@ -340,29 +358,62 @@ function renderControl(c, s, i) {
     const b = document.createElement('span'); b.className = 'box text' + (V[c.key] ? '' : ' empty'); b.id = ctlId(s, i);
     b.textContent = V[c.key] ? (c.secret ? V[c.key].slice(0, 7) + '…' + V[c.key].slice(-4) : V[c.key]) : '(empty)';
     row.append(lab(c.label), b);
-  } else if (c.type === 'always') {
-    const wrap = document.createElement('div'); wrap.className = 'always';
-    const bar = document.createElement('div'); bar.className = 'ctl';
-    ALWAYS_TOOLS.forEach(([part, text]) => { const b = document.createElement('span'); b.className = 'btn' + (/^(up|down|del)$/.test(part) && picked < 0 ? ' off' : ''); b.id = ctlId(s, i, '-' + part); b.textContent = text; bar.append(b); });
-    const ins = document.createElement('div'); ins.className = 'ctl';
-    [['name', 'Insert: Their name'], ['time', 'Insert: Time of day']].forEach(([part, text]) => { const b = document.createElement('span'); b.className = 'btn' + (picked < 0 ? ' off' : ''); b.id = ctlId(s, i, '-ins-' + part); b.textContent = text; ins.append(b); });
-    wrap.append(bar, ins);
-    V[c.key].forEach((p, k) => {
-      const r = document.createElement('div'); r.className = 'eerow' + (k === picked ? ' picked' : ''); r.id = ctlId(s, i, '-r' + k);
-      const t = document.createElement('span'); t.className = 'box text' + (p.text ? '' : ' empty'); t.id = ctlId(s, i, `-r${k}-t`); t.textContent = p.text || 'What the button says';
-      const sp = document.createElement('span'); sp.className = 'box text' + (p.speak ? '' : ' empty'); sp.id = ctlId(s, i, `-r${k}-s`); sp.textContent = p.speak || 'How to say it (optional)';
-      const h = document.createElement('span'); h.className = 'btn'; h.id = ctlId(s, i, `-r${k}-h`); h.textContent = '\u{1F50A}';
-      r.append(t, sp, h);
-      if (exitMode() === 'leave') { const l = document.createElement('span'); l.className = 'leave'; l.id = ctlId(s, i, `-r${k}-leave`); l.textContent = 'Leave'; r.append(l); }
-      wrap.append(r);
-    });
-    row.className = ''; row.append(wrap);
+  } else if (c.type === 'band') {
+    row.className = ''; row.append(renderBand(c.band, s, i));
+  } else if (c.type === 'note') {
+    row.className = 'eenote'; row.textContent = c.text();
+  } else if (c.type === 'flexScope') {
+    row.append(lab('Editing the Flex band for'), selBox(ctlId(s, i, '-topic'), flexTopic ? 'Topic: ' + flexTopic : 'No topic'));
+    if (!flexTopic) row.append(selBox(ctlId(s, i, '-who'), flexWho), lab('at'), selBox(ctlId(s, i, '-where'), flexWhere));
+  } else if (c.type === 'situations') {
+    if (!madeSituations().length) { row.className = 'hidden'; return row; }
+    const listed = madeSituations().includes(flexKey());
+    const del = document.createElement('span'); del.className = 'btn' + (listed ? '' : ' off'); del.id = ctlId(s, i, '-del'); del.textContent = '✕';
+    row.append(lab('Already set up:'), selBox(ctlId(s, i, '-pick'), listed ? flexKey() : '— choose —'), del);
   } else if (c.type === 'button') {
     const b = document.createElement('span'); b.className = 'btn' + (c.danger ? ' danger' : ''); b.id = ctlId(s, i); b.textContent = c.label;
     row.append(b);
     if (c.act === 'confirmClearLog') row.append(lab(`(${V.errors} errors in the log)`));
   }
   return row;
+}
+function selBox(id, text) { const b = document.createElement('span'); b.className = 'box sel'; b.id = id; b.textContent = text; return b; }
+function renderBand(band, s, i) {
+  const wrap = document.createElement('div'); wrap.className = 'band';
+  const mk = (cls, id, text) => { const b = document.createElement('span'); b.className = cls; b.id = id; b.textContent = text; return b; };
+  const bar = document.createElement('div'); bar.className = 'ctl';
+  const inline = V.editTools === 'On each row';
+  [...(inline ? [] : MOVE_TOOLS), ...BAND_TOOLS[band]].forEach(([part, text]) => bar.append(mk('btn' + (toolOff(band, part) ? ' off' : ''), ctlId(s, i, '-' + part), text)));
+  wrap.append(bar);
+  if (band !== 'context') {
+    const ins = document.createElement('div'); ins.className = 'ctl';
+    INSERTS.forEach(([part, text]) => ins.append(mk('btn' + (toolOff(band, part) ? ' off' : ''), ctlId(s, i, '-' + part), text)));
+    wrap.append(ins);
+  }
+  const list = bandList(band);
+  list.forEach((p, k) => {
+    const r = document.createElement('div'); r.className = 'eerow' + (k === picked(band) ? ' picked' : ''); r.id = ctlId(s, i, '-r' + k);
+    if (band === 'context') {
+      r.append(mk('kind', ctlId(s, i, `-r${k}-kind`), KIND_LABEL[p.kind]));
+      if (p.kind === 'feeling') r.append(mk('box text' + (p.text ? '' : ' empty'), ctlId(s, i, `-r${k}-t`), p.text || 'How you are feeling - dog tired, stretched thin...'));
+      else r.append(mk('box sel', ctlId(s, i, `-r${k}-t`), p.name || '— choose —'));
+    } else {
+      r.append(mk('box text' + (p.text ? '' : ' empty'), ctlId(s, i, `-r${k}-t`), p.text || 'What the button says'),
+        mk('box text' + (p.speak ? '' : ' empty'), ctlId(s, i, `-r${k}-s`), p.speak || 'How to say it (optional)'),
+        mk('btn', ctlId(s, i, `-r${k}-h`), '\u{1F50A}'));
+    }
+    if (inline) { r.classList.add('inline'); const t = document.createElement('div'); t.className = 'rowtools';
+      MOVE_TOOLS.forEach(([part, text]) => t.append(mk('btn' + (rowToolOff(band, k, part) ? ' off' : ''), ctlId(s, i, `-r${k}-${part}`), text))); r.append(t); }
+    if (exitMode() === 'leave') r.append(mk('leave', ctlId(s, i, `-r${k}-leave`), 'Leave'));
+    wrap.append(r);
+  });
+  if (!list.length) {
+    const e = document.createElement('div'); e.className = 'eenote';
+    e.textContent = band === 'flex' ? 'No phrases for this situation yet. Whatever you do not fill is taken from the more general lists.'
+      : band === 'context' ? 'No context buttons yet.' : 'No phrases yet.';
+    wrap.append(e);
+  }
+  return wrap;
 }
 function renderOverlay() {
   const o = $('overlay'); o.textContent = '';
@@ -371,7 +422,7 @@ function renderOverlay() {
   const card = document.createElement('div'); card.className = 'card' + (overlay.kind === 'confirm' ? ' danger' : '');
   if (overlay.kind === 'list') {
     card.innerHTML = '<h3></h3>'; card.querySelector('h3').textContent = overlay.label;
-    overlay.options.forEach((opt, k) => { const d = document.createElement('div'); d.className = 'listitem' + (opt === V[overlay.key] ? ' current' : ''); d.id = 'opt-' + k; d.textContent = opt; card.appendChild(d); });
+    overlay.options.forEach((opt, k) => { const d = document.createElement('div'); d.className = 'listitem' + (opt === ('cur' in overlay ? overlay.cur : V[overlay.key]) ? ' current' : ''); d.id = 'opt-' + k; d.textContent = opt; card.appendChild(d); });
     if (exitMode() === 'leave') { const l = document.createElement('div'); l.className = 'leave'; l.id = 'leave-list'; l.textContent = 'Leave'; card.appendChild(l); }
   } else if (overlay.kind === 'kbd') {
     card.innerHTML = '<h3></h3><div id="compose"></div><div id="kbd"></div>'; card.querySelector('h3').textContent = overlay.label;
@@ -403,43 +454,158 @@ function controlNodes(s) {
       nodes.push({ id: ctlId(s, i, '-plus'), label: `${c.label}: higher`, changes: true, act: () => { const v = Math.min(c.max, V[c.key] + 1); setValue(c.key, v, `${c.label}: ${v}`); return 'stay'; } });
     } else if (c.type === 'text') nodes.push({ id: ctlId(s, i), label: c.label, act: () => { typed = V[c.key]; openOverlay({ kind: 'kbd', key: c.key, label: c.label }); return 'handled'; } });
     else if (c.type === 'button') nodes.push({ id: ctlId(s, i), label: c.label, changes: !/^confirm|picker/.test(c.act), act: () => buttonAct(c) });
-    else if (c.type === 'always') nodes.push(...alwaysNodes(s, i, c.key));
+    else if (c.type === 'band') nodes.push(...bandNodes(s, i, c.band));
+    else if (c.type === 'flexScope') nodes.push(...flexScopeNodes(s, i));
+    else if (c.type === 'situations') nodes.push(...situationNodes(s, i));
   });
   return nodes;
 }
-// ---- The Always section, as the app has it.
-const ALWAYS_TOOLS = [['up', 'Move up'], ['down', 'Move down'], ['del', 'Delete'], ['add', 'Add a phrase'], ['sound', 'Add a sound'], ['reset', 'Reset to the app’s phrases']];
-let picked = -1;   // the selected row, which the toolbar acts on; shown with the dark fill
-function setAlways(list, note) { setValue('always', list, note); renderContent(); for (const L of S.stack) rebuildKeepPlace(L); draw(); }
-function alwaysNodes(s, i, key) {
+// ---- The three band editors, as the app has them (app/js/express-editor.js).
+const PEOPLE = ['Mom', 'Devon', 'Dr. Patel'], PLACES = ['Home', 'Coffee shop', 'Clinic'], TOPICS = ['Conversant'];
+const KINDS = ['partner', 'place', 'topic', 'feeling'];
+const KIND_LABEL = { partner: 'Partner', place: 'Place', topic: 'Topic', feeling: 'Feeling' };
+const KIND_CHOICES = { partner: PEOPLE, place: PLACES, topic: TOPICS };
+const MOVE_TOOLS = [['up', 'Move up'], ['down', 'Move down'], ['del', 'Delete']];
+const BAND_TOOLS = {
+  always: [['add', 'Add a phrase'], ['sound', 'Add a sound'], ['reset', 'Reset to the app’s phrases']],
+  flex: [['add', 'Add a phrase'], ['sound', 'Add a sound']],
+  context: [['add-partner', 'Add a partner'], ['add-place', 'Add a place'], ['add-topic', 'Add a topic'], ['add-feeling', 'Add a feeling']],
+};
+const INSERTS = [['ins-name', 'Insert: Their name'], ['ins-time', 'Insert: Time of day']];
+let pick = null;   // { band, k }: the selected row, which its own band's toolbar acts on; shown with the dark fill
+let flexWho = 'Anyone', flexWhere = 'Anyplace', flexTopic = '';   // which situation the Flex section is editing
+const flexKey = () => (flexTopic ? 'Topic: ' + flexTopic : `${flexWho} at ${flexWhere}`);
+const madeSituations = () => Object.keys(V.flex).filter((k) => V.flex[k].length).sort();
+const picked = (band) => (pick && pick.band === band ? pick.k : -1);
+const labelOf = (p) => p.text || p.name || '';
+function bandList(band) { return band === 'flex' ? (V.flex[flexKey()] || []) : V[band]; }
+function refreshEditor() { renderContent(); for (const L of S.stack) rebuildKeepPlace(L); draw(); }
+function saveBand(band, list, note) {
+  if (band === 'flex') { const fx = { ...V.flex }; if (list.length) fx[flexKey()] = list; else delete fx[flexKey()]; setValue('flex', fx, note); }
+  else setValue(band, list, note);
+  refreshEditor();
+}
+// Grayed out until there is something for the tool to do, as in the app. In the Context
+// band a button can't move past the end of its own kind's run.
+function toolOff(band, part) {
+  const k = picked(band), L = bandList(band);
+  if (part === 'up') return k <= 0 || (band === 'context' && L[k - 1].kind !== L[k].kind);
+  if (part === 'down') return k < 0 || k >= L.length - 1 || (band === 'context' && L[k + 1].kind !== L[k].kind);
+  return (part === 'del' || part.startsWith('ins-')) && k < 0;
+}
+// The same tests for a row's own Move and Delete buttons, which act on that row.
+function rowToolOff(band, k, part) {
+  const L = bandList(band);
+  if (part === 'up') return k <= 0 || (band === 'context' && L[k - 1].kind !== L[k].kind);
+  if (part === 'down') return k >= L.length - 1 || (band === 'context' && L[k + 1].kind !== L[k].kind);
+  return false;
+}
+function setScope(who, where, topic, note) { flexWho = who; flexWhere = where; flexTopic = topic; pick = null; logLine(note); refreshEditor(); }
+function flexScopeNodes(s, i) {
+  const listPick = (label, options, cur, fn) => () => { openOverlay({ kind: 'list', label, options, cur, pick: fn }); return 'handled'; };
+  const nodes = [{ id: ctlId(s, i, '-topic'), label: 'Which topic: ' + (flexTopic || 'No topic'),
+    act: listPick('Which topic the Flex phrases are for', ['No topic', ...TOPICS.map((t) => 'Topic: ' + t)], flexTopic ? 'Topic: ' + flexTopic : 'No topic',
+      (o) => setScope(flexWho, flexWhere, o === 'No topic' ? '' : o.slice(7), 'Editing the Flex band for ' + o)) }];
+  if (!flexTopic) nodes.push(
+    { id: ctlId(s, i, '-who'), label: 'Which partner: ' + flexWho, act: listPick('Which partner the Flex phrases are for', ['Anyone', ...PEOPLE], flexWho,
+      (o) => setScope(o, flexWhere, '', `Editing the Flex band for ${o} at ${flexWhere}`)) },
+    { id: ctlId(s, i, '-where'), label: 'Which place: ' + flexWhere, act: listPick('Which place the Flex phrases are for', ['Anyplace', ...PLACES], flexWhere,
+      (o) => setScope(flexWho, o, '', `Editing the Flex band for ${flexWho} at ${o}`)) });
+  return nodes;
+}
+function situationNodes(s, i) {
+  const made = madeSituations();
+  if (!made.length) return [];
+  const listed = made.includes(flexKey());
+  return [
+    { id: ctlId(s, i, '-pick'), label: 'Already set up: ' + (listed ? flexKey() : 'choose'), act: () => {
+      openOverlay({ kind: 'list', label: 'Jump to a situation you have already set up', options: made, cur: flexKey(), pick: (o) => {
+        if (o.startsWith('Topic: ')) setScope(flexWho, flexWhere, o.slice(7), 'Editing the Flex band for ' + o);
+        else { const [w, p] = o.split(' at '); setScope(w, p, '', 'Editing the Flex band for ' + o); } } });
+      return 'handled'; } },
+    { id: ctlId(s, i, '-del'), label: 'Delete this situation', act: () => {
+      if (!listed) { logLine('Nothing to delete: this situation has no phrases.'); return 'stay'; }
+      const n = V.flex[flexKey()].length;
+      openOverlay({ kind: 'confirm', title: '⚠ Delete this situation?', body: `The ${n} button${n === 1 ? '' : 's'} you have made for ${flexKey()} will be removed.`,
+        buttons: [{ label: 'Cancel' }, { label: 'Delete them', danger: true, run: () => { pick = null; saveBand('flex', [], 'Situation deleted: ' + flexKey()); } }] });
+      return 'handled'; } }];
+}
+function bandNodes(s, i, band) {
   const id = (part) => ctlId(s, i, part);
-  const L = () => V[key];
-  const needPick = (fn) => () => { if (picked < 0) { logLine('Select a phrase first.'); return 'stay'; } return fn(); };
+  const L = () => bandList(band);
+  const k0 = () => picked(band);
+  const needPick = (fn) => () => { if (k0() < 0) { logLine('Select a row in this section first.'); return 'stay'; } return fn(); };
+  const swap = (dir) => needPick(() => {
+    if (toolOff(band, dir < 0 ? 'up' : 'down')) { logLine('It can’t move that way.'); return 'stay'; }
+    const a = L().slice(), k = k0(); [a[k + dir], a[k]] = [a[k], a[k + dir]]; pick = { band, k: k + dir };
+    saveBand(band, a, dir < 0 ? 'Moved up' : 'Moved down'); return 'handled'; });
+  const goToRow = (at) => { const R = topL(); const n = R.nodes.findIndex((x) => x.id === id('-r' + at)); if (n >= 0) { R.idx = n; draw(); } };
+  const addAt = (item, at, note) => { const a = L().slice(); a.splice(at, 0, item); pick = { band, k: at }; saveBand(band, a, note); goToRow(at); return 'handled'; };
   const tools = {
-    up: needPick(() => { if (picked > 0) { const a = L().slice(); [a[picked - 1], a[picked]] = [a[picked], a[picked - 1]]; picked--; setAlways(a, 'Moved up'); } return 'handled'; }),
-    down: needPick(() => { if (picked < L().length - 1) { const a = L().slice(); [a[picked + 1], a[picked]] = [a[picked], a[picked + 1]]; picked++; setAlways(a, 'Moved down'); } return 'handled'; }),
-    del: needPick(() => { const p = L()[picked]; openOverlay({ kind: 'confirm', title: '⚠ Delete this button?', body: `“${p.text}” will be removed, and every button after it moves up one place.`,
-      buttons: [{ label: 'Cancel' }, { label: 'Delete it', danger: true, run: () => { const k = picked; picked = -1; setValue(key, L().filter((_, j) => j !== k), `Phrase deleted: “${p.text}”`); } }] }); return 'handled'; }),
-    add: () => { const a = L().slice(); const at = picked >= 0 ? picked + 1 : a.length; a.splice(at, 0, { text: '', speak: '' }); picked = at; setAlways(a, 'Phrase added');
-      const R = topL(); const n = R.nodes.findIndex((x) => x.id === id('-r' + at)); if (n >= 0) { R.idx = n; draw(); } return 'handled'; },
+    up: swap(-1), down: swap(1),
+    del: needPick(() => { const k = k0(), p = L()[k]; openOverlay({ kind: 'confirm', title: '⚠ Delete this button?',
+      body: `${labelOf(p) ? `“${labelOf(p)}” will be removed` : 'This button will be removed'}, and every button after it moves up one place.`,
+      buttons: [{ label: 'Cancel' }, { label: 'Delete it', danger: true, run: () => { pick = null; saveBand(band, L().filter((_, j) => j !== k), `Deleted: “${labelOf(p)}”`); } }] }); return 'handled'; }),
+    add: () => addAt({ text: '', speak: '' }, k0() >= 0 ? k0() + 1 : L().length, 'Phrase added'),
     sound: () => { openOverlay({ kind: 'modal', title: 'Add a sound', body: 'This opens the device’s own window for choosing a file. A switch can’t operate it, so a supporter would do this step.', buttons: [{ label: 'OK' }] }); return 'handled'; },
     reset: () => { openOverlay({ kind: 'confirm', title: '⚠ Replace the Always phrases?', body: `All ${L().length} buttons in the Always band will be replaced with the set the app comes with.`,
-      buttons: [{ label: 'Cancel' }, { label: 'Replace them', danger: true, run: () => { picked = -1; setValue(key, START_VALUES.always, 'Always phrases reset'); } }] }); return 'handled'; },
+      buttons: [{ label: 'Cancel' }, { label: 'Replace them', danger: true, run: () => { pick = null; saveBand('always', START_VALUES.always, 'Always phrases reset'); } }] }); return 'handled'; },
+    'ins-name': needPick(() => insert('{name}')), 'ins-time': needPick(() => insert('{time of day}')),
   };
-  const insert = (tok) => needPick(() => { const a = L().map((p, j) => (j === picked ? { ...p, text: (p.text + ' ' + tok).trim() } : p)); setAlways(a, `Inserted ${tok}`); return 'handled'; });
-  const nodes = ALWAYS_TOOLS.map(([part, text]) => ({ id: id('-' + part), label: text, changes: part !== 'sound', act: tools[part] }));
-  nodes.push({ id: id('-ins-name'), label: 'Insert: Their name', changes: true, act: insert('{name}') },
-    { id: id('-ins-time'), label: 'Insert: Time of day', changes: true, act: insert('{time of day}') });
-  L().forEach((p, k) => nodes.push({ id: id('-r' + k), label: 'Phrase: ' + (p.text || '(empty)'), group: true, exitByPass: exitMode() === 'pass',
-    onEnter: () => { picked = k; renderContent(); logLine('Selected: ' + (p.text || '(empty)')); },
+  // A new context button goes at the end of its own kind's run: partners, places, topics, feelings.
+  KINDS.forEach((kind) => { tools['add-' + kind] = () => {
+    const at = L().filter((p) => KINDS.indexOf(p.kind) <= KINDS.indexOf(kind)).length;
+    return addAt(kind === 'feeling' ? { kind, text: '' } : { kind, name: '' }, at, KIND_LABEL[kind] + ' button added'); }; });
+  function insert(tok) { const k = k0(); saveBand(band, L().map((p, j) => (j === k ? { ...p, text: (p.text + ' ' + tok).trim() } : p)), `Inserted ${tok}`); return 'handled'; }
+  const inline = V.editTools === 'On each row';
+  const rowId = (k) => id('-r' + k);
+  // A row's own Move button moves the row, and the scan goes with it: it stays inside
+  // that phrase, on the same button, so pressing again moves it again.
+  const followRow = (oldK, newK) => {
+    const li = S.stack.findIndex((Lv) => Lv.fromId === rowId(oldK)); if (li < 1) return;
+    const P = S.stack[li - 1]; const pi = P.nodes.findIndex((n) => n.id === rowId(newK)); if (pi < 0) return;
+    P.idx = pi; const Lv = S.stack[li]; Lv.fromId = rowId(newK); Lv.build = P.nodes[pi].kids; Lv.nodes = Lv.build(); draw();
+  };
+  const rowTool = (k, part) => () => {
+    if (rowToolOff(band, k, part)) { logLine('It can’t move that way.'); return 'stay'; }
+    pick = { band, k };
+    if (part === 'del') {
+      const p = L()[k];
+      openOverlay({ kind: 'confirm', title: '⚠ Delete this button?',
+        body: `${labelOf(p) ? `“${labelOf(p)}” will be removed` : 'This button will be removed'}, and every button after it moves up one place.`,
+        buttons: [{ label: 'Cancel' }, { label: 'Delete it', danger: true, run: () => {
+          // The row is gone, so the scan comes out of it.
+          const li = (S.saved || []).findIndex((Lv) => Lv.fromId === rowId(k)); if (li >= 1) S.saved = S.saved.slice(0, li);
+          pick = null; saveBand(band, L().filter((_, j) => j !== k), `Deleted: “${labelOf(p)}”`); } }] });
+      return 'handled';
+    }
+    const dir = part === 'up' ? -1 : 1, a = L().slice(); [a[k + dir], a[k]] = [a[k], a[k + dir]]; pick = { band, k: k + dir };
+    saveBand(band, a, dir < 0 ? 'Moved up' : 'Moved down'); followRow(k, k + dir); return 'handled';
+  };
+  const nodes = [...(inline ? [] : MOVE_TOOLS), ...BAND_TOOLS[band], ...(band === 'context' ? [] : INSERTS)]
+    .map(([part, text]) => ({ id: id('-' + part), label: text, changes: part !== 'sound', act: tools[part] }));
+  const setRow = (k, patch, note) => saveBand(band, L().map((x, j) => (j === k ? { ...x, ...patch } : x)), note);
+  L().forEach((p, k) => nodes.push({ id: id('-r' + k), label: (band === 'context' ? KIND_LABEL[p.kind] + ': ' : 'Phrase: ') + (labelOf(p) || '(empty)'),
+    group: true, exitByPass: exitMode() === 'pass',
+    onEnter: () => { pick = { band, k }; renderContent(); logLine('Selected: ' + (labelOf(p) || '(empty)')); },
     kids: () => {
       const q = L()[k];
-      const field = (f, part, label) => ({ id: id(`-r${k}-${part}`), label: `${label}: ${q[f] || '(empty)'}`, act: () => { typed = q[f]; openOverlay({ kind: 'kbd', label,
-        onDone: (t) => setAlways(L().map((x, j) => (j === k ? { ...x, [f]: t.trim() } : x)), `${label}: “${t.trim()}”`) }); return 'handled'; } });
-      return [field('text', 't', 'What the button says'), field('speak', 's', 'How to say it'),
+      if (!q) return [];
+      const leave = [...(inline ? MOVE_TOOLS.map(([part, text]) => ({ id: id(`-r${k}-${part}`), label: text, changes: true, act: rowTool(k, part) })) : []),
+        ...(exitMode() === 'leave' ? [{ id: id(`-r${k}-leave`), label: 'Leave', leave: true }] : [])];
+      const typeInto = (f, part, label) => ({ id: id(`-r${k}-${part}`), label: `${label}: ${q[f] || '(empty)'}`, act: () => { typed = q[f] || ''; openOverlay({ kind: 'kbd', label,
+        onDone: (t) => setRow(k, { [f]: t.trim() }, `${label}: “${t.trim()}”`) }); return 'handled'; } });
+      if (band === 'context') {
+        if (q.kind === 'feeling') return [typeInto('text', 't', 'How you are feeling'), ...leave];
+        const which = `Which ${q.kind} this button is for`;
+        return [{ id: id(`-r${k}-t`), label: `${which}: ${q.name || 'choose'}`, act: () => { openOverlay({ kind: 'list', label: which,
+          options: ['— choose —', ...KIND_CHOICES[q.kind]], cur: q.name || '— choose —',
+          pick: (o) => setRow(k, { name: o === '— choose —' ? '' : o }, `${KIND_LABEL[q.kind]}: ${o}`) }); return 'handled'; } }, ...leave];
+      }
+      return [typeInto('text', 't', 'What the button says'), typeInto('speak', 's', 'How to say it'),
         { id: id(`-r${k}-h`), label: 'Hear it', act: () => { const said = (q.speak || q.text).replace(/\{name\}/g, '').replace(/\{time of day\}/g, 'morning');
           logLine('Says: ' + said); try { speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance(said)); } catch (e) { /* no speech here */ } return 'stay'; } },
-        ...(exitMode() === 'leave' ? [{ id: id(`-r${k}-leave`), label: 'Leave', leave: true }] : [])];
+        ...leave];
     } }));
   return nodes;
 }
@@ -469,7 +635,9 @@ function closeOverlay() {
 }
 function overlayRoot() {
   if (!overlay) return [];
-  if (overlay.kind === 'list') return [...overlay.options.map((opt, k) => ({ id: 'opt-' + k, label: opt, changes: true, act: () => { setValue(overlay.key, opt, `${overlay.label}: ${opt}`); closeOverlay(); return 'handled'; } })),
+  if (overlay.kind === 'list') return [...overlay.options.map((opt, k) => ({ id: 'opt-' + k, label: opt, changes: true, act: () => {
+      if (overlay.pick) { const p = overlay.pick; closeOverlay(); p(opt); return 'handled'; }
+      setValue(overlay.key, opt, `${overlay.label}: ${opt}`); closeOverlay(); return 'handled'; } })),
     ...(exitMode() === 'leave' ? [{ id: 'leave-list', label: 'Leave', act: () => { closeOverlay(); return 'handled'; } }] : [])];
   if (overlay.kind === 'kbd') return KBD.map((keys, r) => ({ id: 'krow-' + r, label: keys.join(' '), group: true, exitByPass: true,
     kids: () => keys.map((k, c) => ({ id: `key-${r}-${c}`, label: k === '␣' ? 'space' : k, act: () => keyAct(k) })) }));
@@ -717,7 +885,7 @@ document.addEventListener('keyup', (e) => {
 
 // ---------------------------------------------------------------- wiring
 function restart() {
-  V = { ...START_VALUES }; tab = -1; openSec = -1; overlay = null; typed = ''; picked = -1;
+  V = { ...START_VALUES }; tab = -1; openSec = -1; overlay = null; typed = ''; pick = null; flexWho = 'Anyone'; flexWhere = 'Anyplace'; flexTopic = '';
   done.fill(null); $('log').textContent = '';
   renderAll(); renderTasks(); resetMeter(); resetScan();
 }
@@ -761,6 +929,7 @@ function stateLines() {
   out.push('Scanning: ' + (stopped ? 'stopped' : S.resting ? 'resting' : 'running'));
   out.push('Tab: ' + (tab >= 0 ? TABS[tab].label : 'none chosen'));
   if (tab >= 0) out.push('Section open: ' + (openSec >= 0 ? TABS[tab].sections[openSec].title : 'none'));
+  if (tab >= 0 && TABS[tab].label === 'Express Panel and Keyboard') out.push('Flex band being edited: ' + flexKey() + '; selected row: ' + (pick ? pick.band + ' ' + (pick.k + 1) : 'none'));
   if (overlay) out.push('Open on top: ' + overlay.kind + (overlay.title ? ' "' + overlay.title + '"' : '') + (overlay.key ? ' (' + overlay.key + ')' : ''));
   if (overlay && overlay.kind === 'kbd') out.push('Typed so far: "' + typed + '"');
   const changed = Object.keys(V).filter((k) => JSON.stringify(V[k]) !== JSON.stringify(START_VALUES[k]));

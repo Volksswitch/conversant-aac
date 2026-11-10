@@ -39,7 +39,7 @@ PAGES = [
     {'slug': 'conversant-switch-access-settings-prototype', 'title': 'Conversant AAC Switch Access Prototype: Settings',
      'file': 'switch-access-settings.html', 'height': 1750,
      'intro': ('This page lets you try how someone using one or two switches might change Conversant AAC’s settings. '
-               'It shows seven of the real Settings tabs and eight tasks to time. '
+               'It shows seven of the real Settings tabs and nine tasks to time. '
                'Anywhere in the prototype except the panel on its right, the <strong>left mouse button is switch 1</strong> '
                'and the <strong>right mouse button is switch 2</strong>; Space and Enter do the same. '
                'Nothing here changes the real app. It works best on a computer with a mouse and a wide window.'),
