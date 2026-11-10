@@ -85,6 +85,7 @@
   #panel .field { margin-bottom: 8px; }
   #panel .field > span { display: block; font-weight: bold; margin-bottom: 2px; }
   #panel select, #panel input[type=number] { font-size: 14px; padding: 3px; }
+  #panel button.on { background: #1f4e79; color: #fff; }
   #panel button { font-size: 14px; padding: 6px 8px; margin: 2px 0; width: 100%; text-align: left; cursor: pointer; border: 1px solid var(--edge); border-radius: 5px; background: #f7f9fb; }
   .note { font-size: 12px; color: var(--ink-muted); }
   #tasks { list-style: none; padding: 0; margin: 0; }
@@ -110,6 +111,8 @@
   </div>
 
   <div id="panel">
+    <h2>Examples</h2>
+    <div id="presets"></div>
     <h2>Tasks</h2>
     <ul id="tasks"></ul>
     <p class="note">A task is checked when the setting reaches its target. The cost is counted from the previous task you finished.</p>
@@ -496,9 +499,21 @@ function restart() {
   done.fill(null); $('log').textContent = '';
   renderAll(); renderTasks(); resetMeter(); resetScan();
 }
-$('panel').addEventListener('change', () => { readCfg(); restart(); });
+// Ready-made examples, so plain page order and grouped order are one click apart.
+const PRESETS = [
+  ['1. Plain page order, one switch', { order: 'plain', method: 'auto' }],
+  ['2. Grouped, one switch', { order: 'grouped', method: 'auto' }],
+  ['3. Plain page order, two switches (step)', { order: 'plain', method: 'step' }],
+  ['4. Grouped, two switches (step)', { order: 'grouped', method: 'step' }],
+];
+function applyPreset(name, over) {
+  cfg = { ...DEFAULTS, ...over }; writeCfg(); restart();
+  document.querySelectorAll('#presets button').forEach((b) => b.classList.toggle('on', b.textContent === name));
+}
+PRESETS.forEach(([name, over]) => { const b = document.createElement('button'); b.textContent = name; b.addEventListener('click', () => { applyPreset(name, over); $('screen').focus(); }); $('presets').appendChild(b); });
+$('panel').addEventListener('change', () => { readCfg(); restart(); document.querySelectorAll('#presets button').forEach((b) => b.classList.remove('on')); });
 $('restart').addEventListener('click', () => { restart(); $('screen').focus(); });
-writeCfg(); restart(); $('screen').focus();
+applyPreset(PRESETS[0][0], PRESETS[0][1]); $('screen').focus();
 </script>
 </body>
 </html>
