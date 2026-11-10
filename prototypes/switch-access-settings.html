@@ -9,11 +9,13 @@
   November 9 2026: "work up a webpage prototype for switch access to the Settings
   panel").
 
-  Six of the real Settings tabs, with their real labels and choices, scanned two ways:
-  in plain page order (what "normal tab order" gives) or grouped (tabs, then a
-  section, then its controls). It shows the controls that don't fit "highlight it and
-  press": drop-down lists, radio buttons, sliders, text boxes, red confirmation cards
-  and the device's own folder window. Tasks on the right are timed.
+  Six of the real Settings tabs, with their real labels and choices. The scan starts
+  on the tabs and Close; choosing a tab enters it, and each section in it is a group
+  the scan stays in until it leaves (Ken settled this; the earlier plain-versus-grouped
+  choice was dropped once the two behaved the same). It shows the controls that don't
+  fit "highlight it and press": drop-down lists, radio buttons, sliders, text boxes,
+  red confirmation cards and the device's own folder window. Tasks on the right are
+  timed.
 
   Inputs: anywhere on the page except the right-hand panel, the LEFT mouse button is
   switch 1 and the RIGHT mouse button is switch 2. Space and Enter do the same.
@@ -123,10 +125,7 @@
     <p class="note">A task is checked when the setting reaches its target. The cost is counted from the previous task you finished.</p>
 
     <h2>How the scan works</h2>
-    <div class="field"><span>Order</span>
-      <label><input type="radio" name="order" value="plain"> Plain page order: inside a tab, each section heading, with an open section’s settings right after it</label>
-      <label><input type="radio" name="order" value="grouped"> Grouped: inside a tab, each section is one stop you enter</label>
-      <p class="note">The scan starts on the tabs and Close. Choosing a tab enters it, and the scan stays in that tab until it leaves.</p></div>
+    <p class="note">The scan starts on the tabs and Close. Choosing a tab enters it, and pressing a section heading enters that section. The scan stays in a tab or section until it leaves.</p>
     <div class="field"><span>Scan method</span>
       <label><input type="radio" name="method" value="auto"> Automatic: the highlight moves by itself</label>
       <label><input type="radio" name="method" value="step"> Step: left button moves, right button chooses</label>
@@ -219,18 +218,18 @@ const TASKS = [
 const KBD = [['Done', 'Delete', 'Cancel'], ['␣', 'e', 't', 'a', 'o', 'i', 'n'], ['s', 'h', 'r', 'd', 'l', 'u', 'c'], ['m', 'w', 'f', 'g', 'y', 'p', 'b'], ['v', 'k', 'j', 'x', 'q', 'z', '.', '?']];
 
 // ---------------------------------------------------------------- settings of the prototype itself
-const DEFAULTS = { order: 'grouped', method: 'auto', speed: 1, dropdown: 'list', exit: 'pass', rest: 2,
+const DEFAULTS = { method: 'auto', speed: 1, dropdown: 'list', exit: 'pass', rest: 2,
   actOn: 'press', minMs: 0, repeatMs: 250, forgiveMs: 0, twoPress: false, secondMs: 2000 };
 let cfg = { ...DEFAULTS };
 function readCfg() {
   const radio = (n) => (document.querySelector(`input[name=${n}]:checked`) || {}).value;
-  cfg.order = radio('order'); cfg.method = radio('method'); cfg.dropdown = radio('dropdown'); cfg.exit = radio('exit');
+  cfg.method = radio('method'); cfg.dropdown = radio('dropdown'); cfg.exit = radio('exit');
   cfg.speed = Math.max(0.3, Number($('speed').value) || 1); cfg.rest = Number($('rest').value);
   cfg.actOn = $('actOn').value; cfg.minMs = Number($('minMs').value); cfg.repeatMs = Number($('repeatMs').value);
   cfg.forgiveMs = Number($('forgiveMs').value); cfg.twoPress = $('twoPress').checked; cfg.secondMs = Number($('secondMs').value);
 }
 function writeCfg() {
-  for (const n of ['order', 'method', 'dropdown', 'exit']) { const el = document.querySelector(`input[name=${n}][value="${cfg[n]}"]`); if (el) el.checked = true; }
+  for (const n of ['method', 'dropdown', 'exit']) { const el = document.querySelector(`input[name=${n}][value="${cfg[n]}"]`); if (el) el.checked = true; }
   $('speed').value = cfg.speed; $('rest').value = String(cfg.rest);
   $('actOn').value = cfg.actOn; $('minMs').value = String(cfg.minMs); $('repeatMs').value = String(cfg.repeatMs);
   $('forgiveMs').value = String(cfg.forgiveMs); $('twoPress').checked = cfg.twoPress; $('secondMs').value = String(cfg.secondMs);
@@ -501,8 +500,8 @@ function choose() {
 function runNode(n) {
   const r = n.act ? n.act() : null;
   if (r === 'handled') return;
-  // Stay where you are: in plain order the scan goes on from this control, in a
-  // group it stays in the group, and in the keyboard it goes back to the rows.
+  // Stay where you are: in a group the scan stays in the group, and in the keyboard
+  // it goes back to the rows.
   if (overlay && overlay.kind === 'kbd' && S.stack.length > 1) { S.stack.pop(); topL().idx = 0; }
   for (const L of S.stack) rebuildKeepPlace(L);
   topL().passes = 0;
@@ -560,13 +559,10 @@ function restart() {
   done.fill(null); $('log').textContent = '';
   renderAll(); renderTasks(); resetMeter(); resetScan();
 }
-// Ready-made examples, so plain page order and grouped order are one click apart.
+// Ready-made examples.
 const PRESETS = [
-  ['1. Plain page order, one switch', { order: 'plain', method: 'auto' }],
-  ['2. Grouped, one switch', { order: 'grouped', method: 'auto' }],
-  ['3. Plain page order, two switches (step)', { order: 'plain', method: 'step' }],
-  ['4. Grouped, two switches (step)', { order: 'grouped', method: 'step' }],
-  ['5. Grouped, one switch, two presses to change a setting', { order: 'grouped', method: 'auto', twoPress: true }],
+  ['One switch', { method: 'auto' }],
+  ['Two switches', { method: 'step' }],
 ];
 function applyPreset(name, over) {
   cfg = { ...DEFAULTS, ...over }; writeCfg(); restart();
