@@ -11,7 +11,7 @@
 
   Six of the real Settings tabs, with their real labels and choices. The scan starts
   on the tabs and Close; choosing a tab puts its sections in the tab's place in the
-  same cycle, and each section is a group the scan stays in until it leaves (Ken settled this; the earlier plain-versus-grouped
+  same cycle, and an open section's settings take its heading's place in the cycle too (Ken settled this; the earlier plain-versus-grouped
   choice was dropped once the two behaved the same). It shows the controls that don't
   fit "highlight it and press": drop-down lists, radio buttons, sliders, text boxes,
   red confirmation cards and the device's own folder window. Tasks on the right are
@@ -126,7 +126,7 @@
     <p class="note">A task is checked when the setting reaches its target. The cost is counted from the previous task you finished.</p>
 
     <h2>How the scan works</h2>
-    <p class="note">The scan starts on the tabs and Close. Choosing a tab puts its sections in the tab’s place, so the scan goes round the other tabs, the chosen tab’s sections and Close in one cycle. Pressing a section heading enters that section, and the scan stays in it until it leaves.</p>
+    <p class="note">The scan starts on the tabs and Close. Choosing a tab puts its sections in the tab’s place, so the scan goes round the other tabs, the chosen tab’s sections and Close in one cycle. Pressing a section heading opens that section, and its settings take the heading’s place in the same cycle.</p>
     <div class="field"><span>Scan method</span>
       <label><input type="radio" name="method" value="auto"> Automatic: the highlight moves by itself</label>
       <label><input type="radio" name="method" value="step"> Step: left button moves, right button chooses</label>
@@ -139,7 +139,7 @@
       <label><input type="radio" name="exit" value="pass"> After one pass with no press</label>
       <label><input type="radio" name="exit" value="leave"> A “Leave” stop at the end</label>
       <label><input type="radio" name="exit" value="switch2"> The right button (automatic and inverse scanning only)</label>
-      <p class="note">Applies to a tab, a section, a drop-down list and the keyboard.</p></div>
+      <p class="note">Applies to a drop-down list and the keyboard.</p></div>
     <div class="field"><span>Stray and mistimed presses</span>
       <label>Act on <select id="actOn"><option value="press">press</option><option value="release">release</option></select></label>
       <label>Ignore presses shorter than <select id="minMs"><option value="0">0</option><option value="100">0.1 s</option><option value="250">0.25 s</option><option value="500">0.5 s</option></select></label>
@@ -259,7 +259,6 @@ function renderContent() {
     box.appendChild(h);
     const cs = document.createElement('div'); cs.className = 'controls';
     sec.controls.forEach((c, i) => cs.appendChild(renderControl(c, s, i)));
-    if (exitMode() === 'leave') { const l = document.createElement('div'); l.className = 'leave'; l.id = `leave-sec-${s}`; l.textContent = 'Leave this section'; cs.appendChild(l); }
     box.appendChild(cs); host.appendChild(box);
   });
 }
@@ -403,19 +402,24 @@ function tabNode(i) {
     act: () => {
       tab = i; openSec = -1; renderAll(); logLine('Tab: ' + TABS[i].label);
       const L = topL(); L.nodes = L.build(); L.passes = 0;
-      const first = L.nodes.findIndex((n) => n.id === 'sec-0'); if (first >= 0) L.idx = first;
+      const first = L.nodes.findIndex((n) => n.id === 'head-0'); if (first >= 0) L.idx = first;
       draw(); schedule(); return 'handled';
     } };
 }
-// Inside a tab: each section heading is one stop, and a press enters the section.
-// Inside a section the scan goes round its settings until it leaves (a pass with no
-// press, "Leave this section", or the right button), then moves to the next heading.
-function tabKids() { return TABS[tab].sections.map((_, s) => headingNode(s)); }
+// Inside a tab: each closed section's heading is one stop. The open section's settings
+// take its heading's place in the same cycle (Ken, November 10 2026, the same rule as a
+// chosen tab), so there is no section to enter or leave. Pressing a heading opens that
+// section, closes the one that was open, and moves the highlight to its first setting.
+function tabKids() { return TABS[tab].sections.flatMap((_, s) => (s === openSec ? controlNodes(s) : [headingNode(s)])); }
 function headingNode(s) {
   const sec = TABS[tab].sections[s];
-  return { id: 'sec-' + s, label: 'Section: ' + sec.title, group: true, exitByPass: exitMode() === 'pass',
-    onEnter: () => { openSec = s; renderContent(); },
-    kids: () => [...controlNodes(s), ...(exitMode() === 'leave' ? [{ id: `leave-sec-${s}`, label: 'Leave this section', leave: true }] : [])] };
+  return { id: 'head-' + s, label: 'Section: ' + sec.title,
+    act: () => {
+      openSec = s; renderContent(); logLine('Section: ' + sec.title);
+      const L = topL(); L.nodes = L.build(); L.passes = 0;
+      const first = L.nodes.findIndex((n) => n.id.startsWith(`ctl-${s}-`)); if (first >= 0) L.idx = first;
+      draw(); schedule(); return 'handled';
+    } };
 }
 function rootBuild() { return [...TABS.flatMap((_, i) => (i === tab ? tabKids() : [tabNode(i)])), closeNode()]; }
 
