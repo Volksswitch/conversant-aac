@@ -856,11 +856,33 @@ screenEl.focus();
 // Ken, November 10 2026: copy the current settings so they can be pasted into a
 // conversation about a particular behavior. Read from the panel itself, so a setting
 // added later is included without anyone remembering to add it here.
+// What is on screen right now, so a copied report says where things stood.
+function stateLines() {
+  const out = [];
+  const name = (x) => (x == null ? 'none' : typeof x === 'object' ? (x.label || x.name || JSON.stringify(x)) : String(x));
+  out.push('Highlight: ' + ($('where').textContent.trim() || '(none)'));
+  out.push('Scanning: ' + (S.paused ? 'paused' : S.resting ? 'resting' : S.reading ? 'reading time for new options' : 'running'));
+  out.push('Screen: ' + (A.mode === 'kbd' ? 'keyboard (In my own words)' : 'conversation'));
+  if (A.mode === 'kbd') out.push('Typed so far: "' + A.typed + '"');
+  out.push('Partner turn: ' + (A.turn + 1) + (A.variant ? ', newer version ' + A.variant : ''));
+  out.push('Response options: ' + (A.waitingAI ? 'waiting for the AI' : A.failed ? 'the AI failed' : A.options.length ? A.options.map((o) => '"' + o[0] + '"').join(' | ') : 'none'));
+  if (pending) out.push('A newer set is held back');
+  out.push('Partner: ' + name(A.partner) + '; Place: ' + name(A.place) + '; Feeling: ' + name(A.feeling));
+  out.push('Goals on: ' + (A.goals.size ? [...A.goals].map(name).join(', ') : 'none'));
+  if (A.reframes.length) out.push('Reframes: ' + A.reframes.join(' + '));
+  if (A.alwaysPage) out.push('Express Panel page (More): ' + (A.alwaysPage + 1));
+  if (A.lastSaid) out.push('Last thing said: "' + A.lastSaid + '"');
+  out.push($('counts').textContent.trim());
+  const pane = $('pane').innerText.trim().split('\n').filter(Boolean).slice(-8);
+  if (pane.length) { out.push('Conversation so far (last lines):'); pane.forEach((l) => out.push('  ' + l)); }
+  return out;
+}
 let presetName = null;
 let presetEdited = false;
 function settingsText() {
   const own = (el) => Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent).join(' ').replace(/\s+/g, ' ').trim();
   const lines = [document.title, new Date().toLocaleString()];
+  lines.push('', 'Settings:');
   lines.push('Example: ' + (presetName ? presetName + (presetEdited ? ' (then changed by hand)' : '') : 'none'));
   document.querySelectorAll('#panel .field').forEach((f) => {
     const head = f.querySelector(':scope > span');
@@ -871,7 +893,8 @@ function settingsText() {
     f.querySelectorAll('input[type=number]').forEach((n) => parts.push(n.value));
     lines.push((head ? head.textContent.trim() + ': ' : '') + parts.join('; '));
   });
-  lines.push('As data: ' + JSON.stringify(cfg));
+  lines.push('', 'Current state:', ...stateLines().map((l) => '  ' + l));
+  lines.push('', 'Settings as data: ' + JSON.stringify(cfg));
   return lines.join('\n');
 }
 async function copySettings() {

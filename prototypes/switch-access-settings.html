@@ -587,11 +587,31 @@ applyPreset(PRESETS[0][0], PRESETS[0][1]); $('screen').focus();
 // Ken, November 10 2026: copy the current settings so they can be pasted into a
 // conversation about a particular behavior. Read from the panel itself, so a setting
 // added later is included without anyone remembering to add it here.
+// What is on screen right now, so a copied report says where things stood.
+function stateLines() {
+  const out = [];
+  const lastLines = (id, n) => ($(id) ? $(id).innerText.trim().split('\n').filter(Boolean).slice(-n) : []);
+  out.push('Highlight: ' + ($('where').textContent.trim() || '(none)'));
+  out.push('Scanning: ' + (stopped ? 'stopped' : S.resting ? 'resting' : 'running'));
+  out.push('Tab: ' + (tab >= 0 ? TABS[tab].label : 'none chosen'));
+  if (tab >= 0) out.push('Section open: ' + (openSec >= 0 ? TABS[tab].sections[openSec].title : 'none'));
+  if (overlay) out.push('Open on top: ' + overlay.kind + (overlay.title ? ' "' + overlay.title + '"' : '') + (overlay.key ? ' (' + overlay.key + ')' : ''));
+  if (overlay && overlay.kind === 'kbd') out.push('Typed so far: "' + typed + '"');
+  const changed = Object.keys(V).filter((k) => JSON.stringify(V[k]) !== JSON.stringify(START_VALUES[k]));
+  out.push('Settings changed in the panel: ' + (changed.length ? changed.map((k) => k + ' = ' + JSON.stringify(V[k])).join(', ') : 'none'));
+  out.push('Tasks done: ' + done.filter(Boolean).length + ' of ' + TASKS.length);
+  TASKS.forEach(([t], i) => { if (done[i]) out.push('  done: ' + t); });
+  out.push($('counts').textContent.trim());
+  const log = lastLines('log', 6);
+  if (log.length) { out.push('Recent activity:'); log.forEach((l) => out.push('  ' + l)); }
+  return out;
+}
 let presetName = null;
 let presetEdited = false;
 function settingsText() {
   const own = (el) => Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent).join(' ').replace(/\s+/g, ' ').trim();
   const lines = [document.title, new Date().toLocaleString()];
+  lines.push('', 'Settings:');
   lines.push('Example: ' + (presetName ? presetName + (presetEdited ? ' (then changed by hand)' : '') : 'none'));
   document.querySelectorAll('#panel .field').forEach((f) => {
     const head = f.querySelector(':scope > span');
@@ -602,7 +622,8 @@ function settingsText() {
     f.querySelectorAll('input[type=number]').forEach((n) => parts.push(n.value));
     lines.push((head ? head.textContent.trim() + ': ' : '') + parts.join('; '));
   });
-  lines.push('As data: ' + JSON.stringify(cfg));
+  lines.push('', 'Current state:', ...stateLines().map((l) => '  ' + l));
+  lines.push('', 'Settings as data: ' + JSON.stringify(cfg));
   return lines.join('\n');
 }
 async function copySettings() {
