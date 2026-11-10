@@ -383,7 +383,7 @@ function renderBand(band, s, i) {
   const inline = ROW_TOOLS;
   [...(inline ? [] : MOVE_TOOLS), ...BAND_TOOLS[band]].forEach(([part, text]) => bar.append(mk('btn' + (toolOff(band, part) ? ' off' : ''), ctlId(s, i, '-' + part), text)));
   wrap.append(bar);
-  if (band !== 'context') {
+  if (band !== 'context' && !inline) {
     const ins = document.createElement('div'); ins.className = 'ctl';
     INSERTS.forEach(([part, text]) => ins.append(mk('btn' + (toolOff(band, part) ? ' off' : ''), ctlId(s, i, '-' + part), text)));
     wrap.append(ins);
@@ -401,7 +401,9 @@ function renderBand(band, s, i) {
         mk('btn', ctlId(s, i, `-r${k}-h`), '\u{1F50A}'));
     }
     if (inline) { r.classList.add('inline'); const t = document.createElement('div'); t.className = 'rowtools';
-      MOVE_TOOLS.forEach(([part, text]) => t.append(mk('btn' + (rowToolOff(band, k, part) ? ' off' : ''), ctlId(s, i, `-r${k}-${part}`), text))); r.append(t); }
+      // Everything that acts on this one phrase is in its row (Ken, November 10 2026),
+      // the "Insert" buttons included, so the whole job is done without leaving it.
+      [...(band === 'context' ? [] : INSERTS), ...MOVE_TOOLS].forEach(([part, text]) => t.append(mk('btn' + (rowToolOff(band, k, part) ? ' off' : ''), ctlId(s, i, `-r${k}-${part}`), text))); r.append(t); }
     if (exitMode() === 'leave') r.append(mk('leave', ctlId(s, i, `-r${k}-leave`), 'Leave'));
     wrap.append(r);
   });
@@ -570,6 +572,7 @@ function bandNodes(s, i, band) {
     P.idx = pi; const Lv = S.stack[li]; Lv.fromId = rowId(newK); Lv.build = P.nodes[pi].kids; Lv.nodes = Lv.build(); draw();
   };
   const rowTool = (k, part) => () => {
+    if (part.startsWith('ins-')) { pick = { band, k }; return insert(part === 'ins-name' ? '{name}' : '{time of day}'); }
     if (rowToolOff(band, k, part)) { logLine('It can’t move that way.'); return 'stay'; }
     pick = { band, k };
     if (part === 'del') {
@@ -585,7 +588,7 @@ function bandNodes(s, i, band) {
     const dir = part === 'up' ? -1 : 1, a = L().slice(); [a[k + dir], a[k]] = [a[k], a[k + dir]]; pick = { band, k: k + dir };
     saveBand(band, a, dir < 0 ? 'Moved up' : 'Moved down'); followRow(k, k + dir); return 'handled';
   };
-  const nodes = [...(inline ? [] : MOVE_TOOLS), ...BAND_TOOLS[band], ...(band === 'context' ? [] : INSERTS)]
+  const nodes = [...(inline ? [] : MOVE_TOOLS), ...BAND_TOOLS[band], ...(band === 'context' || inline ? [] : INSERTS)]
     .map(([part, text]) => ({ id: id('-' + part), label: text, changes: part !== 'sound', act: tools[part] }));
   const setRow = (k, patch, note) => saveBand(band, L().map((x, j) => (j === k ? { ...x, ...patch } : x)), note);
   L().forEach((p, k) => nodes.push({ id: id('-r' + k), label: (band === 'context' ? KIND_LABEL[p.kind] + ': ' : 'Phrase: ') + (labelOf(p) || '(empty)'),
@@ -594,7 +597,7 @@ function bandNodes(s, i, band) {
     kids: () => {
       const q = L()[k];
       if (!q) return [];
-      const leave = [...(inline ? MOVE_TOOLS.map(([part, text]) => ({ id: id(`-r${k}-${part}`), label: text, changes: true, act: rowTool(k, part) })) : []),
+      const leave = [...(inline ? [...(band === 'context' ? [] : INSERTS), ...MOVE_TOOLS].map(([part, text]) => ({ id: id(`-r${k}-${part}`), label: text, changes: true, act: rowTool(k, part) })) : []),
         ...(exitMode() === 'leave' ? [{ id: id(`-r${k}-leave`), label: 'Leave', leave: true }] : [])];
       const typeInto = (f, part, label) => ({ id: id(`-r${k}-${part}`), label: `${label}: ${q[f] || '(empty)'}`, act: () => { typed = q[f] || ''; openOverlay({ kind: 'kbd', label,
         onDone: (t) => setRow(k, { [f]: t.trim() }, `${label}: “${t.trim()}”`) }); return 'handled'; } });
