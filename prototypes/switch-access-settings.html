@@ -166,6 +166,10 @@
       <label><input type="checkbox" id="twoPress"> Two presses to change a setting</label>
       <label>Time for the second press <select id="secondMs"><option value="1000">1 s</option><option value="2000">2 s</option><option value="3000">3 s</option><option value="4000">4 s</option></select></label>
       <p class="note">The app ignores “One tap or two” inside Settings today. This tries applying it for switch users.</p></div>
+    <div class="field"><span>Move up, Move down and Delete in lists</span>
+      <label><input type="radio" name="editTools" value="row"> On each row, under the item</label>
+      <label><input type="radio" name="editTools" value="toolbar"> In a toolbar above the list, acting on the selected row</label>
+      <p class="note">Applies to every list in Settings that has these buttons, such as the Express Panel phrases and the Commands lists. On a row, the scan stays with an item after it moves, so pressing again moves it again. The toolbar is how the app works today.</p></div>
     <p class="note">This shows seven of the fourteen Settings tabs. The folder picker, like importing a file, opens a window the device draws, which a switch can’t operate, so it only shows a message here.</p>
   </div>
 </div>
@@ -222,11 +226,7 @@ const TABS = [
       { type: 'range', key: 'bandFlex', label: 'Flex band', min: 0, max: 12 },
       { type: 'select', key: 'bandShape', label: 'Measured in', options: ['Buttons', 'Whole rows'] },
       { type: 'select', key: 'contextMark', label: 'Telling context buttons apart', options: ['A shape before the label', 'The bar’s color', 'The bar’s thickness', 'Which side the bar is on'] },
-      { type: 'select', key: 'moreScope', label: 'Tapping More shows the rest', options: ['In that band only', 'Across the whole panel'] },
-      // Ken, November 10 2026: for switch access, Move and Delete may be better beside
-      // each phrase than in a toolbar the scan has to come back round to. A setting, since
-      // on a touch screen the toolbar keeps the rows uncluttered.
-      { type: 'select', key: 'editTools', label: 'Move up, Move down and Delete', options: ['In a toolbar above the list', 'On each row'] }]),
+      { type: 'select', key: 'moreScope', label: 'Tapping More shows the rest', options: ['In that band only', 'Across the whole panel'] }]),
     S_('Always — the words that never move', [{ type: 'band', band: 'always' }]),
     S_('Context — describing the conversation context', [
       { type: 'note', text: () => 'Partners, places, topics and feelings, always in that order. This is also where the choices the other person offers appear, at the far end, for one exchange.' },
@@ -245,7 +245,7 @@ const START_VALUES = { apiKey: '', persist: true, profile: 'Everyday', taps: 'On
   fRespFull: 'Default', fRespShort: 'Default', fConv: 'Default', fSettings: 'Default', arrange: 'In a row', spacing: 4, noSave: false,
   perCat: '1 (four in all)', shows: 'The full response', silence: '0.5 seconds', resume: false, chime: true, initial: '2 seconds',
   subsequent: '10 seconds', easeOff: '2 seconds longer', maxPer: '2', tester: '', problem: '', weekly: true, errors: 3, profiles: 3,
-  bandContext: 4, bandFlex: 0, bandShape: 'Buttons', contextMark: 'A shape before the label', moreScope: 'In that band only', editTools: 'On each row',
+  bandContext: 4, bandFlex: 0, bandShape: 'Buttons', contextMark: 'A shape before the label', moreScope: 'In that band only',
   always: ['Yes', 'No', 'Thank you', 'Please', 'Hold on', 'I don’t know', 'Hi', 'Bye', 'See you later', 'Can you help me?'].map((text) => ({ text, speak: '' })),
   context: [{ kind: 'partner', name: 'Mom' }, { kind: 'partner', name: 'Devon' }, { kind: 'place', name: 'Home' }, { kind: 'feeling', text: 'Happy' }, { kind: 'feeling', text: 'Tired' }],
   flex: { 'Mom at Anyplace': [{ text: 'Love you', speak: '' }, { text: 'How was your day?', speak: '' }] } };
@@ -263,7 +263,7 @@ const TASKS = [
 const KBD = [['Done', 'Delete', 'Cancel'], ['␣', 'e', 't', 'a', 'o', 'i', 'n'], ['s', 'h', 'r', 'd', 'l', 'u', 'c'], ['m', 'w', 'f', 'g', 'y', 'p', 'b'], ['v', 'k', 'j', 'x', 'q', 'z', '.', '?']];
 
 // ---------------------------------------------------------------- settings of the prototype itself
-const DEFAULTS = { switches: 1, method: 'auto', speed: 1.5, dropdown: 'list', exit: 'pass',
+const DEFAULTS = { editTools: 'row', switches: 1, method: 'auto', speed: 1.5, dropdown: 'list', exit: 'pass',
   actOn: 'press', minMs: 0, repeatMs: 300, forgiveMs: 300, twoPress: false, secondMs: 2000 };
 // Each number of switches has a starting set of other settings, so the scan works out
 // of the box and can be tweaked from there (Ken, November 10 2026). Choosing One or Two
@@ -279,13 +279,13 @@ function readCfg() {
   applySwitchLimits();
   const radio = (n) => (document.querySelector(`input[name=${n}]:checked`) || {}).value;
   cfg.switches = Number(radio('switches')) || 1;
-  cfg.method = radio('method'); cfg.dropdown = radio('dropdown'); cfg.exit = radio('exit');
+  cfg.method = radio('method'); cfg.dropdown = radio('dropdown'); cfg.exit = radio('exit'); cfg.editTools = radio('editTools') || 'row';
   cfg.speed = Math.max(0.3, Number($('speed').value) || 1);
   cfg.actOn = $('actOn').value; cfg.minMs = Number($('minMs').value); cfg.repeatMs = Number($('repeatMs').value);
   cfg.forgiveMs = Number($('forgiveMs').value); cfg.twoPress = $('twoPress').checked; cfg.secondMs = Number($('secondMs').value);
 }
 function writeCfg() {
-  for (const n of ['switches', 'method', 'dropdown', 'exit']) { const el = document.querySelector(`input[name=${n}][value="${cfg[n]}"]`); if (el) el.checked = true; }
+  for (const n of ['switches', 'method', 'dropdown', 'exit', 'editTools']) { const el = document.querySelector(`input[name=${n}][value="${cfg[n]}"]`); if (el) el.checked = true; }
   $('speed').value = cfg.speed;
   $('actOn').value = cfg.actOn; $('minMs').value = String(cfg.minMs); $('repeatMs').value = String(cfg.repeatMs);
   $('forgiveMs').value = String(cfg.forgiveMs); $('twoPress').checked = cfg.twoPress; $('secondMs').value = String(cfg.secondMs);
@@ -384,7 +384,7 @@ function renderBand(band, s, i) {
   const wrap = document.createElement('div'); wrap.className = 'band';
   const mk = (cls, id, text) => { const b = document.createElement('span'); b.className = cls; b.id = id; b.textContent = text; return b; };
   const bar = document.createElement('div'); bar.className = 'ctl';
-  const inline = V.editTools === 'On each row';
+  const inline = cfg.editTools === 'row';
   [...(inline ? [] : MOVE_TOOLS), ...BAND_TOOLS[band]].forEach(([part, text]) => bar.append(mk('btn' + (toolOff(band, part) ? ' off' : ''), ctlId(s, i, '-' + part), text)));
   wrap.append(bar);
   if (band !== 'context') {
@@ -559,7 +559,7 @@ function bandNodes(s, i, band) {
     const at = L().filter((p) => KINDS.indexOf(p.kind) <= KINDS.indexOf(kind)).length;
     return addAt(kind === 'feeling' ? { kind, text: '' } : { kind, name: '' }, at, KIND_LABEL[kind] + ' button added'); }; });
   function insert(tok) { const k = k0(); saveBand(band, L().map((p, j) => (j === k ? { ...p, text: (p.text + ' ' + tok).trim() } : p)), `Inserted ${tok}`); return 'handled'; }
-  const inline = V.editTools === 'On each row';
+  const inline = cfg.editTools === 'row';
   const rowId = (k) => id('-r' + k);
   // A row's own Move button moves the row, and the scan goes with it: it stays inside
   // that phrase, on the same button, so pressing again moves it again.
