@@ -27,7 +27,7 @@ NL = '\n'
 def build():
     proto = open(os.path.join(ROOT, 'prototypes', 'switch-access.html'), encoding='utf-8').read()
     intro = ('<p>This page lets you try how someone using one or two switches might use '
-             'Conversant AAC. Inside the screen area, the <strong>left mouse button is switch 1</strong> '
+             'Conversant AAC. Anywhere in the prototype except its settings panel, the <strong>left mouse button is switch 1</strong> '
              'and the <strong>right mouse button is switch 2</strong>; Space and Enter do the same. '
              'Nothing here uses the real AI: the partner and the response options are made up. '
              'It works best on a computer with a mouse and a wide window.</p>')

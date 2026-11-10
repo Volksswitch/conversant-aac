@@ -12,8 +12,9 @@
   "Conversant AAC Switch Access Proposal.docx" before anything is built.
 
   Inputs (Ken: "use the left mouse button as a single switch setup and the left and
-  right mouse buttons as a two-switch setup"): inside the screen area, the LEFT mouse
-  button is switch 1 and the RIGHT mouse button is switch 2. Space and Enter do the
+  right mouse buttons as a two-switch setup"): anywhere on the page except the
+  settings panel (Ken: clicking anywhere should act like clicking the screen), the LEFT
+  mouse button is switch 1 and the RIGHT mouse button is switch 2. Space and Enter do the
   same, because the common switch interfaces send those keys. The settings panel is
   outside the screen area and takes ordinary clicks.
 
@@ -29,7 +30,8 @@
     --flex-rf: #fff4d6; --flex-goal: #e3f3e6; --ctx: #e8edf2; --on: #1f4e79;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: var(--bg); color: var(--ink); }
+  body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: var(--bg); color: var(--ink); user-select: none; -webkit-user-select: none; }
+  #panel { user-select: auto; -webkit-user-select: auto; }
   header { padding: 12px 16px 4px; }
   header h1 { margin: 0 0 4px; font-size: 22px; }
   header p { margin: 0 0 6px; color: var(--ink-muted); font-size: 14px; max-width: 1100px; }
@@ -104,7 +106,7 @@
 <body>
 <header>
   <h1>Conversant switch access prototype</h1>
-  <p><b>Inside the screen area, the left mouse button is switch 1 and the right mouse button is switch 2.</b> Space and Enter do the same. Pick an example on the right, or change the settings. Nothing here uses the real AI: the partner and the response options are made up, and the AI's reply is a fixed wait.</p>
+  <p><b>Anywhere on this page except the settings panel, the left mouse button is switch 1 and the right mouse button is switch 2.</b> Space and Enter do the same. Pick an example in the settings panel, or change the settings. Nothing here uses the real AI: the partner and the response options are made up, and the AI's reply is a fixed wait.</p>
 </header>
 
 <div class="layout">
@@ -614,8 +616,15 @@ function inverseUp() {
   M.presses++; choose();
 }
 const screenEl = $('screen');
-screenEl.addEventListener('contextmenu', (e) => e.preventDefault());
-screenEl.addEventListener('pointerdown', (e) => { e.preventDefault(); screenEl.focus(); if (e.button === 0) rawDown(1); else if (e.button === 2) rawDown(2); });
+// A press anywhere outside the settings panel is a switch press, so a slightly
+// missed click still counts. The settings panel keeps ordinary clicks.
+const inPanel = (e) => !!(e.target.closest && e.target.closest('#panel'));
+document.addEventListener('contextmenu', (e) => { if (!inPanel(e)) e.preventDefault(); });
+document.addEventListener('pointerdown', (e) => {
+  if (inPanel(e)) return;
+  e.preventDefault(); screenEl.focus();
+  if (e.button === 0) rawDown(1); else if (e.button === 2) rawDown(2);
+});
 window.addEventListener('pointerup', (e) => { if (e.button === 0) rawUp(1); else if (e.button === 2) rawUp(2); });
 document.addEventListener('keydown', (e) => {
   if (e.target.closest && e.target.closest('#panel')) return;
