@@ -441,13 +441,14 @@ function rootRegions() {
     kids: () => [...commandNodes(), ...(cfg.exit === 'leave' ? [leaveNode('leave-r4')] : [])] });
   return nodes;
 }
-// The first draft: the four options one at a time, then the Express Panel rows,
-// then New 4, the Context row with In my own words, and the Command Bar.
+// One button at a time: the four options and New 4 (Ken: New 4 belongs with the
+// options it replaces), then the Express Panel rows, In my own words, the Context
+// row and the Command Bar.
 function rootItems() {
   const rows = panelRows();
   const nodes = [...optionNodes()];
-  rows.forEach((row, r) => { if (row.band !== 'context') nodes.push(rowNode(row, r)); });
   if (A.options.length) nodes.push(new4Node());
+  rows.forEach((row, r) => { if (row.band !== 'context') nodes.push(rowNode(row, r)); });
   nodes.push(imowNode());
   rows.forEach((row, r) => { if (row.band === 'context') nodes.push(rowNode(row, r)); });
   nodes.push({ id: 'cmdrow', label: 'Command Bar', group: true, exitByPass: true, kids: commandNodes });
@@ -507,7 +508,7 @@ function advance() {
     if (passComplete(L)) return;
   }
   // One-at-a-time: leaving the options lets a held set through.
-  if (cfg.pattern === 'items' && S.stack.length === 1 && pending && L.idx >= A.options.length) applyPending(false);
+  if (cfg.pattern === 'items' && S.stack.length === 1 && pending && L.idx > A.options.length) applyPending(false);
   draw(); cueAloud(cur() ? cur().label : '');
 }
 // Returns true when it has already redrawn.
@@ -649,7 +650,7 @@ function requestOptions(reason) {
 // setting says hold, they wait.
 function showOptions(set, fromPartner) {
   const inOptions = cfg.pattern === 'regions' ? S.stack.some((L) => L.key === 'R1')
-                                              : (S.stack.length === 1 && topL().idx < A.options.length) || (S.held && /^opt/.test(S.held.id));
+                                              : (S.stack.length === 1 && topL().idx <= A.options.length) || (S.held && /^opt/.test(S.held.id));
   if (fromPartner && cfg.newopts === 'hold' && A.options.length && inOptions) { pending = set; paneLine('n', 'Newer options are waiting.'); return; }
   A.options = set; renderOptions();
   if (!fromPartner) resetMeter();
