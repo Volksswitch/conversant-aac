@@ -94,6 +94,7 @@
   #panel h2 { font-size: 16px; margin: 10px 0 6px; }
   #panel h2:first-child { margin-top: 0; }
   #panel label { display: block; margin: 3px 0; }
+  #panel label:has(input:disabled) { color: #9aa4ad; }
   #panel .field { margin-bottom: 8px; }
   #panel .field > span { display: block; font-weight: bold; margin-bottom: 2px; }
   #panel select, #panel input[type=number] { font-size: 14px; padding: 3px; }
@@ -152,6 +153,9 @@
     <button id="copySettings" class="stop">Copy these settings</button>
 
     <h2>Settings</h2>
+    <div class="field"><span>Switches</span>
+      <label><input type="radio" name="switches" value="1"> One switch (the left button)</label>
+      <label><input type="radio" name="switches" value="2"> Two switches (left and right buttons)</label></div>
     <div class="field"><span>How the scan moves</span>
       <label><input type="radio" name="pattern" value="regions"> By region: options, Express Panel, In my own words, Command Bar</label>
       <label><input type="radio" name="pattern" value="items"> One button at a time</label></div>
@@ -252,15 +256,15 @@ const KBD = [
 ];
 
 // ---------------------------------------------------------------- settings and examples
-const DEFAULTS = { pattern: 'regions', method: 'auto', speed: 1, reading: 4, exit: 'pass', actOn: 'press', minMs: 0, repeatMs: 300,
+const DEFAULTS = { switches: 1, pattern: 'regions', method: 'auto', speed: 1, reading: 4, exit: 'pass', actOn: 'press', minMs: 0, repeatMs: 300,
   forgiveMs: 0, twoPress: false, secondMs: 2000, size: 'small', situationFirst: false, moreFirst: 'last', newopts: 'hold', labels: 'full',
   autoPartner: true, chatty: false, aiWait: 3000, aiFails: false, cue: 'off', aloud: false };
 const PRESETS = [
   ['1. One switch, by region', { pattern: 'regions', method: 'auto', exit: 'pass' }],
   ['2. One switch, one button at a time', { pattern: 'items', method: 'auto' }],
   ['3. One switch, by region, with a “Leave” stop', { pattern: 'regions', method: 'auto', exit: 'leave' }],
-  ['4. Two switches, step scanning', { pattern: 'regions', method: 'step', exit: 'pass' }],
-  ['5. Two switches, right button leaves a region', { pattern: 'regions', method: 'auto', exit: 'switch2' }],
+  ['4. Two switches, step scanning', { switches: 2, pattern: 'regions', method: 'step', exit: 'pass' }],
+  ['5. Two switches, right button leaves a region', { switches: 2, pattern: 'regions', method: 'auto', exit: 'switch2' }],
   ['6. One switch, inverse (hold and let go)', { pattern: 'regions', method: 'inverse', exit: 'pass' }],
   ['7. Full Express Panel, by region', { pattern: 'regions', method: 'auto', size: 'full' }],
   ['8. Talkative partner, short labels', { pattern: 'regions', method: 'auto', chatty: true, labels: 'short' }],
@@ -268,7 +272,9 @@ const PRESETS = [
 let cfg = { ...DEFAULTS };
 
 function readSettings() {
+  applySwitchLimits();
   const radio = (n) => (document.querySelector(`input[name=${n}]:checked`) || {}).value;
+  cfg.switches = Number(radio('switches')) || 1;
   cfg.pattern = radio('pattern'); cfg.method = radio('method'); cfg.exit = radio('exit'); cfg.size = radio('size');
   cfg.newopts = radio('newopts'); cfg.labels = radio('labels');
   cfg.speed = Math.max(0.3, Number($('speed').value) || 1); cfg.reading = Math.max(0, Number($('reading').value) || 0);
@@ -281,7 +287,8 @@ function readSettings() {
 }
 function writeSettings() {
   const setRadio = (n, v) => { const el = document.querySelector(`input[name=${n}][value="${v}"]`); if (el) el.checked = true; };
-  ['pattern', 'method', 'exit', 'size', 'newopts', 'labels'].forEach((n) => setRadio(n, cfg[n]));
+  ['switches', 'pattern', 'method', 'exit', 'size', 'newopts', 'labels'].forEach((n) => setRadio(n, cfg[n]));
+  applySwitchLimits(); cfg.method = document.querySelector('input[name=method]:checked').value; cfg.exit = document.querySelector('input[name=exit]:checked').value;
   $('speed').value = cfg.speed; $('reading').value = cfg.reading;
   $('actOn').value = cfg.actOn; $('minMs').value = String(cfg.minMs); $('repeatMs').value = String(cfg.repeatMs);
   $('forgiveMs').value = String(cfg.forgiveMs);
@@ -289,6 +296,20 @@ function writeSettings() {
   $('situationFirst').checked = cfg.situationFirst; $('moreFirst').value = cfg.moreFirst;
   $('autoPartner').checked = cfg.autoPartner; $('chatty').checked = cfg.chatty; $('aiWait').value = String(cfg.aiWait);
   $('aiFails').checked = cfg.aiFails; $('cue').value = cfg.cue; $('aloud').checked = cfg.aloud;
+}
+// How many switches the user has comes first and decides what else can be chosen (Ken,
+// November 10 2026). With one switch, step scanning and "the right button" for leaving
+// are grayed out; step scanning also rules out "the right button", since it uses that
+// button to choose. A choice that becomes unavailable falls back to automatic scanning
+// or "After one pass with no press".
+function applySwitchLimits() {
+  const q = (n, v) => document.querySelector(`input[name=${n}][value="${v}"]`);
+  const one = (document.querySelector('input[name=switches]:checked') || {}).value !== '2';
+  q('method', 'step').disabled = one;
+  if (one && q('method', 'step').checked) q('method', 'auto').checked = true;
+  const s2 = q('exit', 'switch2');
+  s2.disabled = one || q('method', 'step').checked;
+  if (s2.disabled && s2.checked) q('exit', 'pass').checked = true;
 }
 // Step scanning already uses the right button to choose, so "the right button
 // leaves a region" can't work there; it behaves as a "Leave" stop instead.
@@ -661,7 +682,7 @@ function pauseScan() {
 const sw = { 1: { down: false, t: 0, minTimer: null, pauseTimer: null }, 2: { down: false, t: 0, minTimer: null, pauseTimer: null } };
 let lastAccept = -1e9, inverseTimer = null;
 function rawDown(n) {
-  if (stopped) return;
+  if (stopped || (n === 2 && cfg.switches === 1)) return;   // one switch: the right button is not a switch
   const s = sw[n]; if (s.down) return; s.down = true; s.t = performance.now();
   if (S.paused) {   // only a 2-second hold starts the scan again
     s.pauseTimer = setTimeout(() => { if (s.down && S.paused) { paneLine('n', 'Scanning started again.'); resetScan(); } }, 2000);
@@ -896,7 +917,7 @@ function settingsText() {
   const own = (el) => Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent).join(' ').replace(/\s+/g, ' ').trim();
   const lines = [document.title, new Date().toLocaleString()];
   lines.push('', 'Settings:');
-  lines.push('Example: ' + (presetName ? presetName + (presetEdited ? ' (then changed by hand)' : '') : 'none'));
+  if (document.querySelector('#presets button')) lines.push('Example: ' + (presetName ? presetName + (presetEdited ? ' (then changed by hand)' : '') : 'none'));
   document.querySelectorAll('#panel .field').forEach((f) => {
     const head = f.querySelector(':scope > span');
     const parts = [];

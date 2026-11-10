@@ -87,6 +87,7 @@
   #panel h2 { font-size: 16px; margin: 10px 0 6px; }
   #panel h2:first-child { margin-top: 0; }
   #panel label { display: block; margin: 3px 0; }
+  #panel label:has(input:disabled) { color: #9aa4ad; }
   #panel .field { margin-bottom: 8px; }
   #panel .field > span { display: block; font-weight: bold; margin-bottom: 2px; }
   #panel select, #panel input[type=number] { font-size: 14px; padding: 3px; }
@@ -120,8 +121,6 @@
   <div id="panel">
     <button id="stopBtn" class="stop">Stop scanning</button>
     <button id="restart">Start over</button>
-    <h2>Examples</h2>
-    <div id="presets"></div>
     <button id="copySettings" class="stop">Copy these settings</button>
     <h2>Tasks</h2>
     <ul id="tasks"></ul>
@@ -129,6 +128,9 @@
 
     <h2>How the scan works</h2>
     <p class="note">The scan starts on the tabs and Close. Choosing a tab puts its sections in the tab’s place, so the scan goes round the other tabs, the chosen tab’s sections and Close in one cycle. Pressing a section heading opens that section, and its settings take the heading’s place in the same cycle.</p>
+    <div class="field"><span>Switches</span>
+      <label><input type="radio" name="switches" value="1"> One switch (the left button)</label>
+      <label><input type="radio" name="switches" value="2"> Two switches (left and right buttons)</label></div>
     <div class="field"><span>Scan method</span>
       <label><input type="radio" name="method" value="auto"> Automatic: the highlight moves by itself</label>
       <label><input type="radio" name="method" value="step"> Step: left button moves, right button chooses</label>
@@ -218,22 +220,40 @@ const TASKS = [
 const KBD = [['Done', 'Delete', 'Cancel'], ['␣', 'e', 't', 'a', 'o', 'i', 'n'], ['s', 'h', 'r', 'd', 'l', 'u', 'c'], ['m', 'w', 'f', 'g', 'y', 'p', 'b'], ['v', 'k', 'j', 'x', 'q', 'z', '.', '?']];
 
 // ---------------------------------------------------------------- settings of the prototype itself
-const DEFAULTS = { method: 'auto', speed: 1, dropdown: 'list', exit: 'pass',
+const DEFAULTS = { switches: 1, method: 'auto', speed: 1, dropdown: 'list', exit: 'pass',
   actOn: 'press', minMs: 0, repeatMs: 250, forgiveMs: 0, twoPress: false, secondMs: 2000 };
 let cfg = { ...DEFAULTS };
 function readCfg() {
+  applySwitchLimits();
   const radio = (n) => (document.querySelector(`input[name=${n}]:checked`) || {}).value;
+  cfg.switches = Number(radio('switches')) || 1;
   cfg.method = radio('method'); cfg.dropdown = radio('dropdown'); cfg.exit = radio('exit');
   cfg.speed = Math.max(0.3, Number($('speed').value) || 1);
   cfg.actOn = $('actOn').value; cfg.minMs = Number($('minMs').value); cfg.repeatMs = Number($('repeatMs').value);
   cfg.forgiveMs = Number($('forgiveMs').value); cfg.twoPress = $('twoPress').checked; cfg.secondMs = Number($('secondMs').value);
 }
 function writeCfg() {
-  for (const n of ['method', 'dropdown', 'exit']) { const el = document.querySelector(`input[name=${n}][value="${cfg[n]}"]`); if (el) el.checked = true; }
+  for (const n of ['switches', 'method', 'dropdown', 'exit']) { const el = document.querySelector(`input[name=${n}][value="${cfg[n]}"]`); if (el) el.checked = true; }
   $('speed').value = cfg.speed;
   $('actOn').value = cfg.actOn; $('minMs').value = String(cfg.minMs); $('repeatMs').value = String(cfg.repeatMs);
   $('forgiveMs').value = String(cfg.forgiveMs); $('twoPress').checked = cfg.twoPress; $('secondMs').value = String(cfg.secondMs);
+  applySwitchLimits(); cfg.method = document.querySelector('input[name=method]:checked').value; cfg.exit = document.querySelector('input[name=exit]:checked').value;
 }
+// How many switches the user has comes first and decides what else can be chosen (Ken,
+// November 10 2026). With one switch, step scanning and "the right button" for leaving
+// are grayed out; step scanning also rules out "the right button", since it uses that
+// button to choose. A choice that becomes unavailable falls back to automatic scanning
+// or "After one pass with no press".
+function applySwitchLimits() {
+  const q = (n, v) => document.querySelector(`input[name=${n}][value="${v}"]`);
+  const one = (document.querySelector('input[name=switches]:checked') || {}).value !== '2';
+  q('method', 'step').disabled = one;
+  if (one && q('method', 'step').checked) q('method', 'auto').checked = true;
+  const s2 = q('exit', 'switch2');
+  s2.disabled = one || q('method', 'step').checked;
+  if (s2.disabled && s2.checked) q('exit', 'pass').checked = true;
+}
+
 // Step scanning already uses the right button to choose.
 const exitMode = () => (cfg.method === 'step' && cfg.exit === 'switch2' ? 'leave' : cfg.exit);
 
@@ -524,7 +544,7 @@ function leaveGroup() {
 let lastAccept = -1e9, inverseTimer = null;
 const sw = { 1: { down: false, t: 0, minTimer: null }, 2: { down: false, t: 0, minTimer: null } };
 function rawDown(n) {
-  if (stopped) return;
+  if (stopped || (n === 2 && cfg.switches === 1)) return;   // one switch: the right button is not a switch
   const s = sw[n]; if (s.down) return; s.down = true; s.t = performance.now();
   if (cfg.method === 'inverse' && n === 1) { if (!S.held && !S.resting) { clearInterval(inverseTimer); inverseTimer = setInterval(advance, cfg.speed * 1000); } return; }
   if (cfg.actOn === 'press') { if (cfg.minMs > 0) s.minTimer = setTimeout(() => { if (s.down) accept(n); }, cfg.minMs); else accept(n); }
@@ -567,11 +587,9 @@ function restart() {
   done.fill(null); $('log').textContent = '';
   renderAll(); renderTasks(); resetMeter(); resetScan();
 }
-// Ready-made examples.
-const PRESETS = [
-  ['One switch', { method: 'auto' }],
-  ['Two switches', { method: 'step' }],
-];
+// No ready-made examples: the "Switches" setting replaced the two there were (Ken,
+// November 10 2026).
+const PRESETS = [];
 function applyPreset(name, over) {
   cfg = { ...DEFAULTS, ...over }; writeCfg(); restart();
   document.querySelectorAll('#presets button').forEach((b) => b.classList.toggle('on', b.textContent === name));
@@ -588,7 +606,7 @@ function setStopped(v) {
   if (!v) { draw(); schedule(); }
 }
 $('stopBtn').addEventListener('click', () => setStopped(!stopped));
-applyPreset(PRESETS[0][0], PRESETS[0][1]); $('screen').focus();
+writeCfg(); restart(); $('screen').focus();
 // The page opens stopped (Ken, November 10 2026); "Start scanning" begins.
 setStopped(true);
 
@@ -621,7 +639,7 @@ function settingsText() {
   const own = (el) => Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent).join(' ').replace(/\s+/g, ' ').trim();
   const lines = [document.title, new Date().toLocaleString()];
   lines.push('', 'Settings:');
-  lines.push('Example: ' + (presetName ? presetName + (presetEdited ? ' (then changed by hand)' : '') : 'none'));
+  if (document.querySelector('#presets button')) lines.push('Example: ' + (presetName ? presetName + (presetEdited ? ' (then changed by hand)' : '') : 'none'));
   document.querySelectorAll('#panel .field').forEach((f) => {
     const head = f.querySelector(':scope > span');
     const parts = [];
