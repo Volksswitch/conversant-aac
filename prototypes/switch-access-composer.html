@@ -163,24 +163,24 @@
     <div class="field"><span>How the scan moves</span>
       <label><input type="radio" name="pattern" value="regions"> By area, then row, then key</label>
       <label><input type="radio" name="pattern" value="rows"> By row, then key (no area step)</label>
-      <p class="note">The areas are the word suggestion, the keyboard, Speak/Reframe/Cancel and the Command Bar.</p></div>
+      <p class="note">By area: the scan starts inside the keyboard and stays there. Its stops are the word suggestion, the rows of keys, Speak/Reframe/Cancel, then “Leave keyboard”, which goes to the Command Bar.</p></div>
     <div class="field"><span>Leaving a group</span>
       <label><input type="radio" name="exit" value="pass"> After one pass with no press</label>
       <label><input type="radio" name="exit" value="leave"> A “Leave” stop at the end</label>
-      <p class="note">Applies to an area and a row of keys.</p></div>
+      <p class="note">Applies to a row of keys, Speak/Reframe/Cancel and the Command Bar. The keyboard itself never leaves on its own; “Leave keyboard” does that.</p></div>
     <div class="field"><span>After a key</span>
-      <label><input type="radio" name="afterKey" value="rows"> Start again from the first row</label>
-      <label><input type="radio" name="afterKey" value="row"> Stay on the same row</label></div>
+      <label><input type="checkbox" id="stayKey"> Stay on it for one more stop, so another press types it again</label>
+      <p class="note">Then the scan starts again at the top of the keyboard. The next letter is further along the same row only about 1 time in 8.</p></div>
     <div class="field"><span>Keyboard</span>
       <label><input type="radio" name="layout" value="B11"> QWERTY (the app's, at the bottom)</label>
       <label><input type="radio" name="layout" value="B3"> Alphabet (the app's)</label>
       <label><input type="radio" name="layout" value="FREQ"> Most-used letters first (not in the app)</label>
       <p class="note">The third has QWERTY's shape and keys, with the letters ordered by how often they're used.</p></div>
     <div class="field"><span>Word suggestion</span>
-      <label><input type="radio" name="suggest" value="first"> A stop before the keyboard</label>
-      <label><input type="radio" name="suggest" value="last"> A stop after the keyboard</label>
+      <label><input type="radio" name="suggest" value="first"> The first stop on the keyboard</label>
+      <label><input type="radio" name="suggest" value="last"> A stop after the last row of keys</label>
       <label><input type="radio" name="suggest" value="off"> Off (no stop)</label>
-      <p class="note">The suggestion is the grey ending in the text box. Choosing it finishes the word, as tapping the text box does in the app.</p></div>
+      <p class="note">The suggestion is the gray ending in the text box, and its stop highlights the text box. Choosing it finishes the word, as tapping the text box does in the app, and the scan starts again at the top of the keyboard.</p></div>
     <div class="field"><span>Stray and mistimed presses</span>
       <label>Act on <select id="actOn"><option value="press">press</option><option value="release">release</option></select></label>
       <label>Ignore presses held for less than <select id="minMs"><option value="0">off</option><option value="100">0.1 s</option><option value="250">0.25 s</option><option value="500">0.5 s</option></select></label>
@@ -248,7 +248,7 @@ const CONFIRM = ['End', 'Don’t save'];
 const KEEPS_OPEN = ['Hold on', 'Don’t save'];
 
 // ---------------------------------------------------------------- settings
-const DEFAULTS = { switches: 1, method: 'auto', speed: 1.5, pattern: 'regions', exit: 'pass', afterKey: 'rows', layout: 'B11', suggest: 'first',
+const DEFAULTS = { switches: 1, method: 'auto', speed: 1.5, pattern: 'regions', exit: 'pass', stayKey: true, layout: 'B11', suggest: 'first',
   actOn: 'press', minMs: 0, repeatMs: 300, forgiveMs: 300, twoPress: false, secondMs: 2000, aloud: false };
 // The same starting values as the other two prototypes (Ken, November 10 2026).
 const SWITCH_DEFAULTS = {
@@ -260,7 +260,8 @@ function readSettings() {
   applySwitchLimits();
   const radio = (n) => (document.querySelector(`input[name=${n}]:checked`) || {}).value;
   cfg.switches = Number(radio('switches')) || 1;
-  ['method', 'pattern', 'exit', 'afterKey', 'layout', 'suggest'].forEach((n) => { cfg[n] = radio(n); });
+  ['method', 'pattern', 'exit', 'layout', 'suggest'].forEach((n) => { cfg[n] = radio(n); });
+  cfg.stayKey = $('stayKey').checked;
   cfg.speed = Math.max(0.3, Number($('speed').value) || 1);
   cfg.actOn = $('actOn').value; cfg.minMs = Number($('minMs').value); cfg.repeatMs = Number($('repeatMs').value);
   cfg.forgiveMs = Number($('forgiveMs').value); cfg.twoPress = $('twoPress').checked; cfg.secondMs = Number($('secondMs').value);
@@ -268,7 +269,8 @@ function readSettings() {
 }
 function writeSettings() {
   const setRadio = (n, v) => { const el = document.querySelector(`input[name=${n}][value="${v}"]`); if (el) el.checked = true; };
-  ['switches', 'method', 'pattern', 'exit', 'afterKey', 'layout', 'suggest'].forEach((n) => setRadio(n, cfg[n]));
+  ['switches', 'method', 'pattern', 'exit', 'layout', 'suggest'].forEach((n) => setRadio(n, cfg[n]));
+  $('stayKey').checked = cfg.stayKey;
   applySwitchLimits(); cfg.method = document.querySelector('input[name=method]:checked').value;
   $('speed').value = cfg.speed;
   $('actOn').value = cfg.actOn; $('minMs').value = String(cfg.minMs); $('repeatMs').value = String(cfg.repeatMs);
@@ -334,9 +336,9 @@ function renderKbd() {
     if (cfg.exit === 'leave') { const l = document.createElement('div'); l.className = 'cell leave'; l.id = `leave-k${ri}`; l.textContent = 'Leave'; rowEl.appendChild(l); }
     host.appendChild(rowEl);
   });
-  if (cfg.pattern === 'regions' && cfg.exit === 'leave') {
+  if (cfg.pattern === 'regions') {
     const lr = document.createElement('div'); lr.className = 'row';
-    const l = document.createElement('div'); l.className = 'cell leave'; l.id = 'leave-kbd'; l.textContent = 'Leave'; lr.appendChild(l); host.appendChild(lr);
+    const l = document.createElement('div'); l.className = 'cell leave'; l.id = 'leave-kbd'; l.style.flex = '0 0 160px'; l.textContent = 'Leave keyboard'; lr.appendChild(l); host.appendChild(lr);
   }
 }
 function renderCommands() {
@@ -390,23 +392,31 @@ function rootBuild() {
       { id: 'ctlRow', label: 'Speak, Reframe, Cancel', group: true, exitByPass: cfg.exit === 'pass', kids: ctlKids },
       { id: 'cmdrow', label: 'Command Bar', group: true, exitByPass: cfg.exit === 'pass', kids: cmdKids }];
   }
-  return [...(cfg.suggest === 'first' ? sug : []),
-    { id: 'kbdRegion', label: 'Keyboard', group: true, kbd: true, exitByPass: cfg.exit === 'pass', kids: () => [...rowNodes(), ...(cfg.exit === 'leave' ? [leaveNode('leave-kbd')] : [])] },
-    ...(cfg.suggest === 'last' ? sug : []),
-    { id: 'ctlRow', label: 'Speak, Reframe, Cancel', group: true, exitByPass: cfg.exit === 'pass', kids: ctlKids },
+  // By area (Ken, November 11 2026): the keyboard holds the suggestion, the rows of keys,
+  // Speak/Reframe/Cancel and "Leave keyboard", which is always last. It never leaves by
+  // itself after a pass: while typing, another key is almost always what comes next.
+  return [{ id: 'kbdRegion', label: 'Keyboard', group: true, kbd: true, exitByPass: false, kids: kbdKids },
     { id: 'cmdRegion', label: 'Command Bar', group: true, exitByPass: cfg.exit === 'pass', kids: cmdKids }];
+}
+function kbdKids() {
+  const sug = cfg.suggest !== 'off' && ghostText() ? [suggestNode()] : [];
+  return [...(cfg.suggest === 'first' ? sug : []), ...rowNodes(), ...(cfg.suggest === 'last' ? sug : []),
+    { id: 'ctlRow', label: 'Speak, Reframe, Cancel', group: true, exitByPass: cfg.exit === 'pass', kids: ctlKids },
+    { id: 'leave-kbd', label: 'Leave keyboard', leave: true }];
 }
 
 // ---------------------------------------------------------------- the scanner (as in the conversation prototype)
-const S = { stack: [], paused: false, timer: null, held: null, holdTimer: null, lastMove: 0, prevIdx: null, prevLevel: null };
+const S = { stack: [], stay: false, paused: false, timer: null, held: null, holdTimer: null, lastMove: 0, prevIdx: null, prevLevel: null };
 const M = { t0: performance.now(), stops: 0, presses: 0 };
 let stopped = false;
 function topL() { return S.stack[S.stack.length - 1]; }
 function cur() { const L = topL(); return L ? L.nodes[L.idx] : null; }
 function mkLevel(build, exitByPass) { return { build, nodes: build(), idx: 0, passes: 0, exitByPass }; }
 function resetScan() {
-  clearTimeout(S.timer); clearTimeout(S.holdTimer); S.held = null; S.paused = false;
+  clearTimeout(S.timer); clearTimeout(S.holdTimer); S.held = null; S.paused = false; S.stay = false;
   S.stack = [mkLevel(rootBuild, false)]; S.prevLevel = null;
+  // With the window open and the scan by area, it starts inside the keyboard.
+  if (A.open && cfg.pattern === 'regions') { const k = mkLevel(kbdKids, false); k.fromId = 'kbdRegion'; S.stack.push(k); }
   draw(); schedule();
 }
 function rebuildKeepPlace(L) {
@@ -425,6 +435,7 @@ function draw() {
   const path = S.stack.slice(1).map((L, i) => S.stack[i].nodes[S.stack[i].idx].label.replace(/^Row (\d+):.*/, 'Row $1'));
   let where = (path.length ? path.join(' › ') + ' › ' : '') + n.label;
   if (S.held) where = (S.held.confirm ? 'Press again to confirm: ' : 'Press again: ') + n.label;
+  if (S.stay) where = 'Press again to type it again: ' + n.label;
   $('where').textContent = where;
 }
 function updateCounts() { $('counts').textContent = `Stops ${M.stops} · Presses ${M.presses} · ${((performance.now() - M.t0) / 1000).toFixed(1)} s`; }
@@ -438,6 +449,7 @@ function schedule() {
 function advance() {
   const L = topL(); if (!L || S.paused || stopped) return;
   M.stops++;
+  if (S.stay) { S.stay = false; goTop(); return; }
   const prev = L.idx; L.idx++;
   S.lastMove = performance.now(); S.prevLevel = L; S.prevIdx = prev;
   if (L.idx >= L.nodes.length) { L.idx = 0; L.passes++; if (S.stack.length > 1 && L.exitByPass) { popLevel(true); return; } }
@@ -458,6 +470,7 @@ function choose() {
     L.idx = S.prevIdx; S.prevLevel = null; paneLine('n', 'Late press counted for the stop before.');
   }
   const n = cur(); if (!n) return;
+  S.stay = false;
   if (S.held) { const h = S.held; S.held = null; clearTimeout(S.holdTimer); run(h); return; }
   if (n.leave) { popLevel(true); schedule(); return; }
   if (n.group) {
@@ -483,21 +496,27 @@ function run(n) {
   if (r === 'handled') return;
   afterAction(n);
 }
-// After a key: back to the first row, or stay on the same row (setting). After anything
-// else the scan stays in its area.
+// After a key (Ken, November 11 2026): the highlight stays on it for one more stop, so a
+// press types it again ("tt"); then the scan starts again at the top of the keyboard. The
+// next letter is further along the same row only about 1 time in 8, so going back to the
+// top is quicker than carrying on.
 function afterAction(n) {
   renderAll();
   if (n.isKey) {
-    if (cfg.afterKey === 'row') { const L = topL(); L.nodes = L.build(); L.idx = 0; L.passes = 0; draw(); schedule(); checkTasks(); return; }
-    // Back to the rows: in "by area" the keyboard area stays entered.
-    while (S.stack.length > 1 && !(cfg.pattern === 'regions' && S.stack.length === 2)) S.stack.pop();
-    if (cfg.pattern === 'regions' && S.stack.length === 2) { const L = topL(); L.nodes = L.build(); L.idx = 0; L.passes = 0; }
-    else { const L = topL(); L.nodes = L.build(); L.idx = 0; L.passes = 0; }
-    if (S.stack.length > 1) rebuildKeepPlace(S.stack[0]);
-    draw(); schedule(); checkTasks(); return;
+    if (cfg.stayKey) { rebuildKeepPlace(topL()); S.stay = true; draw(); schedule(); checkTasks(); return; }
+    goTop(); checkTasks(); return;
   }
   for (const L of S.stack) rebuildKeepPlace(L);
   draw(); schedule(); checkTasks();
+}
+// The top of the keyboard: its first stop (the suggestion, when that is first and showing).
+function goTop() {
+  S.stay = false;
+  const keep = cfg.pattern === 'regions' && A.open ? 2 : 1;
+  while (S.stack.length > keep) S.stack.pop();
+  for (const L of S.stack) rebuildKeepPlace(L);
+  const L = topL(); L.idx = 0; L.passes = 0; S.prevLevel = null;
+  draw(); schedule();
 }
 function pauseScan() { clearTimeout(S.timer); S.paused = true; S.held = null; draw(); paneLine('n', 'Scanning paused.'); }
 
@@ -521,8 +540,8 @@ function useSuggestion() {
   const g = ghostText(); if (!g) return 'stay';
   A.text += g; E.suggestionsUsed++;
   if (A.shift === 'shift' && !startsSentence()) A.shift = 'off';
-  // The stop it was on may now be gone, so start again from the first stop.
-  renderAll(); resetScan(); checkTasks(); return 'handled';
+  // Then back to the top of the keyboard, as after a key.
+  renderAll(); goTop(); checkTasks(); return 'handled';
 }
 function openComposer() { A.open = true; A.text = ''; A.page = 'letters'; A.shift = 'shift'; paneLine('n', 'Opened “In my own words”'); renderAll(); resetScan(); }
 function closeWith(how) {
