@@ -79,6 +79,8 @@
   #kbd .cell { min-height: 46px; font-size: 18px; }
   #kbd .cell.act { background: #e8edf2; font-size: 17px; }
   #kbd .cell.shift-on { background: var(--on); color: #fff; }
+  #kbd .cell.sugg { background: #e3f0e6; border: 2px solid #2e7d32; font-weight: bold; color: #1b4d24; }
+  #kbd .cell.sugg.none { background: transparent; border: 1px dashed var(--edge-faint); }
 
   .hl { outline: 5px solid var(--hl) !important; outline-offset: 1px; box-shadow: 0 0 0 9px var(--hl-ring); z-index: 2; }
   .region.hl, .row.hl, #compose.hl { outline-offset: 2px; }
@@ -177,10 +179,11 @@
       <label><input type="radio" name="layout" value="FREQ"> Most-used letters first (not in the app)</label>
       <p class="note">The third has QWERTY's shape and keys, with the letters ordered by how often they're used.</p></div>
     <div class="field"><span>Word suggestion</span>
+      <label><input type="radio" name="suggest" value="key"> A key in the Enter key’s place, showing the word</label>
       <label><input type="radio" name="suggest" value="first"> The first stop on the keyboard</label>
       <label><input type="radio" name="suggest" value="last"> A stop after the last row of keys</label>
       <label><input type="radio" name="suggest" value="off"> Off (no stop)</label>
-      <p class="note">The suggestion is the gray ending in the text box, and its stop highlights the text box. There is no extra button: when the text box is highlighted, a press finishes the word and adds a space, and the scan starts again at the top of the keyboard.</p></div>
+      <p class="note">The suggestion is also the gray ending in the text box. As a key, it sits in Enter’s place (a line break means nothing in spoken words), so no key is lost and nothing moves; it is blank, and skipped, when there is no suggestion. As a stop, the text box itself is highlighted. Either way, choosing it finishes the word, adds a space, and starts the scan again at the top of the keyboard.</p></div>
     <div class="field"><span>Stray and mistimed presses</span>
       <label>Act on <select id="actOn"><option value="press">press</option><option value="release">release</option></select></label>
       <label>Ignore presses held for less than <select id="minMs"><option value="0">off</option><option value="100">0.1 s</option><option value="250">0.25 s</option><option value="500">0.5 s</option></select></label>
@@ -248,7 +251,7 @@ const CONFIRM = ['End', 'Don’t save'];
 const KEEPS_OPEN = ['Hold on', 'Don’t save'];
 
 // ---------------------------------------------------------------- settings
-const DEFAULTS = { switches: 1, method: 'auto', speed: 1.5, pattern: 'regions', exit: 'pass', stayKey: true, layout: 'B11', suggest: 'first',
+const DEFAULTS = { switches: 1, method: 'auto', speed: 1.5, pattern: 'regions', exit: 'pass', stayKey: true, layout: 'B11', suggest: 'key',
   actOn: 'press', minMs: 0, repeatMs: 300, forgiveMs: 300, twoPress: false, secondMs: 2000, aloud: false };
 // The same starting values as the other two prototypes (Ken, November 10 2026).
 const SWITCH_DEFAULTS = {
@@ -310,7 +313,14 @@ function ghostText() {
 function startsSentence() { return /^\s*$/.test(A.text) || /[.!?]\s+$/.test(A.text); }
 
 // ---------------------------------------------------------------- rendering
-function currentRows() { const base = LAYOUTS[cfg.layout]; return A.page === 'letters' ? base : symbolsPage(base); }
+// The suggestion key (Ken, November 11 2026): with "a key in Enter's place", the Enter key's
+// cell holds the suggested word. Same cell, same size, so a keyguard still fits; Enter only
+// makes a line break, which means nothing in words that are spoken.
+function currentRows() {
+  const base = LAYOUTS[cfg.layout]; const rows = A.page === 'letters' ? base : symbolsPage(base);
+  if (cfg.suggest !== 'key') return rows;
+  return rows.map((row) => row.map((c) => (c.kind === 'enter' ? { kind: 'suggest', label: '', span: c.span } : c)));
+}
 function renderCompose() {
   const el = $('compose'); el.textContent = '';
   if (!A.text) { const s = document.createElement('span'); s.className = 'empty'; s.textContent = 'Type here, then Speak it, Reframe to get new options from it, or Cancel.'; el.appendChild(s); return; }
@@ -320,6 +330,7 @@ function renderCompose() {
   const c = document.createElement('span'); c.className = 'caret'; el.appendChild(c);
 }
 function keyLabel(c) {
+  if (c.kind === 'suggest') return ghostText() ? partialWord() + ghostText() : '';
   if (c.kind === 'char' && /[a-z]/.test(c.char) && A.shift !== 'off') return c.char.toUpperCase();
   return c.label;
 }
@@ -329,7 +340,7 @@ function renderKbd() {
     const rowEl = document.createElement('div'); rowEl.className = 'row'; rowEl.id = 'krow' + ri;
     row.forEach((c, ci) => {
       const el = document.createElement('div');
-      el.className = 'cell' + (c.kind === 'blank' ? ' blank' : c.kind === 'char' ? '' : ' act') + (c.kind === 'shift' && A.shift !== 'off' ? ' shift-on' : '');
+      el.className = 'cell' + (c.kind === 'blank' ? ' blank' : c.kind === 'suggest' ? (ghostText() ? ' sugg' : ' sugg none') : c.kind === 'char' ? '' : ' act') + (c.kind === 'shift' && A.shift !== 'off' ? ' shift-on' : '');
       el.id = `k${ri}_${ci}`; el.style.flex = `${c.span} 1 0`; el.textContent = keyLabel(c);
       rowEl.appendChild(el);
     });
@@ -363,11 +374,15 @@ const leaveNode = (id) => ({ id, label: 'Leave', leave: true });
 function keyNodes(ri) {
   const row = currentRows()[ri];
   const nodes = [];
-  row.forEach((c, ci) => { if (c.kind !== 'blank') nodes.push({ id: `k${ri}_${ci}`, label: keyName(c), isKey: true, act: () => pressKey(c) }); });
+  row.forEach((c, ci) => {
+    if (c.kind === 'blank' || (c.kind === 'suggest' && !ghostText())) return;   // an empty suggestion key is skipped
+    nodes.push({ id: `k${ri}_${ci}`, label: keyName(c), isKey: c.kind !== 'suggest', act: () => (c.kind === 'suggest' ? useSuggestion() : pressKey(c)) });
+  });
   if (cfg.exit === 'leave') nodes.push(leaveNode(`leave-k${ri}`));
   return nodes;
 }
 function keyName(c) {
+  if (c.kind === 'suggest') return 'Suggestion: ' + keyLabel(c);
   return { space: 'space', back: 'delete', enter: 'new line', shift: 'shift', page: c.label === '123' ? '123 (numbers and symbols)' : 'ABC (letters)' }[c.kind] || keyLabel(c);
 }
 function rowNodes() {
@@ -386,7 +401,7 @@ const cmdKids = () => [...CMD_SCAN.map((t) => ({ id: 'cmd' + COMMANDS.indexOf(t)
 function rootBuild() {
   if (!A.open) return [{ id: 'imow', label: 'In my own words', act: () => { openComposer(); return 'handled'; } },
     { id: 'cmdRegion', label: 'Command Bar', group: true, exitByPass: cfg.exit === 'pass', kids: cmdKids }];
-  const sug = cfg.suggest !== 'off' && ghostText() ? [suggestNode()] : [];
+  const sug = (cfg.suggest === 'first' || cfg.suggest === 'last') && ghostText() ? [suggestNode()] : [];
   if (cfg.pattern === 'rows') {
     return [...(cfg.suggest === 'first' ? sug : []), ...rowNodes(), ...(cfg.suggest === 'last' ? sug : []),
       { id: 'ctlRow', label: 'Speak, Reframe, Cancel', group: true, exitByPass: cfg.exit === 'pass', kids: ctlKids },
@@ -399,7 +414,7 @@ function rootBuild() {
     { id: 'cmdRegion', label: 'Command Bar', group: true, exitByPass: cfg.exit === 'pass', kids: cmdKids }];
 }
 function kbdKids() {
-  const sug = cfg.suggest !== 'off' && ghostText() ? [suggestNode()] : [];
+  const sug = (cfg.suggest === 'first' || cfg.suggest === 'last') && ghostText() ? [suggestNode()] : [];
   return [...(cfg.suggest === 'first' ? sug : []), ...rowNodes(), ...(cfg.suggest === 'last' ? sug : []),
     { id: 'ctlRow', label: 'Speak, Reframe, Cancel', group: true, exitByPass: cfg.exit === 'pass', kids: ctlKids },
     { id: 'leave-kbd', label: 'Leave keyboard', leave: true }];
