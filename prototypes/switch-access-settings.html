@@ -147,7 +147,8 @@
     <div class="field"><span>Scan method</span>
       <label><input type="radio" name="method" value="auto"> Automatic: the highlight moves by itself</label>
       <label><input type="radio" name="method" value="step"> Step: left button moves, right button chooses</label>
-      <label><input type="radio" name="method" value="inverse"> Inverse: hold the left button to move, let go to choose</label></div>
+      <label><input type="radio" name="method" value="inverse"> Inverse: hold the left button to move, let go to choose</label>
+      <p class="note">One switch: automatic or inverse. Two switches: step only.</p></div>
     <div class="field"><span>Seconds per stop</span><input type="number" id="speed" min="0.3" max="3" step="0.1"></div>
     <div class="field"><span>Drop-down lists</span>
       <label><input type="radio" name="dropdown" value="cycle"> Each press moves to the next choice</label>
@@ -155,7 +156,6 @@
     <div class="field"><span>Leaving a group</span>
       <label><input type="radio" name="exit" value="pass"> After one pass with no press</label>
       <label><input type="radio" name="exit" value="leave"> A “Leave” stop at the end</label>
-      <label><input type="radio" name="exit" value="switch2"> The right button (automatic and inverse scanning only)</label>
       <p class="note">Applies to an open section, the chosen tab, a row in a list (such as a phrase with its boxes and buttons), a drop-down list and the keyboard.</p></div>
     <div class="field"><span>Stray and mistimed presses</span>
       <label>Act on <select id="actOn"><option value="press">press</option><option value="release">release</option></select></label>
@@ -287,23 +287,23 @@ function writeCfg() {
   $('forgiveMs').value = String(cfg.forgiveMs); $('twoPress').checked = cfg.twoPress; $('secondMs').value = String(cfg.secondMs);
   applySwitchLimits(); cfg.method = document.querySelector('input[name=method]:checked').value; cfg.exit = document.querySelector('input[name=exit]:checked').value;
 }
-// How many switches the user has comes first and decides what else can be chosen (Ken,
-// November 10 2026). With one switch, step scanning and "the right button" for leaving
-// are grayed out; step scanning also rules out "the right button", since it uses that
-// button to choose. A choice that becomes unavailable falls back to automatic scanning
-// or "After one pass with no press".
+// How many switches the user has comes first and decides the scan method (Ken, November
+// 10 and 11 2026). One switch: automatic or inverse, and step scanning is grayed out. Two
+// switches: step scanning only (the left button moves, the right chooses), so automatic
+// and inverse are grayed out; with them the second switch had no job but leaving, which
+// is why they were dropped for two switches. Grayed out, not hidden, so the user can see
+// what the other number of switches offers.
 function applySwitchLimits() {
   const q = (n, v) => document.querySelector(`input[name=${n}][value="${v}"]`);
-  const one = (document.querySelector('input[name=switches]:checked') || {}).value !== '2';
-  q('method', 'step').disabled = one;
-  if (one && q('method', 'step').checked) q('method', 'auto').checked = true;
-  const s2 = q('exit', 'switch2');
-  s2.disabled = one || q('method', 'step').checked;
-  if (s2.disabled && s2.checked) q('exit', 'pass').checked = true;
+  const two = (document.querySelector('input[name=switches]:checked') || {}).value === '2';
+  q('method', 'step').disabled = !two;
+  q('method', 'auto').disabled = two;
+  q('method', 'inverse').disabled = two;
+  if (two) q('method', 'step').checked = true;
+  else if (q('method', 'step').checked) q('method', 'auto').checked = true;
 }
 
-// Step scanning already uses the right button to choose.
-const exitMode = () => (cfg.method === 'step' && cfg.exit === 'switch2' ? 'leave' : cfg.exit);
+const exitMode = () => cfg.exit;
 
 // ---------------------------------------------------------------- state and rendering
 let V = { ...START_VALUES };
@@ -869,7 +869,6 @@ function accept(n) {
   const now = performance.now(); if (now - lastAccept < cfg.repeatMs) return; lastAccept = now;
   M.presses++;
   if (cfg.method === 'step') { if (n === 1) { if (S.resting) choose(); else advance(); } else choose(); return; }
-  if (n === 2 && exitMode() === 'switch2' && !S.held) { leaveGroup(); return; }
   choose();
 }
 const inPanel = (e) => !!(e.target.closest && e.target.closest('#panel'));

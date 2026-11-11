@@ -165,14 +165,14 @@
     <div class="field"><span>Scan method</span>
       <label><input type="radio" name="method" value="auto"> Automatic: the highlight moves by itself</label>
       <label><input type="radio" name="method" value="step"> Step: left button moves, right button chooses</label>
-      <label><input type="radio" name="method" value="inverse"> Inverse: hold the left button to move, let go to choose</label></div>
+      <label><input type="radio" name="method" value="inverse"> Inverse: hold the left button to move, let go to choose</label>
+      <p class="note">One switch: automatic or inverse. Two switches: step only.</p></div>
     <div class="field"><span>Seconds per stop</span><input type="number" id="speed" min="0.3" max="3" step="0.1"></div>
     <div class="field"><span>Reading time for new options (seconds)</span><input type="number" id="reading" min="0" max="15" step="0.5"></div>
     <div class="field"><span>Leaving a region</span>
       <label><input type="radio" name="exit" value="pass"> After one pass with no press</label>
       <label><input type="radio" name="exit" value="leave"> A “Leave” stop at the end</label>
-      <label><input type="radio" name="exit" value="switch2"> The right button (second switch)</label>
-      <p class="note">With step scanning the right button chooses, so “The right button” works as a “Leave” stop.</p></div>
+</div>
     <div class="field"><span>Stray presses</span>
       <label>Act on <select id="actOn"><option value="press">press</option><option value="release">release</option></select></label>
       <label>Ignore presses held for less than <select id="minMs"><option value="0">off</option><option value="100">0.1 s</option><option value="250">0.25 s</option><option value="500">0.5 s</option></select></label>
@@ -275,10 +275,9 @@ const PRESETS = [
   ['2. One switch, one button at a time', { pattern: 'items', method: 'auto' }],
   ['3. One switch, by region, with a “Leave” stop', { pattern: 'regions', method: 'auto', exit: 'leave' }],
   ['4. Two switches, step scanning', { switches: 2, pattern: 'regions', method: 'step', exit: 'pass' }],
-  ['5. Two switches, right button leaves a region', { switches: 2, pattern: 'regions', method: 'auto', exit: 'switch2' }],
-  ['6. One switch, inverse (hold and let go)', { pattern: 'regions', method: 'inverse', exit: 'pass' }],
-  ['7. Full Express Panel, by region', { pattern: 'regions', method: 'auto', size: 'full' }],
-  ['8. Talkative partner, short labels', { pattern: 'regions', method: 'auto', chatty: true, labels: 'short' }],
+  ['5. One switch, inverse (hold and let go)', { pattern: 'regions', method: 'inverse', exit: 'pass' }],
+  ['6. Full Express Panel, by region', { pattern: 'regions', method: 'auto', size: 'full' }],
+  ['7. Talkative partner, short labels', { pattern: 'regions', method: 'auto', chatty: true, labels: 'short' }],
 ];
 let cfg = { ...DEFAULTS };
 
@@ -308,23 +307,22 @@ function writeSettings() {
   $('autoPartner').checked = cfg.autoPartner; $('chatty').checked = cfg.chatty; $('aiWait').value = String(cfg.aiWait);
   $('aiFails').checked = cfg.aiFails; $('cue').value = cfg.cue; $('aloud').checked = cfg.aloud;
 }
-// How many switches the user has comes first and decides what else can be chosen (Ken,
-// November 10 2026). With one switch, step scanning and "the right button" for leaving
-// are grayed out; step scanning also rules out "the right button", since it uses that
-// button to choose. A choice that becomes unavailable falls back to automatic scanning
-// or "After one pass with no press".
+// How many switches the user has comes first and decides the scan method (Ken, November
+// 10 and 11 2026). One switch: automatic or inverse, and step scanning is grayed out. Two
+// switches: step scanning only (the left button moves, the right chooses), so automatic
+// and inverse are grayed out; with them the second switch had no job but leaving, which
+// is why they were dropped for two switches. Grayed out, not hidden, so the user can see
+// what the other number of switches offers.
 function applySwitchLimits() {
   const q = (n, v) => document.querySelector(`input[name=${n}][value="${v}"]`);
-  const one = (document.querySelector('input[name=switches]:checked') || {}).value !== '2';
-  q('method', 'step').disabled = one;
-  if (one && q('method', 'step').checked) q('method', 'auto').checked = true;
-  const s2 = q('exit', 'switch2');
-  s2.disabled = one || q('method', 'step').checked;
-  if (s2.disabled && s2.checked) q('exit', 'pass').checked = true;
+  const two = (document.querySelector('input[name=switches]:checked') || {}).value === '2';
+  q('method', 'step').disabled = !two;
+  q('method', 'auto').disabled = two;
+  q('method', 'inverse').disabled = two;
+  if (two) q('method', 'step').checked = true;
+  else if (q('method', 'step').checked) q('method', 'auto').checked = true;
 }
-// Step scanning already uses the right button to choose, so "the right button
-// leaves a region" can't work there; it behaves as a "Leave" stop instead.
-function exitMode() { return cfg.method === 'step' && cfg.exit === 'switch2' ? 'leave' : cfg.exit; }
+function exitMode() { return cfg.exit; }
 function setupLabel() {
   const m = { auto: 'automatic', step: 'step', inverse: 'inverse' }[cfg.method];
   const p = cfg.pattern === 'regions' ? 'regions' : 'one at a time';
@@ -719,7 +717,7 @@ function accept(n) {
   $('screen').classList.remove('pressflash'); void $('screen').offsetWidth; $('screen').classList.add('pressflash');
   M.presses++;
   if (cfg.method === 'step') { if (n === 1) { if (S.resting) { choose(); return; } advance(); } else choose(); return; }
-  if (n === 2) { if (exitMode() === 'switch2' && !S.held) leaveToRoot(); else choose(); return; }
+  if (n === 2) { choose(); return; }
   choose();
 }
 function inverseDown() {
