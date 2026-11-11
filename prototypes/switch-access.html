@@ -818,6 +818,7 @@ function userSpoke(text, how) {
   const tr = document.createElement('tr');
   [text, M.stops, M.presses, secs, `${setupLabel()} (${how})`].forEach((v) => { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
   $('logBody').prepend(tr);
+  if (typeof hist === 'function') hist(`said "${text}" (${M.stops} stops, ${M.presses} presses, ${secs} s; ${setupLabel()}, ${how})`);
   resetMeter();
 }
 function sayOption(i) {
@@ -920,6 +921,10 @@ function stateLines() {
   if (A.alwaysPage) out.push('Express Panel page (More): ' + (A.alwaysPage + 1));
   if (A.lastSaid) out.push('Last thing said: "' + A.lastSaid + '"');
   out.push($('counts').textContent.trim());
+  const costs = Array.from($('logBody').rows).reverse();
+  out.push('What was said, and what it cost (oldest first):');
+  if (costs.length) costs.forEach((tr) => { const c = Array.from(tr.cells).map((td) => td.textContent); out.push(`  "${c[0]}": ${c[1]} stops, ${c[2]} presses, ${c[3]} s; ${c[4]}`); });
+  else out.push('  (nothing said yet)');
   const pane = $('pane').innerText.trim().split('\n').filter(Boolean);
   out.push('Transcript (everything in the conversation pane):');
   if (pane.length) pane.forEach((l) => out.push('  ' + l)); else out.push('  (empty)');

@@ -3,9 +3,10 @@
     python scripts/wordpress/publish-switch-prototype.py            (shows what it would do)
     python scripts/wordpress/publish-switch-prototype.py --apply    (makes or updates the pages)
 
-Two pages, each linking to the other:
+Three pages, each linking to the other two:
   prototypes/switch-access.html          -> /conversant-switch-access-prototype/
   prototypes/switch-access-settings.html -> /conversant-switch-access-settings-prototype/
+  prototypes/switch-access-composer.html -> /conversant-switch-access-composer-prototype/
 
 Ken, November 9 2026: "add it to the website", then "publish it" for the Settings one,
 for the speech and language therapists.
@@ -35,7 +36,8 @@ PAGES = [
                'and the <strong>right mouse button is switch 2</strong>; Space and Enter do the same. '
                'Nothing here uses the real AI: the partner and the response options are made up. '
                'It works best on a computer with a mouse and a wide window.'),
-     'other': ('conversant-switch-access-settings-prototype', 'Scanning the Settings panel has its own prototype.')},
+     'other': [('conversant-switch-access-settings-prototype', 'Scanning the Settings panel has its own prototype.'),
+               ('conversant-switch-access-composer-prototype', 'Typing in “In my own words” has its own prototype.')]},
     {'slug': 'conversant-switch-access-settings-prototype', 'title': 'Conversant AAC Switch Access Prototype: Settings',
      'file': 'switch-access-settings.html', 'height': 1750,
      'intro': ('This page lets you try how someone using one or two switches might change Conversant AAC’s settings. '
@@ -43,7 +45,17 @@ PAGES = [
                'Anywhere in the prototype except the panel on its right, the <strong>left mouse button is switch 1</strong> '
                'and the <strong>right mouse button is switch 2</strong>; Space and Enter do the same. '
                'Nothing here changes the real app. It works best on a computer with a mouse and a wide window.'),
-     'other': ('conversant-switch-access-prototype', 'The conversation screen has its own prototype.')},
+     'other': [('conversant-switch-access-prototype', 'The conversation screen has its own prototype.'),
+               ('conversant-switch-access-composer-prototype', 'Typing in “In my own words” has its own prototype.')]},
+    {'slug': 'conversant-switch-access-composer-prototype', 'title': 'Conversant AAC Switch Access Prototype: In My Own Words',
+     'file': 'switch-access-composer.html', 'height': 1650,
+     'intro': ('This page lets you try how someone using one or two switches might type in Conversant AAC’s “In my own words” window. '
+               'It copies the app’s text box, buttons and keyboard, and has five tasks to time. '
+               'Anywhere in the prototype except the panel on its right, the <strong>left mouse button is switch 1</strong> '
+               'and the <strong>right mouse button is switch 2</strong>; Space and Enter do the same. '
+               'Nothing here uses the real AI. It works best on a computer with a mouse and a wide window.'),
+     'other': [('conversant-switch-access-prototype', 'The conversation screen has its own prototype.'),
+               ('conversant-switch-access-settings-prototype', 'Scanning the Settings panel has its own prototype.')]},
 ]
 
 
@@ -53,9 +65,8 @@ def build(pg):
     stamp = subprocess.run(['git', 'log', '-1', '--format=%h, %cd', '--date=format:%B %d %Y %H:%M', '--',
                             os.path.join('prototypes', pg['file'])], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     proto = proto.replace('@@PROTO_VERSION@@', 'published from ' + (stamp or 'an uncommitted copy'))
-    slug, text = pg['other']
-    intro = (f'<p>{pg["intro"]}</p>' + NL +
-             f'<p>{html.escape(text)} <a href="{SITE}{slug}/">Open it</a>.</p>')
+    intro = f'<p>{pg["intro"]}</p>' + ''.join(
+        NL + f'<p>{html.escape(text)} <a href="{SITE}{slug}/">Open it</a>.</p>' for slug, text in pg['other'])
     frame = (f'<iframe title="{html.escape(pg["title"])}" '
              'allow="clipboard-write" '
              f'style="width:100%;height:{pg["height"]}px;border:1px solid #b9c2ca;border-radius:6px;" '
