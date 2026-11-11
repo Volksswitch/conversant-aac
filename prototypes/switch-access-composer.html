@@ -102,10 +102,12 @@
   #panel button.stop { font-weight: bold; text-align: center; padding: 10px; margin-bottom: 6px; }
   #panel button.stop.stopped { background: #2e7d32; color: #fff; }
   .note { font-size: 12px; color: var(--ink-muted); }
-  #tasks { padding-left: 18px; margin: 4px 0; }
-  #tasks li { margin: 3px 0; }
-  #tasks li.done { color: #2e7d32; }
-  #tasks .cost { display: block; font-size: 12px; color: var(--ink-muted); }
+  #tasks { list-style: none; padding: 0; margin: 0; }
+  #tasks li { padding: 4px 0 4px 26px; position: relative; border-bottom: 1px solid #e3e7eb; }
+  #tasks li::before { content: "☐"; position: absolute; left: 4px; }
+  #tasks li.done::before { content: "☑"; color: #2e7d32; }
+  #tasks li .cost { display: block; font-size: 12px; color: var(--ink-muted); }
+  #log { height: 74px; overflow-y: auto; font-size: 13px; color: var(--ink-muted); padding: 4px 10px; border-top: 1px solid var(--edge-faint); }
   .pagever { font-size: 12px; color: var(--ink-muted); margin-top: 4px; }
 </style>
 </head>
@@ -140,16 +142,17 @@
     <div class="region" id="kbdRegion"><span class="tag">Keyboard</span>
       <div id="kbd"></div>
     </div>
+    <div id="log"></div>
   </div>
 
   <div id="panel">
     <button id="stopBtn" class="stop">Stop scanning</button>
     <button id="restart">Start over</button>
-    <h2>Tasks</h2>
-    <ul id="tasks"></ul>
-    <p class="note">Each task records the stops, presses and seconds it took, counted from the end of the previous task or a restart.</p>
     <button id="copySettings" class="stop">Copy these settings</button>
     <div id="pageVersion" class="pagever"></div>
+    <h2>Tasks</h2>
+    <ul id="tasks"></ul>
+    <p class="note">A task is checked when its target is reached. The cost is counted from the previous task you finished.</p>
 
     <h2>How the scan works</h2>
     <div class="field"><span>Number of switches</span>
@@ -296,6 +299,7 @@ function paneLine(cls, text) {
   const d = document.createElement('div'); d.className = cls; d.textContent = text; $('pane').appendChild(d);
   $('pane').scrollTop = $('pane').scrollHeight;
 }
+function logLine(t) { const d = document.createElement('div'); d.textContent = t; $('log').appendChild(d); $('log').scrollTop = $('log').scrollHeight; }
 function sayAloud(t) { if (!cfg.aloud) return; try { speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance(t)); } catch (e) { /* none */ } }
 
 // The word being typed, and the suggested ending (the app's grey ghost).
@@ -482,7 +486,7 @@ function choose() {
   if (S.paused) return;
   const L = topL();
   if (cfg.method === 'auto' && cfg.forgiveMs > 0 && !S.held && S.prevLevel === L && S.prevIdx != null && performance.now() - S.lastMove < cfg.forgiveMs) {
-    L.idx = S.prevIdx; S.prevLevel = null; paneLine('n', 'Late press counted for the stop before.');
+    L.idx = S.prevIdx; S.prevLevel = null; logLine('Late press counted for the stop before.');
   }
   const n = cur(); if (!n) return;
   S.stay = false;
@@ -533,7 +537,7 @@ function goTop() {
   const L = topL(); L.idx = 0; L.passes = 0; S.prevLevel = null;
   draw(); schedule();
 }
-function pauseScan() { clearTimeout(S.timer); S.paused = true; S.held = null; draw(); paneLine('n', 'Scanning paused.'); }
+function pauseScan() { clearTimeout(S.timer); S.paused = true; S.held = null; draw(); logLine('Scanning paused.'); }
 
 // ---------------------------------------------------------------- what the buttons do
 function pressKey(c) {
@@ -559,23 +563,23 @@ function useSuggestion() {
   // Then back to the top of the keyboard, as after a key.
   renderAll(); goTop(); checkTasks(); return 'handled';
 }
-function openComposer() { A.open = true; A.text = ''; A.page = 'letters'; A.shift = 'shift'; paneLine('n', 'Opened “In my own words”'); renderAll(); resetScan(); }
+function openComposer() { A.open = true; A.text = ''; A.page = 'letters'; A.shift = 'shift'; logLine('Opened “In my own words”'); renderAll(); resetScan(); }
 function closeWith(how) {
   const t = A.text.trim();
   if (how === 'speak' && t) { paneLine('u', 'You: ' + t); sayAloud(t); A.lastSaid = t; E.spoken.push(t); }
-  else if (how === 'reframe' && t) { paneLine('n', 'Reframe sent: “' + t + '”. New response options would appear.'); E.reframed.push(t); }
-  else if (how === 'cancel') paneLine('n', 'Closed “In my own words”' + (t ? ' (the words typed were dropped)' : ''));
-  else paneLine('n', 'Nothing typed, so nothing was ' + (how === 'speak' ? 'spoken' : 'sent') + '.');
+  else if (how === 'reframe' && t) { logLine('Reframe sent: “' + t + '”. New response options would appear.'); E.reframed.push(t); }
+  else if (how === 'cancel') logLine('Closed “In my own words”' + (t ? ' (the words typed were dropped)' : ''));
+  else logLine('Nothing typed, so nothing was ' + (how === 'speak' ? 'spoken' : 'sent') + '.');
   A.open = false; A.text = ''; A.page = 'letters'; A.shift = 'off';
   renderAll(); resetScan(); checkTasks(); return 'handled';
 }
 function command(t) {
   if (t === 'Hold on') { paneLine('u', 'You: Hold on, I’m thinking.'); sayAloud('Hold on, I’m thinking.'); if (A.open && A.text.trim()) E.holdOnWhileTyping = true; checkTasks(); return 'stay'; }
-  if (t === 'Don’t save') { A.noSave = !A.noSave; paneLine('n', A.noSave ? 'This conversation won’t be saved.' : 'This conversation will be saved.'); renderCommands(); return 'stay'; }
-  if (A.open) { paneLine('n', '“' + t + '” closed “In my own words” first' + (A.text.trim() ? ' (the words typed were dropped)' : '') + '.'); A.open = false; A.text = ''; A.page = 'letters'; }
+  if (t === 'Don’t save') { A.noSave = !A.noSave; logLine(A.noSave ? 'This conversation won’t be saved.' : 'This conversation will be saved.'); renderCommands(); return 'stay'; }
+  if (A.open) { logLine('“' + t + '” closed “In my own words” first' + (A.text.trim() ? ' (the words typed were dropped)' : '') + '.'); A.open = false; A.text = ''; A.page = 'letters'; }
   if (t === 'Repeat') { if (A.lastSaid) { paneLine('u', 'You: ' + A.lastSaid); sayAloud(A.lastSaid); } }
   else if (t === 'Ask to repeat') { paneLine('u', 'You: Sorry, could you say that again?'); sayAloud('Sorry, could you say that again?'); }
-  else paneLine('n', `“${t}” pressed. (Not part of this prototype.)`);
+  else logLine(`“${t}” pressed. (Not part of this prototype.)`);
   renderAll(); resetScan(); return 'handled';
 }
 
@@ -593,7 +597,7 @@ function checkTasks() {
   TASKS.forEach(([t, test], i) => {
     if (done[i] || !test()) return;
     done[i] = { stops: M.stops, presses: M.presses, secs: ((performance.now() - M.t0) / 1000).toFixed(1) };
-    paneLine('n', 'Task done: ' + t); hist('task done: ' + t + ` (${done[i].stops} stops, ${done[i].presses} presses, ${done[i].secs} s)`);
+    logLine('Task done: ' + t); hist('task done: ' + t + ` (${done[i].stops} stops, ${done[i].presses} presses, ${done[i].secs} s)`);
     resetMeter();
   });
   renderTasks();
@@ -602,7 +606,7 @@ function renderTasks() {
   const host = $('tasks'); host.textContent = '';
   TASKS.forEach(([t], i) => {
     const li = document.createElement('li'); li.className = done[i] ? 'done' : ''; li.textContent = t;
-    if (done[i]) { const c = document.createElement('span'); c.className = 'cost'; const pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`; c.textContent = `${pl(done[i].stops, 'stop')}, ${done[i].presses} press${done[i].presses === 1 ? '' : 'es'}, ${done[i].secs} s`; li.appendChild(c); }
+    if (done[i]) { const c = document.createElement('span'); c.className = 'cost'; const pl = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`; c.textContent = `${pl(done[i].stops, 'stop')}, ${pl(done[i].presses, 'press').replace('presss', 'presses')}, ${done[i].secs} s`; li.appendChild(c); }
     host.appendChild(li);
   });
 }
@@ -613,7 +617,7 @@ let lastAccept = -1e9, inverseTimer = null;
 function rawDown(n) {
   if (stopped || (n === 2 && cfg.switches === 1)) return;
   const s = sw[n]; if (s.down) return; s.down = true; s.t = performance.now();
-  if (S.paused) { s.pauseTimer = setTimeout(() => { if (s.down && S.paused) { paneLine('n', 'Scanning started again.'); resetScan(); } }, 2000); return; }
+  if (S.paused) { s.pauseTimer = setTimeout(() => { if (s.down && S.paused) { logLine('Scanning started again.'); resetScan(); } }, 2000); return; }
   if (cfg.method === 'inverse' && n === 1) { if (!S.held) { clearInterval(inverseTimer); inverseTimer = setInterval(advance, cfg.speed * 1000); } return; }
   if (cfg.actOn === 'press') { if (cfg.minMs > 0) s.minTimer = setTimeout(() => { if (s.down) accept(n); }, cfg.minMs); else accept(n); }
 }
@@ -657,9 +661,9 @@ function restart() {
   Object.assign(A, { open: true, text: '', shift: 'shift', page: 'letters', lastSaid: '', noSave: false });
   Object.assign(E, { spoken: [], reframed: [], suggestionsUsed: 0, holdOnWhileTyping: false });
   done.fill(null); renderTasks();
-  $('pane').textContent = '';
+  $('pane').textContent = ''; $('log').textContent = '';
   paneLine('p', 'Partner: Do you want to come to dinner on Friday?');
-  paneLine('n', 'Opened “In my own words”');
+  logLine('Opened “In my own words”');
   renderAll(); resetMeter(); resetScan();
 }
 function setStopped(v) {
@@ -690,6 +694,8 @@ function stateLines() {
   TASKS.forEach(([t], i) => { if (done[i]) out.push(`  done: ${t} (${done[i].stops} stops, ${done[i].presses} presses, ${done[i].secs} s)`); });
   out.push($('counts').textContent.trim());
   const pane = $('pane').innerText.trim().split('\n').filter(Boolean);
+  const act = $('log').innerText.trim().split('\n').filter(Boolean).slice(-6);
+  out.push('Recent activity: ' + (act.length ? act.join(' | ') : 'none'));
   out.push('Transcript (everything in the conversation pane):');
   if (pane.length) pane.forEach((l) => out.push('  ' + l)); else out.push('  (empty)');
   return out;
@@ -744,6 +750,7 @@ function histSig() {
     'don’t save': A.noSave ? 'on' : 'off', 'tasks done': String(done.filter(Boolean).length), held: S.held ? 'waiting for a second press' : 'no' };
 }
 { const before = paneLine; paneLine = function (cls, text) { hist('transcript: ' + text); return before.apply(this, arguments); }; }
+{ const before = logLine; logLine = function (t) { hist('activity: ' + t); return before.apply(this, arguments); }; }
 const H = { t0: performance.now(), lines: [], stops: null, where: '', sig: null, max: 3000 };
 const hSecs = () => ((performance.now() - H.t0) / 1000).toFixed(1).padStart(6) + ' s  ';
 function hist(text) {
