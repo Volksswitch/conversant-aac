@@ -159,6 +159,10 @@
     <div class="field"><span>Tap or hold</span>
       <label>A press shorter than <select id="tapMs"><option value="250">0.25 s</option><option value="400">0.4 s</option><option value="600">0.6 s</option><option value="800">0.8 s</option></select> is a tap; longer is a hold</label>
       <p class="note">Step: holding a button that moves keeps the highlight moving once the press is a hold. Hold to move: the first stop comes when the press becomes a hold, then the scan speeds up as set above, so a short hold moves one stop.</p></div>
+    <div class="field"><span>How the scan moves</span>
+      <label><input type="radio" name="pattern" value="regions" checked disabled> By group</label>
+      <label><input type="radio" name="pattern" value="line" disabled> One line, no groups</label>
+      <p class="note">Not used in Settings, so it can’t be changed here. Choosing a tab or opening a section is moving around the panel, not grouping, and the settings inside a section are already one list.</p></div>
     <div class="field"><span>Drop-down lists</span>
       <label><input type="radio" name="dropdown" value="cycle"> Each press moves to the next choice</label>
       <label><input type="radio" name="dropdown" value="list"> A press opens a scanned list</label></div>
