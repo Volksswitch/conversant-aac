@@ -37,6 +37,11 @@ the one that quietly waits forever.
 
 ## Open
 
+### How-to video: when the other person didn't understand you
+- **Raised:** 2026-11-11 - Ken's own problem report: picking "Sorry, let me try that again" spoke it and then opened the Composition window with his earlier words in the box, and it surprised him. The manuals describe it (the note in the section on being asked to repeat yourself, and the Commands tab), but nobody should meet it for the first time mid-conversation.
+- **What is wanted:** a how-to video on the four response options offered when the other person asks you to repeat yourself: your exact words again, the two reworded versions (and the "My best guess" label), and "Sorry, let me try that again", which reopens your typing with what you said. No existing video covers this side of repair: 2.4 is about the app mishearing the other person, and 2.7 is about buying time. Under the rule that published addresses never change, it goes at the END of group 2, as 2.8. Once made, add its "Video:" line to the manuals with `scripts/video/add-manual-links.py`.
+- **Why not now:** Ken said "we may need" one; not yet decided.
+
 ### Question sessions: nothing checks the total size of a topic's documents
 - **Raised:** 2026-11-09 - Ken asked how much material a topic can hold. Each document is capped at about 65,000 words (400,000 characters) and a topic at 20 documents, but nothing adds them up. Twenty long documents (about 1.3 million words) would be more than the AI can read in one request (about a million tokens, roughly 700,000 words), and every question would fail with an ordinary "couldn't get answers" error rather than saying why.
 - **What is wanted:** a check on the topic's form that adds up the words in the documents checked, says when the total is too large, and ideally shows the running total so a presenter can see how much each question sends. Also measure the wait and the cost at about 30,000-50,000 words, which is beyond the 22,000 words tested.
