@@ -171,10 +171,13 @@
       <label><input type="radio" name="method" value="step"> Step: the left button moves and the right button chooses; with three switches the middle button moves back</label>
       <p class="note">One switch: automatic, inverse or hold to move. Two or three switches: step. In step scanning, holding a button that moves keeps the highlight moving (racing).</p></div>
     <div class="field"><span>Seconds per stop</span><input type="number" id="speed" min="0.3" max="3" step="0.1"></div>
-    <div class="field"><span>Seconds per stop while a switch is held</span><input type="number" id="heldSpeed" min="0.1" max="2" step="0.1"></div>
+    <div class="field"><span>Top speed while a switch is held (seconds per stop)</span><input type="number" id="heldSpeed" min="0.1" max="3" step="0.1"></div>
+    <div class="field"><span>Speeding up while held</span>
+      <label>Reach the top speed after <select id="rampStops"><option value="0">no stops (go straight to it)</option><option value="2">2 stops</option><option value="4">4 stops</option><option value="6">6 stops</option><option value="8">8 stops</option></select></label>
+      <p class="note">While a switch is held, the highlight starts at “Seconds per stop”, and each stop then comes a little sooner until it reaches the top speed. Set a top speed slower than “Seconds per stop” and holding slows it down instead.</p></div>
     <div class="field"><span>Tap or hold</span>
       <label>A press shorter than <select id="tapMs"><option value="250">0.25 s</option><option value="400">0.4 s</option><option value="600">0.6 s</option><option value="800">0.8 s</option></select> is a tap; longer is a hold</label>
-      <p class="note">Step: holding a button that moves races at the held speed once the press is a hold. Hold to move: the first stop comes when the press becomes a hold, the next after “Seconds per stop”, then the rest at the held speed, so a short hold moves one stop.</p></div>
+      <p class="note">Step: holding a button that moves keeps the highlight moving once the press is a hold. Hold to move: the first stop comes when the press becomes a hold, then the scan speeds up as set above, so a short hold moves one stop.</p></div>
     <div class="field"><span>Reading time for new options (seconds)</span><input type="number" id="reading" min="0" max="15" step="0.5"></div>
     <div class="field"><span>Leaving a region</span>
       <label><input type="radio" name="exit" value="pass"> After one pass with no press</label>
@@ -267,16 +270,16 @@ const KBD = [
 
 // ---------------------------------------------------------------- settings and examples
 const DEFAULTS = { switches: 1, pattern: 'regions', method: 'auto', speed: 1.5, reading: 4, exit: 'pass', actOn: 'press', minMs: 0, repeatMs: 300,
-  forgiveMs: 300, twoPress: false, secondMs: 2000, tapMs: 400, heldSpeed: 0.5, size: 'small', situationFirst: false, moreFirst: 'last', newopts: 'hold', labels: 'full',
+  forgiveMs: 300, twoPress: false, secondMs: 2000, tapMs: 400, heldSpeed: 0.5, rampStops: 4, size: 'small', situationFirst: false, moreFirst: 'last', newopts: 'hold', labels: 'full',
   autoPartner: true, chatty: false, aiWait: 3000, aiFails: false, cue: 'off', aloud: false };
 // Each number of switches has a starting set of other settings, so the scan works out
 // of the box and can be tweaked from there (Ken, November 10 2026). Choosing One, Two or Three
 // puts these back, replacing any tweaks. These are Claude's judgment, not published
 // guidance, and are in the proposal for the therapists to review.
 const SWITCH_DEFAULTS = {
-  1: { method: 'auto', speed: 1.5, exit: 'pass', forgiveMs: 300, repeatMs: 300, twoPress: false, tapMs: 400, heldSpeed: 0.5 },
-  2: { method: 'step', exit: 'pass', forgiveMs: 0, repeatMs: 300, twoPress: false, tapMs: 400, heldSpeed: 0.3 },
-  3: { method: 'step', exit: 'pass', forgiveMs: 0, repeatMs: 300, twoPress: false, tapMs: 400, heldSpeed: 0.3 },
+  1: { method: 'auto', speed: 1.5, exit: 'pass', forgiveMs: 300, repeatMs: 300, twoPress: false, tapMs: 400, heldSpeed: 0.5, rampStops: 4 },
+  2: { method: 'step', exit: 'pass', forgiveMs: 0, repeatMs: 300, twoPress: false, tapMs: 400, heldSpeed: 0.3, rampStops: 2 },
+  3: { method: 'step', exit: 'pass', forgiveMs: 0, repeatMs: 300, twoPress: false, tapMs: 400, heldSpeed: 0.3, rampStops: 2 },
 };
 const PRESETS = [
   ['1. One switch, by region', { pattern: 'regions', method: 'auto', exit: 'pass' }],
@@ -301,7 +304,7 @@ function readSettings() {
   cfg.speed = Math.max(0.3, Number($('speed').value) || 1); cfg.reading = Math.max(0, Number($('reading').value) || 0);
   cfg.actOn = $('actOn').value; cfg.minMs = Number($('minMs').value); cfg.repeatMs = Number($('repeatMs').value);
   cfg.forgiveMs = Number($('forgiveMs').value);
-  cfg.tapMs = Number($('tapMs').value); cfg.heldSpeed = Math.max(0.1, Number($('heldSpeed').value) || 0.5);
+  cfg.tapMs = Number($('tapMs').value); cfg.rampStops = Number($('rampStops').value); cfg.heldSpeed = Math.max(0.1, Number($('heldSpeed').value) || 0.5);
   cfg.twoPress = $('twoPress').checked; cfg.secondMs = Number($('secondMs').value);
   cfg.situationFirst = $('situationFirst').checked; cfg.moreFirst = $('moreFirst').value;
   cfg.autoPartner = $('autoPartner').checked; cfg.chatty = $('chatty').checked; cfg.aiWait = Number($('aiWait').value);
@@ -314,7 +317,7 @@ function writeSettings() {
   $('speed').value = cfg.speed; $('reading').value = cfg.reading;
   $('actOn').value = cfg.actOn; $('minMs').value = String(cfg.minMs); $('repeatMs').value = String(cfg.repeatMs);
   $('forgiveMs').value = String(cfg.forgiveMs);
-  $('tapMs').value = String(cfg.tapMs); $('heldSpeed').value = cfg.heldSpeed;
+  $('tapMs').value = String(cfg.tapMs); $('rampStops').value = String(cfg.rampStops); $('heldSpeed').value = cfg.heldSpeed;
   $('twoPress').checked = cfg.twoPress; $('secondMs').value = String(cfg.secondMs);
   $('situationFirst').checked = cfg.situationFirst; $('moreFirst').value = cfg.moreFirst;
   $('autoPartner').checked = cfg.autoPartner; $('chatty').checked = cfg.chatty; $('aiWait').value = String(cfg.aiWait);
@@ -725,7 +728,11 @@ const sw = { 1: mkSw(), 2: mkSw(), 3: mkSw() };
 let lastAccept = -1e9, inverseTimer = null, raceTimer = null;
 function flashPress() { const el = $('screen'); el.classList.remove('pressflash'); void el.offsetWidth; el.classList.add('pressflash'); }
 function stopRace() { clearTimeout(raceTimer); raceTimer = null; }
-function race(dir) { if (dir > 0) advance(); else retreat(); raceTimer = setTimeout(() => race(dir), cfg.heldSpeed * 1000); }
+// Speeding up while held (Ken, November 12 2026): the wait between stops starts at
+// "Seconds per stop" and shrinks evenly to the top speed over the set number of stops;
+// 0 goes straight to the top speed.
+function raceWait(k) { const n = cfg.rampStops; if (!n) return cfg.heldSpeed; return cfg.speed + (cfg.heldSpeed - cfg.speed) * Math.min(k, n) / n; }
+function race(dir, k = 1) { if (dir > 0) advance(); else retreat(); raceTimer = setTimeout(() => race(dir, k + 1), raceWait(k) * 1000); }
 function rawDown(n) {
   if (stopped || n > cfg.switches) return;   // a switch the user doesn't have does nothing
   const s = sw[n]; if (s.down) return; s.down = true; s.t = performance.now(); s.raced = false;
@@ -738,7 +745,7 @@ function rawDown(n) {
     if (!S.held) s.raceTimer = setTimeout(() => {
       if (!s.down) return;
       s.raced = true; M.presses++; flashPress(); clearTimeout(S.timer); advance();
-      raceTimer = setTimeout(() => race(1), cfg.speed * 1000);
+      raceTimer = setTimeout(() => race(1, 2), raceWait(1) * 1000);
     }, cfg.tapMs);
     return;
   }
