@@ -496,15 +496,29 @@ function advance() {
   const prev = L.idx; L.idx++;
   S.lastMove = performance.now(); S.prevLevel = L; S.prevIdx = prev;
   if (L.idx >= L.nodes.length) { L.idx = 0; L.passes++; if (S.stack.length > 1 && L.exitByPass) { popLevel(true); return; } }
+  enterKeyboard(false);
   draw();
+}
+// The keyboard is never highlighted as a whole (Ken, November 12 2026): when the scan comes
+// round to it, the highlight goes straight to its first stop (or, moving back, its last),
+// and the scan stays inside until "Leave keyboard".
+function enterKeyboard(atEnd) {
+  const n = cur(); if (!n || !n.kbd || !A.open) return;
+  const lvl = mkLevel(n.kids, false); lvl.fromId = n.id;
+  if (!lvl.nodes.length) return;
+  if (atEnd) lvl.idx = lvl.nodes.length - 1;
+  S.stack.push(lvl);
 }
 // Back (the third switch): the stop before. At a group's first stop it leaves the group
 // and stays on the group (Ken, November 12 2026).
 function retreat() {
   const L = topL(); if (!L || S.paused || stopped || !L.nodes.length) return;
   M.stops++; S.prevLevel = null; S.stay = false;
-  if (L.idx === 0 && S.stack.length > 1) { popLevel(false); return; }
+  // Back at the keyboard's first stop wraps to its last ("Leave keyboard"): the keyboard
+  // is left only through that stop.
+  if (L.idx === 0 && S.stack.length > 1 && L.fromId !== 'kbdRegion') { popLevel(false); return; }
   L.idx = (L.idx - 1 + L.nodes.length) % L.nodes.length;
+  if (S.stack.length === 1) enterKeyboard(true);
   draw();
 }
 function popLevel(advanceParent) {
@@ -512,7 +526,7 @@ function popLevel(advanceParent) {
   const P = topL(); P.nodes = P.build();
   let i = P.nodes.findIndex((n) => n.id === L.fromId); if (i < 0) i = Math.min(P.idx, P.nodes.length - 1);
   P.idx = i;
-  if (advanceParent) { P.idx = (P.idx + 1) % P.nodes.length; M.stops++; }
+  if (advanceParent) { P.idx = (P.idx + 1) % P.nodes.length; M.stops++; enterKeyboard(false); }
   S.prevLevel = null; draw();
 }
 function choose() {
