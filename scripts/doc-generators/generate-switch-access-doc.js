@@ -303,7 +303,8 @@ const doc = new Document({
             bullet("After a key, the highlight stays on it for one more stop. ", "A second press types the key again, for a double letter such as “tt”. The iPad’s Switch Control does the same with its “Scan Same Key After Tap” setting [5]."),
             bullet("Then the scan starts again at the top. ", "In the app’s 450 most common words, the next letter is further along the same row only about 1 time in 8. Most of the rest is on a row the scan would reach sooner by starting again."),
             bullet("The keyboard never leaves on its own. ", "While typing, another key is almost always what comes next, so leaving after a pass with no press would drop the user out between letters. “Leave keyboard” does that instead."),
-            bullet("With one line, no groups. ", "The scan goes through every key in turn, then Speak, Reframe and Cancel, then the Command Bar, and round again. There’s no group to leave, so there’s no “Leave keyboard”. After a key it stays for one stop, then goes back to the first key."),
+            bullet("With one line, no groups. ", "The scan goes through every key in turn and keeps going round the keys until “Leave keyboard”, which is there however the scan moves. Then come Speak, Reframe and Cancel, each Command Bar button, and back to the first key. After a key it stays for one stop, then goes back to the first key."),
+            bullet("No “Leaving a group” setting here. ", "Rows of keys, Speak/Reframe/Cancel and the Command Bar are each left after a pass with no press, and the keyboard only through “Leave keyboard”, so the setting has nothing left to decide in this window."),
 
             h1("4. Trimming What Gets Scanned"),
             para("Every extra stop costs time on every pass, including passes where the user wants something else. The proposal puts things in the loop according to how often they’re used."),

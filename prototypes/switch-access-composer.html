@@ -175,14 +175,9 @@
       <label>A press shorter than <select id="tapMs"><option value="250">0.25 s</option><option value="400">0.4 s</option><option value="600">0.6 s</option><option value="800">0.8 s</option></select> is a tap; longer is a hold</label>
       <p class="note">Step: holding a button that moves keeps the highlight moving once the press is a hold. Hold to move: the first stop comes when the press becomes a hold, then the scan speeds up as set above, so a short hold moves one stop.</p></div>
     <div class="field"><span>How the scan moves</span>
-      <label><input type="radio" name="pattern" value="regions"> By area, then row, then key</label>
-      <label><input type="radio" name="pattern" value="rows"> By row, then key (no area step)</label>
-      <label><input type="radio" name="pattern" value="line"> One line, no groups: every key in turn, then Speak/Reframe/Cancel and the Command Bar</label>
-      <p class="note">By area: the scan starts inside the keyboard and stays there. Its stops are the word suggestion, the rows of keys, then “Leave keyboard”, which goes to Speak/Reframe/Cancel and then the Command Bar. One line has no groups, so nothing to leave; it is for the whole screen, all or nothing, and suits racing with two or three switches.</p></div>
-    <div class="field"><span>Leaving a group</span>
-      <label><input type="radio" name="exit" value="pass"> After one pass with no press</label>
-      <label><input type="radio" name="exit" value="leave"> A “Leave” stop at the end</label>
-      <p class="note">Applies to a row of keys, Speak/Reframe/Cancel and the Command Bar. The keyboard itself never leaves on its own; “Leave keyboard” does that.</p></div>
+      <label><input type="radio" name="pattern" value="regions"> By row, then key</label>
+      <label><input type="radio" name="pattern" value="line"> One line, no groups: every key in turn</label>
+      <p class="note">Either way the scan starts inside the keyboard and goes round it until “Leave keyboard”, always its last stop, which goes to Speak, Reframe and Cancel and then the Command Bar. A row of keys, Speak/Reframe/Cancel and the Command Bar are each left after a pass with no press. One line suits racing with two or three switches.</p></div>
     <div class="field"><span>After a key</span>
       <label><input type="checkbox" id="stayKey"> Stay on it for one more stop, so another press types it again</label>
       <p class="note">Then the scan starts again at the top of the keyboard. The next letter is further along the same row only about 1 time in 8.</p></div>
@@ -277,7 +272,9 @@ function readSettings() {
   applySwitchLimits();
   const radio = (n) => (document.querySelector(`input[name=${n}]:checked`) || {}).value;
   cfg.switches = Number(radio('switches')) || 1;
-  ['method', 'pattern', 'exit', 'layout', 'suggest'].forEach((n) => { cfg[n] = radio(n); });
+  ['method', 'pattern', 'layout', 'suggest'].forEach((n) => { cfg[n] = radio(n); });
+  cfg.exit = 'pass';   // "Leaving a group" isn't a setting here (Ken, November 12 2026)
+  if (cfg.pattern !== 'line') cfg.pattern = 'regions';
   cfg.stayKey = $('stayKey').checked;
   cfg.speed = Math.max(0.3, Number($('speed').value) || 1);
   cfg.actOn = $('actOn').value; cfg.minMs = Number($('minMs').value); cfg.repeatMs = Number($('repeatMs').value);
@@ -287,7 +284,8 @@ function readSettings() {
 }
 function writeSettings() {
   const setRadio = (n, v) => { const el = document.querySelector(`input[name=${n}][value="${v}"]`); if (el) el.checked = true; };
-  ['switches', 'method', 'pattern', 'exit', 'layout', 'suggest'].forEach((n) => setRadio(n, cfg[n]));
+  if (cfg.pattern !== 'line') cfg.pattern = 'regions';
+  ['switches', 'method', 'pattern', 'layout', 'suggest'].forEach((n) => setRadio(n, cfg[n]));
   $('stayKey').checked = cfg.stayKey;
   applySwitchLimits(); cfg.method = document.querySelector('input[name=method]:checked').value;
   $('speed').value = cfg.speed;
@@ -366,7 +364,7 @@ function renderKbd() {
     if (leaveStops()) { const l = document.createElement('div'); l.className = 'cell leave'; l.id = `leave-k${ri}`; l.textContent = 'Leave'; rowEl.appendChild(l); }
     host.appendChild(rowEl);
   });
-  if (cfg.pattern === 'regions') {
+  {   // "Leave keyboard" is there however the scan moves (Ken, November 12 2026)
     const lr = document.createElement('div'); lr.className = 'row';
     const l = document.createElement('div'); l.className = 'cell leave'; l.id = 'leave-kbd'; l.style.flex = '0 0 160px'; l.textContent = 'Leave keyboard'; lr.appendChild(l); host.appendChild(lr);
   }
@@ -390,7 +388,8 @@ function renderAll() {
 
 // ---------------------------------------------------------------- the scan tree
 const leaveNode = (id) => ({ id, label: 'Leave', leave: true });
-function leaveStops() { return cfg.exit === 'leave' && cfg.pattern !== 'line'; }
+// No per-group "Leave" stops here: the only way out of anything is "Leave keyboard" or a pass.
+function leaveStops() { return false; }
 function keyNodes(ri) {
   const row = currentRows()[ri];
   const nodes = [];
@@ -422,16 +421,12 @@ function rootBuild() {
   if (!A.open) return [{ id: 'imow', label: 'In my own words', act: () => { openComposer(); return 'handled'; } },
     ...(cfg.pattern === 'line' ? cmdKids() : [{ id: 'cmdRegion', label: 'Command Bar', group: true, exitByPass: cfg.exit === 'pass', kids: cmdKids }])];
   const sug = (cfg.suggest === 'first' || cfg.suggest === 'last') && ghostText() ? [suggestNode()] : [];
-  // One line, no groups (Ken, November 12 2026): every key in turn, then Speak/Reframe/Cancel
-  // and the Command Bar, round again. Nothing to leave.
+  // One line, no groups (Ken, November 12 2026): every key in turn, round and round until
+  // "Leave keyboard" (Ken: there is a Leave keyboard however the scan moves), then Speak,
+  // Reframe, Cancel and each Command Bar button, and back to the first key. The keyboard
+  // is a group only in that it is never highlighted as a whole and is entered directly.
   if (cfg.pattern === 'line') {
-    return [...(cfg.suggest === 'first' ? sug : []), ...currentRows().flatMap((_, ri) => keyNodes(ri)),
-      ...(cfg.suggest === 'last' ? sug : []), ...ctlKids(), ...cmdKids()];
-  }
-  if (cfg.pattern === 'rows') {
-    return [...(cfg.suggest === 'first' ? sug : []), ...rowNodes(), ...(cfg.suggest === 'last' ? sug : []),
-      { id: 'ctlRow', label: 'Speak, Reframe, Cancel', group: true, exitByPass: cfg.exit === 'pass', kids: ctlKids },
-      { id: 'cmdrow', label: 'Command Bar', group: true, exitByPass: cfg.exit === 'pass', kids: cmdKids }];
+    return [{ id: 'kbdRegion', label: 'Keyboard', group: true, kbd: true, exitByPass: false, kids: kbdKids }, ...ctlKids(), ...cmdKids()];
   }
   // By area (Ken, November 11 and 12 2026): the keyboard holds the suggestion, the rows of
   // keys and "Leave keyboard", which is always last. It never leaves by itself after a pass:
@@ -444,7 +439,8 @@ function rootBuild() {
 }
 function kbdKids() {
   const sug = (cfg.suggest === 'first' || cfg.suggest === 'last') && ghostText() ? [suggestNode()] : [];
-  return [...(cfg.suggest === 'first' ? sug : []), ...rowNodes(), ...(cfg.suggest === 'last' ? sug : []),
+  const keys = cfg.pattern === 'line' ? currentRows().flatMap((_, ri) => keyNodes(ri)) : rowNodes();
+  return [...(cfg.suggest === 'first' ? sug : []), ...keys, ...(cfg.suggest === 'last' ? sug : []),
     { id: 'leave-kbd', label: 'Leave keyboard', leave: true }];
 }
 
@@ -459,7 +455,7 @@ function resetScan() {
   clearTimeout(S.timer); clearTimeout(S.holdTimer); S.held = null; S.paused = false; S.stay = false;
   S.stack = [mkLevel(rootBuild, false)]; S.prevLevel = null;
   // With the window open and the scan by area, it starts inside the keyboard.
-  if (A.open && cfg.pattern === 'regions') { const k = mkLevel(kbdKids, false); k.fromId = 'kbdRegion'; S.stack.push(k); }
+  if (A.open) { const k = mkLevel(kbdKids, false); k.fromId = 'kbdRegion'; S.stack.push(k); }
   draw(); schedule();
 }
 function rebuildKeepPlace(L) {
@@ -578,7 +574,7 @@ function afterAction(n) {
 // The top of the keyboard: its first stop (the suggestion, when that is first and showing).
 function goTop() {
   S.stay = false;
-  const keep = cfg.pattern === 'regions' && A.open ? 2 : 1;
+  const keep = A.open ? 2 : 1;
   while (S.stack.length > keep) S.stack.pop();
   for (const L of S.stack) rebuildKeepPlace(L);
   const L = topL(); L.idx = 0; L.passes = 0; S.prevLevel = null;
