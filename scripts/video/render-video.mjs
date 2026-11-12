@@ -363,6 +363,9 @@ function makeAI(ai = {}, page) {
   const partnerLines = [...(ai.partnerLines || [])];
   const responseSets = [...(ai.responseSets || [])];
   const answerSets = [...(ai.answerSets || [])];
+  // The reworded versions offered when the other person didn't catch what the
+  // user said: { rephrase, expand, guessed }.
+  const repairSets = [...(ai.repairSets || [])];
   // A set marked untilReleased is held until a step calls page.releaseOptions().
   // A fixed delay is not enough: how long the steps before it take varies from
   // render to render, so the options could land a step early (October 31 2026,
@@ -379,6 +382,12 @@ function makeAI(ai = {}, page) {
       if (!partnerLines.length) throw new Error('The app asked for a partner line the script does not have.');
       console.log('  [ai] partner line');
       return partnerLines.shift();
+    }
+    if (system.includes("The partner did not understand the user's last spoken turn")) {
+      if (!repairSets.length) throw new Error('The app asked for reworded versions the script does not have.');
+      const r = repairSets.shift();
+      console.log('  [ai] reworded versions');
+      return JSON.stringify({ rephrase: r.rephrase, expand: r.expand, guessed: !!r.guessed });
     }
     // A question at a talk (a topic switched on) asks for answers, in their own shape.
     const schema = body.output_config && body.output_config.format && body.output_config.format.schema;
@@ -400,7 +409,7 @@ function makeAI(ai = {}, page) {
       }
       return JSON.stringify({
         partner_action: set.partnerAction || 'QUESTION', turn_status: 'COMPLETE',
-        is_repair_initiator: false, offered_options: set.offered || [], offered_range: null,
+        is_repair_initiator: !!set.repairInitiator, offered_options: set.offered || [], offered_range: null,
         responses: set.responses, missing_facts: [], missing_other: [], heard_uncertain: [],
       });
     }

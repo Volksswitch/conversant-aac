@@ -53,6 +53,7 @@ Video 1.5 is short on purpose. During the beta, speech keys are arranged with us
 | 2.5 | In your own words | Type what you want to say, or use your words to get better options | Live (made) |
 | 2.6 | Starting and ending a conversation | Open with Start conversation, close with Wrap up and End conversation | Live (made) |
 | 2.7 | Buying yourself time | Use Hold on and Repeat what I said, and know what the app says while you choose | Live (made) |
+| 2.8 | When they didn't catch what you said | Say it again, say it another way, or fix it first | Live (made) |
 
 ### 3. Making it yours (menu)
 
@@ -90,7 +91,7 @@ Video 1.5 is short on purpose. During the beta, speech keys are arranged with us
 | 5.2 | Backups and moving to a new device | Save everything and bring it back | Staged, plus by hand for iPad |
 | 5.3 | Keeping a conversation private | Use "Don't save this conversation" | Staged |
 
-That's 31 topics. Counting device versions, it's 35 videos.
+That's 36 topics. Counting device versions, it's 40 videos.
 
 ## Companion pages
 

@@ -21,7 +21,8 @@
       { "num": "2.4", "id": "2.4-hears-wrong", "title": "When It Hears Wrong", "learn": "Check what it heard, ask them to repeat, and get new options." },
       { "num": "2.5", "id": "2.5-own-words", "title": "In Your Own Words", "learn": "Type what you want to say, or use your words to get better options." },
       { "num": "2.6", "id": "2.6-start-and-end", "title": "Starting and Ending a Conversation", "learn": "Open a conversation yourself, and close one politely." },
-      { "num": "2.7", "id": "2.7-buying-time", "title": "Buying Yourself Time", "learn": "Keep the conversation going while you think." }
+      { "num": "2.7", "id": "2.7-buying-time", "title": "Buying Yourself Time", "learn": "Keep the conversation going while you think." },
+      { "num": "2.8", "id": "2.8-didnt-catch", "title": "When They Didn't Catch What You Said", "learn": "Say it again, say it another way, or fix it first." }
     ] },
     { "name": "Making it yours", "items": [
       { "num": "3.1", "id": "3.1-about-me", "title": "About Me: A Few Answers Go a Long Way", "learn": "Answer the questions that matter most first." },
