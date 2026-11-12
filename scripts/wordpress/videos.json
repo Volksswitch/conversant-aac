@@ -150,15 +150,15 @@
       }
     },
     "2.7-buying-time": {
-      "signature": "79f2dddf9e16f39f9f08b4c6134c5504bb262139b6efc99fc7c566225d606e0d",
-      "seconds": 74,
+      "signature": "9537ae10ae2c7d6ecdd32a2366171141b55bbbf715432dfd713cc21f565f5794",
+      "seconds": 70,
       "video": {
-        "id": 24290,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-7-Buying-Yourself-Time-3.mp4"
+        "id": 25044,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Conversant-2-7-Buying-Yourself-Time.mp4"
       },
       "guide": {
-        "id": 24291,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-7-Buying-Yourself-Time-Guide-3.pdf"
+        "id": 25045,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Conversant-2-7-Buying-Yourself-Time-Guide.pdf"
       },
       "page": {
         "id": 24219,
@@ -628,12 +628,28 @@
         "id": 24988,
         "url": "https://volksswitch.org/index.php/conversant-videos/video-3-11/"
       }
+    },
+    "2.8-didnt-catch": {
+      "signature": "ebc68da342528625832b86ee8392fa07cd61ac6e224b96ce01316dd28c18c710",
+      "seconds": 86,
+      "video": {
+        "id": 25046,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Conversant-2-8-When-They-Didn-t-Catch-What-You-Said.mp4"
+      },
+      "guide": {
+        "id": 25047,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Conversant-2-8-When-They-Didn-t-Catch-What-You-Said-Guide.pdf"
+      },
+      "page": {
+        "id": 25050,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-2-8/"
+      }
     }
   },
   "courseMap": {
-    "signature": "b6f1dbd868fa5cf30da796ae677596ec338696323aa6bc9b85e3be8a280c6161",
-    "id": 24980,
-    "url": "https://volksswitch.org/wp-content/uploads/2026/11/Learning-Conversant.pdf"
+    "signature": "d2fe5b56f8d27628e56ea28eb1d2aff0baf342d04377a0b9ff9b558528d3f4ff",
+    "id": 25048,
+    "url": "https://volksswitch.org/wp-content/uploads/2026/11/Learning-Conversant-1.pdf"
   },
   "choosers": {
     "1.2": {

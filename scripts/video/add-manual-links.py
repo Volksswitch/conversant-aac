@@ -43,7 +43,7 @@ MAP = [
     ('4.1  Starting a Conversation', ['2.6-start-and-end']),
     ('4.4  In My Own Words', ['2.5-own-words']),
     ('4.5  Keeping a Conversation Private', ['5.3-private']),
-    ('4.7  When the Response Options Change', ['2.4-hears-wrong', '2.7-buying-time']),
+    ('4.7  When the Response Options Change', ['2.4-hears-wrong', '2.7-buying-time', '2.8-didnt-catch']),
     ('4.8  Taking Questions on a Topic', ['3.11-taking-questions']),
     ('5.1  Opening About Me', ['3.1-about-me']),
     ('5.2  ', ['1.4-safe-DEV']),
