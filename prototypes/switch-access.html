@@ -258,11 +258,13 @@ const CONTEXT = [
   { label: 'Mom', kind: 'partner' }, { label: 'Devon', kind: 'partner' }, { label: 'At home', kind: 'place' },
   { label: 'At the clinic', kind: 'place' }, { label: 'Tired', kind: 'feeling' }, { label: 'Happy', kind: 'feeling' },
 ];
-// The Command Bar as it sits on screen, and the order the scan visits it. Settings is
+// The Command Bar as it sits on screen; the scan visits it left to right. Settings is
 // never scanned (a stray press would open a panel the user can't leave), and the
 // scan-only "Pause" stop comes last.
 const COMMANDS = ['Listen', 'Start', 'End', 'Repeat', 'Hold on', 'Ask to repeat', 'Wrap up', 'Don’t save', 'Settings'];
-const CMD_SCAN = ['Ask to repeat', 'Listen', 'Hold on', 'Start', 'End', 'Repeat', 'Wrap up', 'Don’t save'];
+// Left to right as on screen (Ken, November 12 2026): a reordered scan was too hard to
+// follow or predict.
+const CMD_SCAN = COMMANDS.filter((t) => t !== 'Settings');
 const CONFIRM = ['End', 'Don’t save'];
 const KBD = [
   ['Speak', 'Reframe', 'Delete', 'Cancel'],

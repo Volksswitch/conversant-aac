@@ -259,7 +259,9 @@ const NAMES = { tyler: 'Tyler', friday: 'Friday', saturday: 'Saturday' };
 
 // ---------------------------------------------------------------- the app's Command Bar
 const COMMANDS = ['Listen', 'Start', 'End', 'Repeat', 'Hold on', 'Ask to repeat', 'Wrap up', 'Don’t save', 'Settings'];
-const CMD_SCAN = ['Ask to repeat', 'Listen', 'Hold on', 'Start', 'End', 'Repeat', 'Wrap up', 'Don’t save'];
+// Left to right as on screen (Ken, November 12 2026): a reordered scan was too hard to
+// follow or predict.
+const CMD_SCAN = COMMANDS.filter((t) => t !== 'Settings');
 const CONFIRM = ['End', 'Don’t save'];
 const KEEPS_OPEN = ['Hold on', 'Don’t save'];
 
