@@ -114,7 +114,7 @@
 <body>
 <header>
   <h1>Conversant switch access prototype</h1>
-  <p><b>Anywhere on this page except the settings panel, the left mouse button is switch 1 and the right mouse button is switch 2.</b> Space and Enter do the same. Pick an example in the settings panel, or change the settings. Nothing here uses the real AI: the partner and the response options are made up, and the AI's reply is a fixed wait.</p>
+  <p><b>Anywhere on this page except the settings panel, the left mouse button is switch 1 and the right mouse button is switch 2.</b> Space and Enter do the same. With three switches, the middle mouse button is switch 3, which moves back; keys 1, 2 and 3 also work. Pick an example in the settings panel, or change the settings. Nothing here uses the real AI: the partner and the response options are made up, and the AI's reply is a fixed wait.</p>
 </header>
 
 <div class="layout">
@@ -158,16 +158,23 @@
     <div class="field"><span>Number of switches</span>
       <label><input type="radio" name="switches" value="1"> One switch (the left button)</label>
       <label><input type="radio" name="switches" value="2"> Two switches (left and right buttons)</label>
-      <p class="note">Choosing One or Two puts the other scan settings back to that choice’s starting values.</p></div>
+      <label><input type="radio" name="switches" value="3"> Three switches (left, right and middle buttons)</label>
+      <p class="note">Choosing One, Two or Three puts the other scan settings back to that choice’s starting values. Keys 1, 2 and 3 also work as the three switches.</p></div>
     <div class="field"><span>How the scan moves</span>
       <label><input type="radio" name="pattern" value="regions"> By region: options, Express Panel, In my own words, Command Bar</label>
-      <label><input type="radio" name="pattern" value="items"> One button at a time</label></div>
+      <label><input type="radio" name="pattern" value="items"> One line, no groups: every button in turn</label>
+      <p class="note">One line is for the whole screen, all or nothing: options and New 4, the whole Express Panel ignoring bands, “In my own words”, then the Command Bar. In “In my own words” it is every key in turn.</p></div>
     <div class="field"><span>Scan method</span>
       <label><input type="radio" name="method" value="auto"> Automatic: the highlight moves by itself</label>
-      <label><input type="radio" name="method" value="step"> Step: left button moves, right button chooses</label>
       <label><input type="radio" name="method" value="inverse"> Inverse: hold the left button to move, let go to choose</label>
-      <p class="note">One switch: automatic or inverse. Two switches: step only.</p></div>
+      <label><input type="radio" name="method" value="hold"> Hold to move: hold the left button to move, let go to stop, tap to choose</label>
+      <label><input type="radio" name="method" value="step"> Step: the left button moves and the right button chooses; with three switches the middle button moves back</label>
+      <p class="note">One switch: automatic, inverse or hold to move. Two or three switches: step. In step scanning, holding a button that moves keeps the highlight moving (racing).</p></div>
     <div class="field"><span>Seconds per stop</span><input type="number" id="speed" min="0.3" max="3" step="0.1"></div>
+    <div class="field"><span>Seconds per stop while a switch is held</span><input type="number" id="heldSpeed" min="0.1" max="2" step="0.1"></div>
+    <div class="field"><span>Tap or hold</span>
+      <label>A press shorter than <select id="tapMs"><option value="250">0.25 s</option><option value="400">0.4 s</option><option value="600">0.6 s</option><option value="800">0.8 s</option></select> is a tap; longer is a hold</label>
+      <p class="note">Step: holding a button that moves races at the held speed once the press is a hold. Hold to move: the first stop comes when the press becomes a hold, the next after “Seconds per stop”, then the rest at the held speed, so a short hold moves one stop.</p></div>
     <div class="field"><span>Reading time for new options (seconds)</span><input type="number" id="reading" min="0" max="15" step="0.5"></div>
     <div class="field"><span>Leaving a region</span>
       <label><input type="radio" name="exit" value="pass"> After one pass with no press</label>
@@ -260,24 +267,28 @@ const KBD = [
 
 // ---------------------------------------------------------------- settings and examples
 const DEFAULTS = { switches: 1, pattern: 'regions', method: 'auto', speed: 1.5, reading: 4, exit: 'pass', actOn: 'press', minMs: 0, repeatMs: 300,
-  forgiveMs: 300, twoPress: false, secondMs: 2000, size: 'small', situationFirst: false, moreFirst: 'last', newopts: 'hold', labels: 'full',
+  forgiveMs: 300, twoPress: false, secondMs: 2000, tapMs: 400, heldSpeed: 0.5, size: 'small', situationFirst: false, moreFirst: 'last', newopts: 'hold', labels: 'full',
   autoPartner: true, chatty: false, aiWait: 3000, aiFails: false, cue: 'off', aloud: false };
 // Each number of switches has a starting set of other settings, so the scan works out
-// of the box and can be tweaked from there (Ken, November 10 2026). Choosing One or Two
+// of the box and can be tweaked from there (Ken, November 10 2026). Choosing One, Two or Three
 // puts these back, replacing any tweaks. These are Claude's judgment, not published
 // guidance, and are in the proposal for the therapists to review.
 const SWITCH_DEFAULTS = {
-  1: { method: 'auto', speed: 1.5, exit: 'pass', forgiveMs: 300, repeatMs: 300, twoPress: false },
-  2: { method: 'step', exit: 'pass', forgiveMs: 0, repeatMs: 300, twoPress: false },
+  1: { method: 'auto', speed: 1.5, exit: 'pass', forgiveMs: 300, repeatMs: 300, twoPress: false, tapMs: 400, heldSpeed: 0.5 },
+  2: { method: 'step', exit: 'pass', forgiveMs: 0, repeatMs: 300, twoPress: false, tapMs: 400, heldSpeed: 0.3 },
+  3: { method: 'step', exit: 'pass', forgiveMs: 0, repeatMs: 300, twoPress: false, tapMs: 400, heldSpeed: 0.3 },
 };
 const PRESETS = [
   ['1. One switch, by region', { pattern: 'regions', method: 'auto', exit: 'pass' }],
-  ['2. One switch, one button at a time', { pattern: 'items', method: 'auto' }],
+  ['2. One switch, one line, no groups', { pattern: 'items', method: 'auto' }],
   ['3. One switch, by region, with a “Leave” stop', { pattern: 'regions', method: 'auto', exit: 'leave' }],
   ['4. Two switches, step scanning', { switches: 2, pattern: 'regions', method: 'step', exit: 'pass' }],
   ['5. One switch, inverse (hold and let go)', { pattern: 'regions', method: 'inverse', exit: 'pass' }],
   ['6. Full Express Panel, by region', { pattern: 'regions', method: 'auto', size: 'full' }],
   ['7. Talkative partner, short labels', { pattern: 'regions', method: 'auto', chatty: true, labels: 'short' }],
+  ['8. One switch, hold to move, tap to choose', { pattern: 'regions', method: 'hold', exit: 'pass' }],
+  ['9. Two switches, one line, hold to race', { switches: 2, pattern: 'items', method: 'step' }],
+  ['10. Three switches, one line, hold to race', { switches: 3, pattern: 'items', method: 'step' }],
 ];
 let cfg = { ...DEFAULTS };
 
@@ -290,6 +301,7 @@ function readSettings() {
   cfg.speed = Math.max(0.3, Number($('speed').value) || 1); cfg.reading = Math.max(0, Number($('reading').value) || 0);
   cfg.actOn = $('actOn').value; cfg.minMs = Number($('minMs').value); cfg.repeatMs = Number($('repeatMs').value);
   cfg.forgiveMs = Number($('forgiveMs').value);
+  cfg.tapMs = Number($('tapMs').value); cfg.heldSpeed = Math.max(0.1, Number($('heldSpeed').value) || 0.5);
   cfg.twoPress = $('twoPress').checked; cfg.secondMs = Number($('secondMs').value);
   cfg.situationFirst = $('situationFirst').checked; cfg.moreFirst = $('moreFirst').value;
   cfg.autoPartner = $('autoPartner').checked; cfg.chatty = $('chatty').checked; cfg.aiWait = Number($('aiWait').value);
@@ -302,30 +314,30 @@ function writeSettings() {
   $('speed').value = cfg.speed; $('reading').value = cfg.reading;
   $('actOn').value = cfg.actOn; $('minMs').value = String(cfg.minMs); $('repeatMs').value = String(cfg.repeatMs);
   $('forgiveMs').value = String(cfg.forgiveMs);
+  $('tapMs').value = String(cfg.tapMs); $('heldSpeed').value = cfg.heldSpeed;
   $('twoPress').checked = cfg.twoPress; $('secondMs').value = String(cfg.secondMs);
   $('situationFirst').checked = cfg.situationFirst; $('moreFirst').value = cfg.moreFirst;
   $('autoPartner').checked = cfg.autoPartner; $('chatty').checked = cfg.chatty; $('aiWait').value = String(cfg.aiWait);
   $('aiFails').checked = cfg.aiFails; $('cue').value = cfg.cue; $('aloud').checked = cfg.aloud;
 }
 // How many switches the user has comes first and decides the scan method (Ken, November
-// 10 and 11 2026). One switch: automatic or inverse, and step scanning is grayed out. Two
-// switches: step scanning only (the left button moves, the right chooses), so automatic
-// and inverse are grayed out; with them the second switch had no job but leaving, which
-// is why they were dropped for two switches. Grayed out, not hidden, so the user can see
+// 10, 11 and 12 2026). One switch: automatic, inverse or hold to move, and step scanning is
+// grayed out. Two or three switches: step scanning only (the left button moves, the right
+// chooses, the middle moves back), so the one-switch methods are grayed out; with them the
+// second switch had no job but leaving, which is why they were dropped. Grayed out, not hidden, so the user can see
 // what the other number of switches offers.
 function applySwitchLimits() {
   const q = (n, v) => document.querySelector(`input[name=${n}][value="${v}"]`);
-  const two = (document.querySelector('input[name=switches]:checked') || {}).value === '2';
-  q('method', 'step').disabled = !two;
-  q('method', 'auto').disabled = two;
-  q('method', 'inverse').disabled = two;
-  if (two) q('method', 'step').checked = true;
+  const k = Number((document.querySelector('input[name=switches]:checked') || {}).value) || 1;
+  q('method', 'step').disabled = k === 1;
+  ['auto', 'inverse', 'hold'].forEach((m) => { q('method', m).disabled = k > 1; });
+  if (k > 1) q('method', 'step').checked = true;
   else if (q('method', 'step').checked) q('method', 'auto').checked = true;
 }
 function exitMode() { return cfg.exit; }
 function setupLabel() {
-  const m = { auto: 'automatic', step: 'step', inverse: 'inverse' }[cfg.method];
-  const p = cfg.pattern === 'regions' ? 'regions' : 'one at a time';
+  const m = { auto: 'automatic', step: `step, ${cfg.switches} switches`, inverse: 'inverse', hold: 'hold to move' }[cfg.method];
+  const p = cfg.pattern === 'regions' ? 'regions' : 'one line';
   return `${m}, ${p}, ${cfg.speed} s/stop, ${cfg.size} panel`;
 }
 
@@ -530,7 +542,12 @@ function rootKeyboard() {
   return KBD.map((keys, r) => ({ id: 'krow' + r, label: r === 0 ? 'Speak, Reframe, Delete, Cancel' : keys.join(' '), group: true, exitByPass: true,
     kids: () => keys.map((k, c) => ({ id: `k${r}_${c}`, label: k === '␣' ? 'space' : k, act: () => key(k) })) }));
 }
-function rootBuild() { return A.mode === 'kbd' ? rootKeyboard() : (cfg.pattern === 'regions' ? rootRegions() : rootItems()); }
+// One line: every key in turn, starting with Speak.
+function rootKeyLine() { return KBD.flatMap((keys, r) => keys.map((k, c) => ({ id: `k${r}_${c}`, label: k === '␣' ? 'space' : k, act: () => key(k) }))); }
+function rootBuild() {
+  if (A.mode === 'kbd') return cfg.pattern === 'regions' ? rootKeyboard() : rootKeyLine();
+  return cfg.pattern === 'regions' ? rootRegions() : rootItems();
+}
 
 // ---------------------------------------------------------------- the scanner
 const S = { stack: [], resting: false, paused: false, timer: null, held: null, holdTimer: null, reading: false,
@@ -605,6 +622,15 @@ function passComplete(L) {
   }
   return false;
 }
+// Back (the third switch): the stop before. At a group's first stop it leaves the group
+// and stays on the group (Ken, November 12 2026).
+function retreat() {
+  const L = topL(); if (!L || S.resting || S.paused || stopped || !L.nodes.length) return;
+  M.stops++; S.prevLevel = null;
+  if (L.idx === 0 && S.stack.length > 1) { popLevel(false); return; }
+  L.idx = (L.idx - 1 + L.nodes.length) % L.nodes.length;
+  draw(); cueAloud(cur() ? cur().label : '');
+}
 function popLevel(advanceParent) {
   const L = S.stack.pop();
   if (L.key === 'R1' && pending) applyPending(false);
@@ -673,7 +699,7 @@ function afterAction(r) {
     draw(); schedule(); return;
   }
   if (A.mode === 'kbd') {
-    if (S.stack.length > 1) { S.stack.pop(); topL().idx = 0; }
+    if (S.stack.length > 1) { S.stack.pop(); topL().idx = 0; } else topL().idx = 0;
     draw(); schedule(); return;
   }
   if (cfg.pattern === 'items') { resetScan(); return; }
@@ -683,73 +709,78 @@ function afterAction(r) {
   draw(); schedule();
 }
 function pauseScan() {
-  clearTimeout(S.timer); S.paused = true; S.held = null; draw();
+  clearTimeout(S.timer); stopRace(); S.paused = true; S.held = null; draw();
   paneLine('n', 'Scanning paused.');
 }
 
 // ---------------------------------------------------------------- switches
-const sw = { 1: { down: false, t: 0, minTimer: null, pauseTimer: null }, 2: { down: false, t: 0, minTimer: null, pauseTimer: null } };
-let lastAccept = -1e9, inverseTimer = null;
+// Switch 1 moves, switch 2 chooses, switch 3 moves back (Ken, November 12 2026): the left,
+// right and middle mouse buttons, or keys 1, 2 and 3 (Space and Enter also work as 1 and 2).
+// Racing: in step scanning, holding a button that moves keeps the highlight moving at the
+// held speed once the press is a hold. Hold to move (one switch): hold to move, let go to
+// stop, tap to choose; the first move waits "Seconds per stop" before speeding up, so a
+// short hold moves one stop.
+const mkSw = () => ({ down: false, t: 0, minTimer: null, pauseTimer: null, raceTimer: null, raced: false });
+const sw = { 1: mkSw(), 2: mkSw(), 3: mkSw() };
+let lastAccept = -1e9, inverseTimer = null, raceTimer = null;
+function flashPress() { const el = $('screen'); el.classList.remove('pressflash'); void el.offsetWidth; el.classList.add('pressflash'); }
+function stopRace() { clearTimeout(raceTimer); raceTimer = null; }
+function race(dir) { if (dir > 0) advance(); else retreat(); raceTimer = setTimeout(() => race(dir), cfg.heldSpeed * 1000); }
 function rawDown(n) {
-  if (stopped || (n === 2 && cfg.switches === 1)) return;   // one switch: the right button is not a switch
-  const s = sw[n]; if (s.down) return; s.down = true; s.t = performance.now();
+  if (stopped || n > cfg.switches) return;   // a switch the user doesn't have does nothing
+  const s = sw[n]; if (s.down) return; s.down = true; s.t = performance.now(); s.raced = false;
   if (S.paused) {   // only a 2-second hold starts the scan again
     s.pauseTimer = setTimeout(() => { if (s.down && S.paused) { paneLine('n', 'Scanning started again.'); resetScan(); } }, 2000);
     return;
   }
-  if (cfg.method === 'inverse' && n === 1) { inverseDown(); return; }
-  if (cfg.actOn === 'press') {
-    if (cfg.minMs > 0) s.minTimer = setTimeout(() => { if (s.down) accept(n); }, cfg.minMs);
-    else accept(n);
+  if (n === 1 && cfg.method === 'inverse') { if (!S.held && !S.resting) { clearInterval(inverseTimer); inverseTimer = setInterval(advance, cfg.speed * 1000); } return; }
+  if (n === 1 && cfg.method === 'hold') {
+    if (!S.held) s.raceTimer = setTimeout(() => {
+      if (!s.down) return;
+      s.raced = true; M.presses++; flashPress(); clearTimeout(S.timer); advance();
+      raceTimer = setTimeout(() => race(1), cfg.speed * 1000);
+    }, cfg.tapMs);
+    return;
   }
+  if (cfg.method === 'step' && n !== 2) s.raceTimer = setTimeout(() => { if (!s.down || S.held) return; s.raced = true; race(n === 1 ? 1 : -1); }, cfg.tapMs);
+  if (cfg.actOn === 'press') { if (cfg.minMs > 0) s.minTimer = setTimeout(() => { if (s.down) accept(n); }, cfg.minMs); else accept(n); }
 }
 function rawUp(n) {
-  const s = sw[n]; if (!s.down) return; s.down = false; clearTimeout(s.minTimer); clearTimeout(s.pauseTimer);
+  const s = sw[n]; if (!s.down) return; s.down = false; clearTimeout(s.minTimer); clearTimeout(s.pauseTimer); clearTimeout(s.raceTimer);
+  if (s.raced) stopRace();
   if (S.paused) return;
-  if (cfg.method === 'inverse' && n === 1) { inverseUp(); return; }
-  if (cfg.actOn === 'release' && performance.now() - s.t >= cfg.minMs) accept(n);
+  if (n === 1 && cfg.method === 'inverse') { clearInterval(inverseTimer); accept(1); return; }
+  if (n === 1 && cfg.method === 'hold') { if (!s.raced && performance.now() - s.t >= cfg.minMs) accept(1); return; }   // after a move, letting go only stops
+  if (cfg.actOn === 'release' && !s.raced && performance.now() - s.t >= cfg.minMs) accept(n);
 }
 function accept(n) {
   if (S.paused || stopped) return;
-  const now = performance.now();
-  if (now - lastAccept < cfg.repeatMs) return;
-  lastAccept = now; S.pressed = true;
-  $('screen').classList.remove('pressflash'); void $('screen').offsetWidth; $('screen').classList.add('pressflash');
-  M.presses++;
-  if (cfg.method === 'step') { if (n === 1) { if (S.resting) { choose(); return; } advance(); } else choose(); return; }
-  if (n === 2) { choose(); return; }
+  const now = performance.now(); if (now - lastAccept < cfg.repeatMs) return; lastAccept = now;
+  flashPress(); M.presses++; S.pressed = true;
+  if (cfg.method === 'step') { if (n === 1) advance(); else if (n === 3) retreat(); else choose(); return; }
   choose();
 }
-function inverseDown() {
-  if (S.held || S.resting) return;
-  clearInterval(inverseTimer);
-  inverseTimer = setInterval(() => advance(), cfg.speed * 1000);
-}
-function inverseUp() {
-  clearInterval(inverseTimer);
-  const now = performance.now(); if (now - lastAccept < cfg.repeatMs) return; lastAccept = now;
-  S.pressed = true; M.presses++; choose();
-}
-const screenEl = $('screen');
-// A press anywhere outside the settings panel is a switch press, so a slightly
-// missed click still counts. The settings panel keeps ordinary clicks.
+const SWITCH_BUTTON = { 0: 1, 2: 2, 1: 3 };   // left, right, middle mouse buttons
+const SWITCH_KEY = { Space: 1, Digit1: 1, Numpad1: 1, Enter: 2, NumpadEnter: 2, Digit2: 2, Numpad2: 2, Digit3: 3, Numpad3: 3 };
 const inPanel = (e) => !!(e.target.closest && e.target.closest('#panel'));
 document.addEventListener('contextmenu', (e) => { if (!inPanel(e)) e.preventDefault(); });
+document.addEventListener('mousedown', (e) => { if (e.button === 1 && !inPanel(e)) e.preventDefault(); });   // no auto-scroll on the middle button
 document.addEventListener('pointerdown', (e) => {
   if (inPanel(e)) return;
-  e.preventDefault(); screenEl.focus();
-  if (e.button === 0) rawDown(1); else if (e.button === 2) rawDown(2);
+  e.preventDefault(); $('screen').focus();
+  if (SWITCH_BUTTON[e.button]) rawDown(SWITCH_BUTTON[e.button]);
 });
-window.addEventListener('pointerup', (e) => { if (e.button === 0) rawUp(1); else if (e.button === 2) rawUp(2); });
+window.addEventListener('pointerup', (e) => { if (SWITCH_BUTTON[e.button]) rawUp(SWITCH_BUTTON[e.button]); });
 document.addEventListener('keydown', (e) => {
   if (e.target.closest && e.target.closest('#panel')) return;
-  if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) rawDown(1); }
-  else if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); if (!e.repeat) rawDown(2); }
+  const n = SWITCH_KEY[e.code]; if (!n) return;
+  e.preventDefault(); if (!e.repeat) rawDown(n);
 });
 document.addEventListener('keyup', (e) => {
   if (e.target.closest && e.target.closest('#panel')) return;
-  if (e.code === 'Space') rawUp(1); else if (e.code === 'Enter' || e.code === 'NumpadEnter') rawUp(2);
+  const n = SWITCH_KEY[e.code]; if (n) rawUp(n);
 });
+const screenEl = $('screen');
 
 // ---------------------------------------------------------------- conversation
 function compute() {
@@ -874,7 +905,7 @@ function applyPreset(name, over) {
 PRESETS.forEach(([name, over]) => {
   const b = document.createElement('button'); b.textContent = name; b.addEventListener('click', () => applyPreset(name, over)); $('presets').appendChild(b);
 });
-// Choosing One or Two applies that number's starting settings before anything reads the panel.
+// Choosing One, Two or Three applies that number's starting settings before anything reads the panel.
 $('panel').addEventListener('change', (e) => {
   if (e.target.name !== 'switches') return;
   const n = Number(e.target.value); cfg = { ...cfg, ...SWITCH_DEFAULTS[n], switches: n }; writeSettings();
@@ -892,7 +923,7 @@ screenEl.focus();
 // Stop the scan so the panel on the right can be used in peace; start it again here.
 // The page opens stopped (Ken, November 10 2026); "Start scanning" begins.
 function setStopped(v) {
-  stopped = v; clearTimeout(S.timer); clearInterval(inverseTimer);
+  stopped = v; clearTimeout(S.timer); clearInterval(inverseTimer); stopRace();
   $('stopBtn').textContent = v ? 'Start scanning' : 'Stop scanning';
   $('stopBtn').classList.toggle('stopped', v);
   draw(); if (!v) { schedule(); screenEl.focus(); }
