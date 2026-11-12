@@ -82,6 +82,11 @@
   #kbd .cell.sugg { background: #e3f0e6; border: 2px solid #2e7d32; font-weight: bold; color: #1b4d24; }
   #kbd .cell.sugg.none { background: transparent; border: 1px dashed var(--edge-faint); }
 
+  /* A "Leave" stop is the outline of the area it leaves, not a button (Ken, November 12
+     2026): no row or cell is used, so the layout stays the direct-select layout. */
+  .hl-leave { outline: 5px dashed var(--hl) !important; outline-offset: 4px; position: relative; z-index: 2; }
+  .hl-leave::after { content: attr(data-leave); position: absolute; top: -18px; right: 16px; z-index: 3;
+    background: var(--hl); color: #1a2733; font-weight: bold; font-size: 14px; padding: 3px 10px; border-radius: 5px; }
   .hl { outline: 5px solid var(--hl) !important; outline-offset: 1px; box-shadow: 0 0 0 9px var(--hl-ring); z-index: 2; }
   .region.hl, .row.hl, #compose.hl { outline-offset: 2px; }
   .held { outline: 5px solid var(--held) !important; outline-offset: 1px; box-shadow: 0 0 0 9px #a5d6a7; }
@@ -364,10 +369,6 @@ function renderKbd() {
     if (leaveStops()) { const l = document.createElement('div'); l.className = 'cell leave'; l.id = `leave-k${ri}`; l.textContent = 'Leave'; rowEl.appendChild(l); }
     host.appendChild(rowEl);
   });
-  {   // "Leave keyboard" is there however the scan moves (Ken, November 12 2026)
-    const lr = document.createElement('div'); lr.className = 'row';
-    const l = document.createElement('div'); l.className = 'cell leave'; l.id = 'leave-kbd'; l.style.flex = '0 0 160px'; l.textContent = 'Leave keyboard'; lr.appendChild(l); host.appendChild(lr);
-  }
 }
 function renderCommands() {
   const row = $('cmdrow'); row.textContent = '';
@@ -441,7 +442,7 @@ function kbdKids() {
   const sug = (cfg.suggest === 'first' || cfg.suggest === 'last') && ghostText() ? [suggestNode()] : [];
   const keys = cfg.pattern === 'line' ? currentRows().flatMap((_, ri) => keyNodes(ri)) : rowNodes();
   return [...(cfg.suggest === 'first' ? sug : []), ...keys, ...(cfg.suggest === 'last' ? sug : []),
-    { id: 'leave-kbd', label: 'Leave keyboard', leave: true }];
+    { id: 'leave-kbd', label: 'Leave keyboard', leave: true, frame: 'kbd' }];
 }
 
 // ---------------------------------------------------------------- the scanner (as in the conversation prototype)
@@ -465,11 +466,12 @@ function rebuildKeepPlace(L) {
   L.idx = i < 0 ? Math.min(L.idx, Math.max(0, L.nodes.length - 1)) : i;
 }
 function draw() {
-  document.querySelectorAll('.hl, .held').forEach((e) => e.classList.remove('hl', 'held'));
+  document.querySelectorAll('.hl, .held, .hl-leave').forEach((e) => e.classList.remove('hl', 'held', 'hl-leave'));
   if (stopped) { $('where').textContent = 'Scanning stopped. Press “Start scanning” on the right.'; return; }
   if (S.paused) { $('where').textContent = 'Paused. Hold a switch for 2 seconds to start again.'; return; }
   const n = cur(); if (!n) return;
-  const el = $(n.id);
+  if (n.frame) { const f = $(n.frame); if (f) { f.dataset.leave = n.label; f.classList.add('hl-leave'); } }
+  const el = n.frame ? null : $(n.id);
   if (el) el.classList.add(S.held ? 'held' : 'hl');
   const path = S.stack.slice(1).map((L, i) => S.stack[i].nodes[S.stack[i].idx].label.replace(/^Row (\d+):.*/, 'Row $1'));
   let where = (path.length ? path.join(' › ') + ' › ' : '') + n.label;

@@ -81,6 +81,11 @@
   #compose:empty::before { content: "Typed words appear here"; color: var(--ink-faint, #8a96a1); }
 
   /* The highlight. Thick and two-toned so it shows on any fill. */
+  /* A "Leave" stop is the outline of the area it leaves, not a button (Ken, November 12
+     2026): no row or cell is used, so the layout stays the direct-select layout. */
+  .hl-leave { outline: 5px dashed var(--hl) !important; outline-offset: 4px; position: relative; z-index: 2; }
+  .hl-leave::after { content: attr(data-leave); position: absolute; top: -18px; right: 16px; z-index: 3;
+    background: var(--hl); color: #1a2733; font-weight: bold; font-size: 14px; padding: 3px 10px; border-radius: 5px; }
   .hl { outline: 5px solid var(--hl) !important; outline-offset: 1px; box-shadow: 0 0 0 9px var(--hl-ring); z-index: 2; }
   .region.hl, .row.hl { outline-offset: 2px; }
   .held { outline: 5px solid var(--held) !important; outline-offset: 1px; box-shadow: 0 0 0 9px #a5d6a7; }
@@ -127,7 +132,6 @@
         <div class="cell opt s0" id="opt0"></div><div class="cell opt s1" id="opt1"></div>
         <div class="cell opt s2" id="opt2"></div><div class="cell opt s3" id="opt3"></div>
         <div class="cell" id="new4">New 4</div>
-        <div class="cell leave" id="leave-r1">Leave</div>
       </div>
     </div>
 
@@ -387,7 +391,6 @@ function renderOptions() {
     else if (!A.options.length) { el.textContent = '.'; el.classList.add('empty'); }
     else el.textContent = cfg.labels === 'short' ? A.options[i][1] : A.options[i][0];
   }
-  $('leave-r1').classList.toggle('hidden', !(cfg.pattern === 'regions' && exitMode() === 'leave'));
 }
 
 // The Express Panel as rows, in the app's band order: Always, Context, Flex.
@@ -439,17 +442,11 @@ function renderPanel() {
     });
     host.appendChild(rowEl);
   });
-  if (cfg.pattern === 'regions' && exitMode() === 'leave') {
-    const lr = document.createElement('div'); lr.className = 'row';
-    const l = document.createElement('div'); l.className = 'cell leave'; l.id = 'leave-r2'; l.textContent = 'Leave';
-    lr.appendChild(l); host.appendChild(lr);
-  }
 }
 function renderCommands() {
   const row = $('cmdrow'); row.textContent = '';
   COMMANDS.forEach((t, i) => { const el = document.createElement('div'); el.className = 'cell' + (t === 'Settings' ? ' skip' : ''); el.id = 'cmd' + i; el.textContent = t; row.appendChild(el); });
   const p = document.createElement('div'); p.className = 'cell leave'; p.id = 'pause'; p.textContent = 'Pause'; row.appendChild(p);
-  if (cfg.pattern === 'regions' && exitMode() === 'leave') { const l = document.createElement('div'); l.className = 'cell leave'; l.id = 'leave-r4'; l.textContent = 'Leave'; row.appendChild(l); }
 }
 function renderKbd() {
   $('compose').textContent = A.typed;
@@ -470,7 +467,8 @@ function renderAll() {
 
 // ---------------------------------------------------------------- the scan tree
 // A node is a stop. A group holds stops inside it; an item does something.
-const leaveNode = (id) => ({ id, label: 'Leave', leave: true });
+// A Leave stop highlights the outline of the region it leaves (frame), not a button.
+const leaveNode = (id, frame, label = 'Leave') => ({ id, label, leave: true, frame });
 function optionNodes() {
   if (A.waitingAI || A.failed) return [];
   return A.options.map((o, i) => ({ id: 'opt' + i, label: cfg.labels === 'short' ? o[1] : o[0], speaks: true, act: () => sayOption(i) }));
@@ -523,12 +521,12 @@ function rootRegions() {
   const ex = exitMode();
   const nodes = [];
   if (optionsShowing()) nodes.push({ id: 'r1', label: 'Response options', group: true, key: 'R1', exitByPass: ex === 'pass',
-    kids: () => [...optionNodes(), new4Node(), ...(ex === 'leave' ? [leaveNode('leave-r1')] : [])] });
+    kids: () => [...optionNodes(), new4Node(), ...(ex === 'leave' ? [leaveNode('leave-r1', 'r1', 'Leave the response options')] : [])] });
   nodes.push({ id: 'r2', label: 'Express Panel', group: true, key: 'R2', exitByPass: ex === 'pass',
-    kids: () => [...panelRowNodes(), ...(ex === 'leave' ? [leaveNode('leave-r2')] : [])] });
+    kids: () => [...panelRowNodes(), ...(ex === 'leave' ? [leaveNode('leave-r2', 'r2', 'Leave the Express Panel')] : [])] });
   nodes.push({ ...imowNode(), id: 'imow', regionId: 'r3' });
   nodes.push({ id: 'r4', label: 'Command Bar', group: true, key: 'R4', exitByPass: ex === 'pass',
-    kids: () => [...commandNodes(), ...(ex === 'leave' ? [leaveNode('leave-r4')] : [])] });
+    kids: () => [...commandNodes(), ...(ex === 'leave' ? [leaveNode('leave-r4', 'r4', 'Leave the Command Bar')] : [])] });
   return nodes;
 }
 // One button at a time: every button is its own stop, one press per choice, in the
@@ -589,10 +587,11 @@ function rebuildKeepPlace(L) {
   L.idx = i < 0 ? 0 : i;
 }
 function draw() {
-  document.querySelectorAll('.hl, .held, .resting').forEach((e) => e.classList.remove('hl', 'held', 'resting'));
+  document.querySelectorAll('.hl, .held, .resting, .hl-leave').forEach((e) => e.classList.remove('hl', 'held', 'resting', 'hl-leave'));
   if (S.paused) { $('where').textContent = 'Paused. Hold a switch for 2 seconds to start again.'; return; }
   const n = cur(); if (!n) return;
-  const el = $(n.regionId || n.id) || $(n.id);
+  if (n.frame) { const f = $(n.frame); if (f) { f.dataset.leave = n.label; f.classList.add('hl-leave'); } }
+  const el = n.frame ? null : ($(n.regionId || n.id) || $(n.id));
   if (el) el.classList.add(S.held ? 'held' : (S.resting ? 'resting' : 'hl'));
   const path = S.stack.slice(1).map((L, i) => S.stack[i].nodes[S.stack[i].idx].label);
   let where = (path.length ? path.join(' › ') + ' › ' : '') + n.label;
