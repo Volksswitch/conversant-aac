@@ -770,13 +770,18 @@ document.addEventListener('pointerdown', (e) => {
   if (SWITCH_BUTTON[e.button]) rawDown(SWITCH_BUTTON[e.button]);
 });
 window.addEventListener('pointerup', (e) => { if (SWITCH_BUTTON[e.button]) rawUp(SWITCH_BUTTON[e.button]); });
+// Switch keys work anywhere except while typing or choosing in a panel field. A panel
+// button (such as "Start scanning") keeps focus after a click, and that used to make every
+// switch key do nothing until the screen was clicked (Ken, November 12 2026).
+const typingInPanel = (e) => !!(e.target.closest && e.target.closest('#panel')
+  && (e.target.matches('textarea, select') || (e.target.matches('input') && !/^(radio|checkbox|button)$/.test(e.target.type))));
 document.addEventListener('keydown', (e) => {
-  if (e.target.closest && e.target.closest('#panel')) return;
+  if (typingInPanel(e)) return;
   const n = SWITCH_KEY[e.code]; if (!n) return;
   e.preventDefault(); if (!e.repeat) rawDown(n);
 });
 document.addEventListener('keyup', (e) => {
-  if (e.target.closest && e.target.closest('#panel')) return;
+  if (typingInPanel(e)) return;
   const n = SWITCH_KEY[e.code]; if (n) rawUp(n);
 });
 const screenEl = $('screen');
@@ -841,7 +846,7 @@ function settingsText() {
   const lines = [document.title, 'Page version: ' + pageVersion(), 'Copied: ' + new Date().toLocaleString()];
   lines.push('', 'Settings:');
   lines.push('Switch keys: ' + keysSummary());
-  document.querySelectorAll('#panel .field').forEach((f) => {
+  document.querySelectorAll('#panel .field:not(#keyField)').forEach((f) => {
     const head = f.querySelector(':scope > span');
     const parts = [];
     f.querySelectorAll('input[type=radio]:checked').forEach((r) => parts.push(own(r.parentElement)));
