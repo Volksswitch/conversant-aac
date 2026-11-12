@@ -566,7 +566,20 @@ function resetScan(opts = {}) {
   S.stack = [mkLevel(rootBuild, 'root', false)];
   S.reading = !!opts.reading && isOptionStop(cur());
   S.readOnOptions = false; S.pressed = false; S.prevLevel = null;
+  enterExpress(false);
   draw(); schedule();
+}
+// The Express Panel is never highlighted as a whole (Ken, November 12 2026): when the scan
+// comes round to it, the highlight goes straight to its first row (or, moving back, its
+// last stop). It is where users mostly go, and the rest of the screen is only a few stops,
+// so leaving it too early costs little. It still leaves after a pass or at its "Leave" stop.
+function enterExpress(atEnd) {
+  if (cfg.pattern !== 'regions' || A.mode === 'kbd' || S.stack.length !== 1) return;
+  const n = cur(); if (!n || n.id !== 'r2') return;
+  const lvl = mkLevel(n.kids, n.key, n.exitByPass); lvl.fromId = n.id;
+  if (!lvl.nodes.length) return;
+  if (atEnd) lvl.idx = lvl.nodes.length - 1;
+  S.stack.push(lvl);
 }
 // Rebuild a level after the screen changed, keeping the highlight on the same stop.
 function rebuildKeepPlace(L) {
@@ -614,6 +627,7 @@ function advance() {
   if (cfg.pattern === 'items' && pending && !isOptionStop(cur())) applyPending(false);
   // Options that arrived while the user was elsewhere get their reading time now.
   if (S.readOnOptions && isOptionStop(cur()) && (cur().id === 'r1' || cur().id === 'opt0')) { S.reading = true; S.readOnOptions = false; }
+  enterExpress(false);
   draw(); cueAloud(cur() ? cur().label : '');
 }
 // Returns true when it has already redrawn.
@@ -630,8 +644,17 @@ function passComplete(L) {
 function retreat() {
   const L = topL(); if (!L || S.resting || S.paused || stopped || !L.nodes.length) return;
   M.stops++; S.prevLevel = null;
+  // Back from the Express Panel's first row goes to the stop before the panel, since the
+  // panel itself is never a stop.
+  if (L.idx === 0 && L.key === 'R2' && S.stack.length === 2) {
+    S.stack.pop(); const P = topL(); rebuildKeepPlace(P);
+    const i = P.nodes.findIndex((n) => n.id === 'r2'); if (i >= 0) P.idx = i;
+    P.idx = (P.idx - 1 + P.nodes.length) % P.nodes.length;
+    enterExpress(true); draw(); cueAloud(cur() ? cur().label : ''); return;
+  }
   if (L.idx === 0 && S.stack.length > 1) { popLevel(false); return; }
   L.idx = (L.idx - 1 + L.nodes.length) % L.nodes.length;
+  enterExpress(true);
   draw(); cueAloud(cur() ? cur().label : '');
 }
 function popLevel(advanceParent) {
@@ -642,7 +665,7 @@ function popLevel(advanceParent) {
   const ids = P.nodes.map((n) => n.id);
   let i = ids.indexOf(L.fromId); if (i < 0) i = Math.min(P.idx, P.nodes.length - 1);
   P.idx = i;
-  if (advanceParent) { P.idx = (P.idx + 1) % P.nodes.length; M.stops++; }
+  if (advanceParent) { P.idx = (P.idx + 1) % P.nodes.length; M.stops++; enterExpress(false); }
   S.prevLevel = null;
   draw(); cueAloud(cur() ? cur().label : '');
 }
