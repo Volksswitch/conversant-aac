@@ -152,8 +152,9 @@
       <div class="keyrow">Switch 1: <b id="key1"></b> <button type="button" class="keyset" data-sw="1">Set</button></div>
       <div class="keyrow">Switch 2: <b id="key2"></b> <button type="button" class="keyset" data-sw="2">Set</button></div>
       <div class="keyrow">Switch 3: <b id="key3"></b> <button type="button" class="keyset" data-sw="3">Set</button></div>
+      <label><input type="checkbox" id="mouseSwitches"> Mouse buttons also act as switches</label>
       <button type="button" id="keyReset">Use the starting keys</button>
-      <p class="note">For a switch interface that sends key presses. Tap “Set”, then press the key (or the switch). The mouse buttons still work as well. The keys are remembered on this device.</p></div>
+      <p class="note">For a switch interface that sends key presses. Tap “Set”, then press the key (or the switch). Setting a key turns off the mouse buttons as switches; check the box to turn them back on. The mouse still works in this panel. These choices are remembered on this device.</p></div>
     <div class="field"><span>Scan method</span>
       <label><input type="radio" name="method" value="auto"> Automatic: the highlight moves by itself</label>
       <label><input type="radio" name="method" value="inverse"> Inverse: hold the left button to move, let go to choose</label>
@@ -954,6 +955,16 @@ const START_KEYS = { Space: 1, Digit1: 1, Numpad1: 1, Enter: 2, NumpadEnter: 2, 
 let customKeys = {};   // switch number -> key code
 try { customKeys = JSON.parse(localStorage.getItem('switchKeys') || '{}') || {}; } catch (e) { customKeys = {}; }
 let SWITCH_KEY = {};
+// Mouse buttons as switches: on until a key is set (Ken: with a key-sending interface the
+// mouse acting as a switch too is wrong).
+let mouseSwitches = true;
+try { const m = localStorage.getItem('mouseSwitches'); mouseSwitches = m === null ? !Object.keys(customKeys).length : m === '1'; } catch (e) {}
+function setMouseSwitches(v) {
+  mouseSwitches = v; const box = document.getElementById('mouseSwitches'); if (box) box.checked = v;
+  try { localStorage.setItem('mouseSwitches', v ? '1' : '0'); } catch (e) {}
+}
+document.getElementById('mouseSwitches').checked = mouseSwitches;
+document.getElementById('mouseSwitches').addEventListener('change', (e) => setMouseSwitches(e.target.checked));
 const switchKeyName = (code) => code.replace(/^Key/, '').replace(/^Digit/, '').replace(/^Numpad/, 'Keypad ').replace(/^Arrow/, 'Arrow ');
 function buildSwitchKeys() {
   SWITCH_KEY = { ...START_KEYS };
@@ -966,14 +977,14 @@ function buildSwitchKeys() {
     el.textContent = codes.map(switchKeyName).join(', ') || '(none)';
   });
 }
-function keysSummary() { return [1, 2, 3].map((n) => n + ': ' + (Object.keys(SWITCH_KEY).filter((c) => SWITCH_KEY[c] === n).map(switchKeyName).join('/') || 'none')).join('; '); }
+function keysSummary() { return (mouseSwitches ? 'mouse buttons on; ' : 'mouse buttons off; ') + [1, 2, 3].map((n) => n + ': ' + (Object.keys(SWITCH_KEY).filter((c) => SWITCH_KEY[c] === n).map(switchKeyName).join('/') || 'none')).join('; '); }
 let listeningFor = 0;
 document.querySelectorAll('.keyset').forEach((b) => b.addEventListener('click', () => {
   document.querySelectorAll('.keyset').forEach((x) => { x.classList.remove('listening'); x.textContent = 'Set'; });
   listeningFor = Number(b.dataset.sw); b.classList.add('listening'); b.textContent = 'Press a key…';
 }));
 document.getElementById('keyReset').addEventListener('click', () => {
-  customKeys = {}; try { localStorage.removeItem('switchKeys'); } catch (e) {} buildSwitchKeys();
+  customKeys = {}; try { localStorage.removeItem('switchKeys'); } catch (e) {} buildSwitchKeys(); setMouseSwitches(true);
 });
 // Catches the key before anything else while "Set" is waiting. Escape cancels.
 window.addEventListener('keydown', (e) => {
@@ -982,6 +993,7 @@ window.addEventListener('keydown', (e) => {
   if (e.code !== 'Escape') {
     Object.keys(customKeys).forEach((n) => { if (customKeys[n] === e.code) delete customKeys[n]; });
     customKeys[listeningFor] = e.code;
+    setMouseSwitches(false);
     try { localStorage.setItem('switchKeys', JSON.stringify(customKeys)); } catch (err) {}
   }
   document.querySelectorAll('.keyset').forEach((x) => { x.classList.remove('listening'); x.textContent = 'Set'; });
@@ -998,9 +1010,9 @@ document.addEventListener('mousedown', (e) => { if (e.button === 1 && !inPanel(e
 document.addEventListener('pointerdown', (e) => {
   if (inPanel(e)) return;
   e.preventDefault(); $('screen').focus();
-  if (SWITCH_BUTTON[e.button]) rawDown(SWITCH_BUTTON[e.button]);
+  if (mouseSwitches && SWITCH_BUTTON[e.button]) rawDown(SWITCH_BUTTON[e.button]);
 });
-window.addEventListener('pointerup', (e) => { if (SWITCH_BUTTON[e.button]) rawUp(SWITCH_BUTTON[e.button]); });
+window.addEventListener('pointerup', (e) => { if (mouseSwitches && SWITCH_BUTTON[e.button]) rawUp(SWITCH_BUTTON[e.button]); });
 // Switch keys work anywhere except while typing or choosing in a panel field. A panel
 // button (such as "Start scanning") keeps focus after a click, and that used to make every
 // switch key do nothing until the screen was clicked (Ken, November 12 2026).
