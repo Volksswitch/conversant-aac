@@ -102,6 +102,9 @@
   #panel label:has(input:disabled) { color: #9aa4ad; }
   #panel .field { margin-bottom: 8px; }
   #panel .field > span { display: block; font-weight: bold; margin-bottom: 2px; }
+  #panel .keyrow { margin: 2px 0; }
+  #panel .keyrow b { display: inline-block; min-width: 9em; }
+  #panel .keyset.listening { background: #ffe082; }
   #panel select, #panel input[type=number] { font-size: 14px; padding: 3px; }
   #panel button { font-size: 14px; padding: 6px 8px; margin: 2px 0; width: 100%; text-align: left; cursor: pointer;
                   border: 1px solid var(--edge); border-radius: 5px; background: #f7f9fb; }
@@ -163,7 +166,13 @@
       <label><input type="radio" name="switches" value="1"> One switch (the left button)</label>
       <label><input type="radio" name="switches" value="2"> Two switches (left and right buttons)</label>
       <label><input type="radio" name="switches" value="3"> Three switches (left, right and middle buttons)</label>
-      <p class="note">Choosing One, Two or Three puts the other scan settings back to that choice’s starting values. Keys 1, 2 and 3 also work as the three switches.</p></div>
+      <p class="note">Choosing One, Two or Three puts the other scan settings back to that choice’s starting values. Keys can be set below.</p></div>
+    <div class="field" id="keyField"><span>Switch keys</span>
+      <div class="keyrow">Switch 1: <b id="key1"></b> <button type="button" class="keyset" data-sw="1">Set</button></div>
+      <div class="keyrow">Switch 2: <b id="key2"></b> <button type="button" class="keyset" data-sw="2">Set</button></div>
+      <div class="keyrow">Switch 3: <b id="key3"></b> <button type="button" class="keyset" data-sw="3">Set</button></div>
+      <button type="button" id="keyReset">Use the starting keys</button>
+      <p class="note">For a switch interface that sends key presses. Tap “Set”, then press the key (or the switch). The mouse buttons still work as well. The keys are remembered on this device.</p></div>
     <div class="field"><span>How the scan moves</span>
       <label><input type="radio" name="pattern" value="regions"> By region: options, Express Panel, In my own words, Command Bar</label>
       <label><input type="radio" name="pattern" value="items"> One line, no groups: every button in turn</label>
@@ -792,7 +801,51 @@ function accept(n) {
   choose();
 }
 const SWITCH_BUTTON = { 0: 1, 2: 2, 1: 3 };   // left, right, middle mouse buttons
-const SWITCH_KEY = { Space: 1, Digit1: 1, Numpad1: 1, Enter: 2, NumpadEnter: 2, Digit2: 2, Numpad2: 2, Digit3: 3, Numpad3: 3 };
+// Keys for the switches (Ken, November 12 2026): a switch interface that sends key presses
+// avoids a clash with mouse software. The starting keys stay; a key set here is added for
+// that switch and taken away from any other switch that had it.
+const START_KEYS = { Space: 1, Digit1: 1, Numpad1: 1, Enter: 2, NumpadEnter: 2, Digit2: 2, Numpad2: 2, Digit3: 3, Numpad3: 3 };
+let customKeys = {};   // switch number -> key code
+try { customKeys = JSON.parse(localStorage.getItem('switchKeys') || '{}') || {}; } catch (e) { customKeys = {}; }
+let SWITCH_KEY = {};
+const switchKeyName = (code) => code.replace(/^Key/, '').replace(/^Digit/, '').replace(/^Numpad/, 'Keypad ').replace(/^Arrow/, 'Arrow ');
+function buildSwitchKeys() {
+  SWITCH_KEY = { ...START_KEYS };
+  const mine = Object.values(customKeys);
+  Object.keys(SWITCH_KEY).forEach((c) => { if (mine.includes(c)) delete SWITCH_KEY[c]; });
+  Object.entries(customKeys).forEach(([n, c]) => { SWITCH_KEY[c] = Number(n); });
+  [1, 2, 3].forEach((n) => {
+    const el = document.getElementById('key' + n); if (!el) return;
+    const codes = Object.keys(SWITCH_KEY).filter((c) => SWITCH_KEY[c] === n);
+    el.textContent = codes.map(switchKeyName).join(', ') || '(none)';
+  });
+}
+function keysSummary() { return [1, 2, 3].map((n) => n + ': ' + (Object.keys(SWITCH_KEY).filter((c) => SWITCH_KEY[c] === n).map(switchKeyName).join('/') || 'none')).join('; '); }
+let listeningFor = 0;
+document.querySelectorAll('.keyset').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('.keyset').forEach((x) => { x.classList.remove('listening'); x.textContent = 'Set'; });
+  listeningFor = Number(b.dataset.sw); b.classList.add('listening'); b.textContent = 'Press a key…';
+}));
+document.getElementById('keyReset').addEventListener('click', () => {
+  customKeys = {}; try { localStorage.removeItem('switchKeys'); } catch (e) {} buildSwitchKeys();
+});
+// Catches the key before anything else while "Set" is waiting. Escape cancels.
+window.addEventListener('keydown', (e) => {
+  if (!listeningFor) return;
+  e.preventDefault(); e.stopPropagation(); lastSetCode = e.code;
+  if (e.code !== 'Escape') {
+    Object.keys(customKeys).forEach((n) => { if (customKeys[n] === e.code) delete customKeys[n]; });
+    customKeys[listeningFor] = e.code;
+    try { localStorage.setItem('switchKeys', JSON.stringify(customKeys)); } catch (err) {}
+  }
+  document.querySelectorAll('.keyset').forEach((x) => { x.classList.remove('listening'); x.textContent = 'Set'; });
+  listeningFor = 0; buildSwitchKeys();
+  // Leave the panel, or the switch keys would be ignored (they don't count inside it).
+  if (document.activeElement) document.activeElement.blur();
+}, true);
+let lastSetCode = '';   // the key just set: its release must not count as a switch
+window.addEventListener('keyup', (e) => { if (listeningFor || e.code === lastSetCode) { e.stopPropagation(); lastSetCode = ''; } }, true);
+buildSwitchKeys();
 const inPanel = (e) => !!(e.target.closest && e.target.closest('#panel'));
 document.addEventListener('contextmenu', (e) => { if (!inPanel(e)) e.preventDefault(); });
 document.addEventListener('mousedown', (e) => { if (e.button === 1 && !inPanel(e)) e.preventDefault(); });   // no auto-scroll on the middle button
@@ -1008,6 +1061,7 @@ function settingsText() {
   const version = pageVersion();
   const lines = [document.title, 'Page version: ' + version, 'Copied: ' + new Date().toLocaleString()];
   lines.push('', 'Settings:');
+  lines.push('Switch keys: ' + keysSummary());
   if (document.querySelector('#presets button')) lines.push('Example: ' + (presetName ? presetName + (presetEdited ? ' (then changed by hand)' : '') : 'none'));
   document.querySelectorAll('#panel .field').forEach((f) => {
     const head = f.querySelector(':scope > span');
