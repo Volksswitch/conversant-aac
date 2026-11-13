@@ -455,10 +455,9 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
             starting = true;
             wanted = true;
             try {
-                stream = await navigator.mediaDevices.getUserMedia({
-                    // Call processing is off on an iPad; see audio-session.js.
-                    audio: audioSession.micProcessing(),
-                });
+                // Call processing off on an iPad, and one retry if its audio mode
+                // was not ready to record; see audio-session.js.
+                stream = await audioSession.openMic();
             } catch (err) {
                 starting = false;
                 if (onStatus) onStatus('error', audioSession.micFailure(err));

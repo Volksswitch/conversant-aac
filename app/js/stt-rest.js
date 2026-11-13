@@ -333,9 +333,7 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
             try {
                 // The same cleanup as the other paid recognizers (CR-276): the app speaks
                 // through the device it listens with.
-                stream = await navigator.mediaDevices.getUserMedia({
-                    audio: audioSession.micProcessing(),   // call processing off on an iPad; see audio-session.js
-                });
+                stream = await audioSession.openMic();   // see audio-session.js
             } catch (err) {
                 starting = false;
                 if (onStatus) onStatus('error', `The microphone could not be opened: ${audioSession.micFailure(err)}`);

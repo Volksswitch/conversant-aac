@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+### On an iPad
+
+- With a paid service hearing the other person, the first Listen after opening Conversant could fail and turn the screen pink. It now works the first time.
+
 ## Version 0.15.6
 
 ### On an iPad

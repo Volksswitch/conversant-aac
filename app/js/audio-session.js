@@ -12,8 +12,8 @@
  * Best explanation, NOT proven: once a page has used the microphone, Safari leaves
  * its audio in a mode meant for calls after the microphone closes. Safari lets a page
  * say what kind of audio it is making (navigator.audioSession, Safari 16.4+), so the
- * app says "playback" whenever paid listening stops and hands the choice back to
- * Safari ("auto", what it did before this file existed) before the microphone opens.
+ * app says "playback" whenever paid listening stops and "play-and-record" before the
+ * microphone opens (see forListening for why not "auto").
  *
  * Scope, deliberately narrow:
  *   - Paid hearing only (stt.js calls this around an external source). The iPad's own
@@ -140,13 +140,42 @@ export function output(ctx, ipad = (() => { try { return platform.isIOS(); } cat
     return chain;
 }
 
-/** Before the microphone opens: let Safari choose, as it always did. */
+/*
+ * Before the microphone opens: say "play and record".
+ *
+ * ⚠ NOT "auto" (Ken's iPad, 0.15.6, November 13 2026). This used to hand the choice
+ * back to Safari, and the first Listen after launch failed with "InvalidStateError:
+ * AudioSession category is not compatible with audio capture" - Safari, left to
+ * choose while the app's voice was ready to play, chose a playback-only mode and then
+ * refused the microphone in it. Recording needs "play-and-record", so the app says so.
+ */
 export function forListening() {
     listening = true;
     applyBoost();
     const s = session();
     if (!s) return;
-    try { if (s.type !== 'auto') s.type = 'auto'; } catch { /* leave it */ }
+    try { if (s.type !== 'play-and-record') s.type = 'play-and-record'; } catch { /* leave it */ }
+}
+
+/*
+ * Open the microphone for a paid service. Shared by all three, so the request and the
+ * recovery below cannot drift between them.
+ *
+ * If an iPad still says its audio mode cannot record, set the mode again, give it a
+ * moment and try once more: the refusal is about timing, and a second Listen a few
+ * seconds later has always worked. Any other failure is passed straight back.
+ */
+export async function openMic(getUserMedia = (c) => navigator.mediaDevices.getUserMedia(c),
+    wait = (ms) => new Promise((r) => setTimeout(r, ms))) {
+    const constraints = { audio: micProcessing() };
+    try {
+        return await getUserMedia(constraints);
+    } catch (err) {
+        if (!err || err.name !== 'InvalidStateError') throw err;
+        forListening();
+        await wait(300);
+        return getUserMedia(constraints);
+    }
 }
 
 /** After paid listening stops: ordinary playback, so the voice is not left quiet. */

@@ -22,6 +22,12 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.7": [
+    {
+      "for": "ipad",
+      "note": "With a paid service hearing the other person, the first Listen after opening Conversant could fail and turn the screen pink. It now works the first time."
+    }
+  ],
   "0.15.6": [
     {
       "for": "ipad",

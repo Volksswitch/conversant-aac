@@ -22,14 +22,14 @@ function withSession(session, fn) {
     }
 }
 
-test('an iPad is told "playback" when listening stops and "auto" before it starts', () => {
+test('an iPad is told "playback" when listening stops and "play-and-record" before it starts', () => {
     const s = { type: 'auto', state: 'active' };
     withSession(s, () => {
         audioSession.forSpeaking();
         assert.equal(s.type, 'playback');
         assert.match(audioSession.describe(), /^playback \(active\)$/);
         audioSession.forListening();
-        assert.equal(s.type, 'auto');
+        assert.equal(s.type, 'play-and-record');
     });
 });
 
@@ -77,7 +77,8 @@ test('every paid service opens the microphone through the one shared request', (
     for (const f of ['stt-deepgram.js', 'stt-azure.js', 'stt-rest.js']) {
         const src = readFileSync(new URL(`../app/js/${f}`, import.meta.url), 'utf8')
             .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-        assert.match(src, /getUserMedia\(\{\s*audio: audioSession\.micProcessing\(\),?\s*\}\)/, f);
+        assert.match(src, /stream = await audioSession\.openMic\(\)/, f);
+        assert.doesNotMatch(src, /getUserMedia/, `${f} must not open the microphone itself`);
         assert.doesNotMatch(src, /echoCancellation/, `${f} must not set its own`);
     }
 });
@@ -135,4 +136,26 @@ test('a microphone failure says which kind it was', () => {
     assert.equal(audioSession.micFailure({ name: 'NotReadableError', message: 'Could not start audio source' }),
         'microphone failed (NotReadableError: Could not start audio source)');
     assert.equal(audioSession.micFailure(null), 'microphone failed (Error)');
+});
+
+// Ken's iPad, 0.15.6: the first Listen after launch failed with "AudioSession
+// category is not compatible with audio capture", and a second one seconds later
+// worked. openMic sets the recording mode again and tries once more.
+test('a microphone refused for the audio mode is tried once more', async () => {
+    const calls = [];
+    const stream = { ok: true };
+    const gum = async (c) => {
+        calls.push(c);
+        if (calls.length === 1) { const e = new Error('AudioSession category is not compatible'); e.name = 'InvalidStateError'; throw e; }
+        return stream;
+    };
+    assert.equal(await audioSession.openMic(gum, async () => {}), stream);
+    assert.equal(calls.length, 2);
+});
+
+test('a refused permission is not retried', async () => {
+    let calls = 0;
+    const gum = async () => { calls++; const e = new Error('denied'); e.name = 'NotAllowedError'; throw e; };
+    await assert.rejects(audioSession.openMic(gum, async () => {}), { name: 'NotAllowedError' });
+    assert.equal(calls, 1, 'asking again would only show the permission prompt again');
 });
