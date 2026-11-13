@@ -22,6 +22,11 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.0": [
+    "In \"In my own words\", the key where Enter used to be now shows the word the keyboard suggests. Tap it to finish the word; it adds the space for you. It's blank when there's no suggestion. Elsewhere, Enter is unchanged.",
+    "A new keyboard layout, \"Most-used letters first\", puts the letters you type most at the start of each row. It's the same shape as QWERTY, so a keyguard made for QWERTY fits it. Choose it in Settings, on the Express Panel and Keyboard tab.",
+    "\"Time allowed between the two taps\" (Settings, General, One tap or two) now also offers 2, 3 and 4 seconds."
+  ],
   "0.14.0": [
     "You can now take questions on a subject you know, such as after a talk. In About Me, open My Topics and add a topic, the documents your answers should come from (pick a PDF, or paste text), and how you relate to the material. Put the topic's button on the Express Panel (Context band). When you tap it, each question you hear gets four answers drawn from your documents: a short one first, then three that go deeper. Ending the conversation switches the topic off. A topic can have its own Flex phrases, such as \"Thank you, next question\". After you speak one, the answers stay on screen so you can pick another to say more, and tapping Listen clears them for the next question. The documents are kept in a new \"sources\" folder inside your data folder.",
     "At a talk, if a question hangs on a word that could mean several things, such as \"covered\", a \"What do you mean by...?\" button appears at the end of the Flex band. Tapping it asks, and the answers that follow take their explanation into account. It needs a Flex band with at least one row.",

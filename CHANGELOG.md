@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.15.0
+
 ### Everyone
 - In "In my own words", the key where Enter used to be now shows the word the keyboard suggests. Tap it to finish the word; it adds the space for you. It's blank when there's no suggestion. Elsewhere, Enter is unchanged.
 - A new keyboard layout, "Most-used letters first", puts the letters you type most at the start of each row. It's the same shape as QWERTY, so a keyguard made for QWERTY fits it. Choose it in Settings, on the Express Panel and Keyboard tab.
