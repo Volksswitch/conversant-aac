@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Settings → About now names the app's license correctly: Apache License 2.0. It said MIT.
+
 ## Version 0.15.1
 
 - "End conversation" and "Don't save" now always ask for a second tap, even if you chose "One tap". Switch users already had this. You have at least 2 seconds for the second tap.
