@@ -308,6 +308,78 @@ test('re-arming within one partner turn does not ease off', async () => {
     assert.equal(spokenTexts.length, 1, 'still the plain initial delay — no exchange has completed');
 });
 
+/* "Maximum per turn" is per TURN of the other person, not per pause (Ken, November 13
+ * 2026). His iPad report: seven holding phrases in about a minute in one turn, because
+ * every pause started the count over - "The placeholders kept firing and I couldn't
+ * complete a sentence." Each test below fails on the code from before the change. */
+test('many pauses in one turn get no more holding phrases than the maximum', async () => {
+    storage.savePlaceholderSettings(0.01, 0.02, 2, 0);
+    for (let i = 0; i < 7; i++) {          // seven pauses, the other person carrying on between them
+        placeholders.arm();
+        await sleep(120);                  // long enough for a phrase at either delay
+        placeholders.stop();               // they started talking again
+    }
+    assert.equal(spokenTexts.length, 2, `the maximum of 2 holds for the whole turn: ${spokenTexts.join(' / ')}`);
+    assert.ok(ACK.includes(spokenTexts[0]), `first acknowledges: ${spokenTexts[0]}`);
+    assert.ok(THINKING.includes(spokenTexts[1]), `second says still thinking, not a second acknowledgment: ${spokenTexts[1]}`);
+});
+
+test('a later pause in the same turn waits the longer delay, not the short one', async () => {
+    storage.savePlaceholderSettings(0.01, 0.4, 3, 0);
+    placeholders.arm();
+    await sleep(100);
+    assert.equal(spokenTexts.length, 1, 'the first comes the short delay after a pause');
+    placeholders.stop();                   // they carry on talking...
+    placeholders.arm();                    // ...and pause again
+    await sleep(100);
+    assert.equal(spokenTexts.length, 1, 'nothing at the short delay: this turn has had its first');
+    await sleep(500);
+    assert.equal(spokenTexts.length, 2, 'the next comes after the longer delay');
+    assert.ok(THINKING.includes(spokenTexts[1]), `and it says still thinking: ${spokenTexts[1]}`);
+});
+
+test('a new turn starts the count over: a reply, something else the user says, or a new conversation', async () => {
+    storage.savePlaceholderSettings(0.01, 5, 1, 0);
+    const endings = {
+        reply: () => placeholders.noteExchange(),
+        'something said': () => placeholders.endTurn(),
+        'new conversation': () => placeholders.resetConversation(),
+    };
+    for (const [name, endTheTurn] of Object.entries(endings)) {
+        placeholders.endTurn();
+        resetSpoken();
+        placeholders.arm(); await sleep(80); placeholders.stop();
+        placeholders.arm(); await sleep(80); placeholders.stop();
+        assert.equal(spokenTexts.length, 1, `${name}: one in the turn at a maximum of 1`);
+        endTheTurn();
+        placeholders.arm(); await sleep(80); placeholders.stop();
+        assert.equal(spokenTexts.length, 2, `${name}: the next turn gets its own`);
+        assert.ok(ACK.includes(spokenTexts[1]), `${name}: starting again with an acknowledgment`);
+    }
+});
+
+test('confirming after a pause cannot add a phrase past the maximum', async () => {
+    storage.savePlaceholderSettings(0.01, 0.01, 1, 0);
+    placeholders.arm(); await sleep(80); placeholders.stop();
+    assert.equal(spokenTexts.length, 1);
+    placeholders.arm();                    // a later pause: the turn has had its one
+    await placeholders.start();            // the suggestions arrive and confirm the ladder
+    await sleep(80);
+    assert.equal(spokenTexts.length, 1, 'still one');
+});
+
+// app.js cannot be loaded by a test, so these are the tripwires for the links there.
+// Without them a turn that ends any other way than a reply leaves the count where it
+// was, and the next turn of the other person gets no holding phrases at all.
+test('anything the user says aloud, and every new turn, ends the count for the holding phrases', () => {
+    for (const fn of ['function logSpokenUserTurn(', 'function startFreshListening(']) {
+        const at = appSource.indexOf(fn);
+        assert.ok(at > 0, `${fn} not found`);
+        const body = appSource.slice(at, appSource.indexOf('\n}', at));
+        assert.match(body, /placeholders\.endTurn\(\);/, `${fn} must call placeholders.endTurn()`);
+    }
+});
+
 // The counting itself lives in app.js, which no test can load, so this is the
 // source-level tripwire for the link between the two layers.
 test('an exchange is counted at the commit choke point, not at the silence checkpoint', () => {
@@ -864,12 +936,15 @@ test('CR-140/141: a sent note is cleared; restore failures are said on the statu
     assert.match(appSource, /async function importFromFile\(file\)/);
 });
 
-// CR-148. A new pause must not forget the phrase just said.
+// CR-148. A new pause must not forget the phrase just said. Each pass is a new turn
+// (endTurn): since November 13 2026 one turn gets no more than its maximum however
+// many pauses it has, and this guard is about the memory arm() keeps, not the count.
 test('the same holding phrase is never said twice in a row across pauses', async () => {
     storage.savePlaceholderSettings(0.005, 5, 1);
     const said = [];
     for (let i = 0; i < 40; i++) {
         resetSpoken();
+        placeholders.endTurn();
         placeholders.arm();
         await sleep(25);
         if (spokenTexts[0]) said.push(spokenTexts[0]);

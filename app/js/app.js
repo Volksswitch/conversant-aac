@@ -1888,11 +1888,10 @@ async function handleSilencePeriod(text) {
     // filled) when the user responds. Fire-and-forget so it doesn't delay options.
     if (text) storage.logPartnerInterim({ rawTranscript: text, partner: partnerStamp() });
     engine.partnerSpeaking(text);
-    // Start the initial-delay clock at the pause (Ken, June 28 2026) so a slow AI
-    // round-trip doesn't leave dead air. arm() only starts the clock; the placeholder
-    // is still gated on the classification (questions only) inside generateOptions,
-    // which calls placeholders.start() (fires immediately if the delay already
-    // elapsed) or placeholders.stop() (not placeholder-worthy).
+    // The pause schedules the next holding phrase itself (August 7 2026: never gated on
+    // the AI). The first of a turn comes the initial delay after a pause; later pauses
+    // in the same turn wait the subsequent delay and count toward "Maximum per turn"
+    // (Ken, November 13 2026). generateOptions only confirms or cancels it.
     placeholders.arm();
     await generateOptions(text);
 }
@@ -2475,6 +2474,7 @@ function startFreshListening(opts = {}) {
     // the turn just ended is closed off.
     metrics.paletteAbandoned('new turn');
     metrics.turnBoundary();
+    placeholders.endTurn();   // and the holding phrases count afresh ("Maximum per turn")
     noteConversationStarted();
     currentPartnerText = '';
     lastIngestedPartnerText = '';
@@ -4563,6 +4563,10 @@ function logSpokenUserTurn(text) {
     // 'control' -- these are OUR phrases (Hold on / Ask them to repeat / the user's
     // own last words re-spoken), never the user's own composition.
     storage.logUserResponse({ selectedText: text, spokenText: spokenFormFor(text), ttsUsed: tts.lastVoiceUsed(), selectedIndex: -1, allOptions: [], source: 'control' });
+    // The user has said something, so whatever the other person says next is a new
+    // turn with its own holding phrases ("Maximum per turn", Ken, November 13 2026).
+    // A reply ends the turn through commitExchange instead; Hold on never comes here.
+    placeholders.endTurn();
 }
 
 // Say again — re-speak the user's last utterance verbatim. Instant, no LLM.

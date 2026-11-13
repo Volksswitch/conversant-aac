@@ -3500,6 +3500,19 @@ Settings → Conversation → **Placeholders** (Initial delay / Subsequent delay
 Maximum per turn, where **0 means none** and "No limit" exists). So they speak even
 when the AI is slow, failing, or absent.
 
+**⚠ "PER TURN" MEANS PER TURN OF THE OTHER PERSON, NOT PER PAUSE (Ken, November 13
+2026).** `arm()` used to start the count over at every pause, so the maximum never
+applied to a turn with pauses in it. Ken's iPad report: seven holding phrases in about a
+minute in one turn of his (*"The placeholders kept firing and I couldn't complete a
+sentence"*), and on an iPad with paid hearing each one closed the microphone for about
+3 seconds. Now the count runs for the whole turn: the first phrase comes the initial
+delay after a pause, a later pause in the same turn waits the subsequent delay, and
+nothing more is said once the maximum is reached. The turn ends when the user says
+something (`noteExchange` in `commitExchange`, `endTurn` in `logSpokenUserTurn`; Hold
+on is neither), when a new partner turn starts (`endTurn` in `startFreshListening`), or
+when the conversation ends. **Do not reset the count in `arm()` or `stop()`**: both run
+inside a turn, and that is exactly the bug.
+
 **FOUR THINGS SILENCE THEM, and each exists for its own reason:**
 
 **⚠ A PHRASE ALREADY PLAYING ALWAYS FINISHES (Ken, October 9 2026), superseding the
@@ -3515,8 +3528,8 @@ Only End conversation and pausing practice silence speech at once (`tts.cancel()
 1. **The user speaking.** Never over the user's own statement (July 2026).
 2. **The user acting at all** — a card, an Express phrase, Say again / Hold on /
    Wind down abort the ladder, because the floor has been taken.
-3. **The partner resuming** (`handlePartnerResumed`) aborts and resets it, so nothing
-   is spoken over them; the next pause re-arms from the fuller utterance.
+3. **The partner resuming** (`handlePartnerResumed`) aborts it, so nothing is spoken
+   over them; the next pause re-arms it, keeping the turn's count (see above).
 4. **A repair-initiator turn** ("What?") — the one turn that warrants none.
 
 **⚠ THERE IS DELIBERATELY NO FIFTH — "In my own words" DOES NOT SILENCE THEM

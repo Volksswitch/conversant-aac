@@ -50,7 +50,7 @@ import * as phrasePools from './placeholder-phrases.js';
 
 let timer = null;
 let active = false;
-let count = 0;               // placeholders spoken this window (for role + cap)
+let turnCount = 0;           // placeholders spoken in the other person's current turn (role + cap)
 let lastIndex = { acknowledgment: -1, thinking: -1 };
 let armTime = 0;             // when the partner stopped (initial-delay clock origin)
 let armed = false;           // arm() was called and start() hasn't consumed it
@@ -95,13 +95,38 @@ let ownUtterance = null;
  */
 const EASE_OFF_EXCHANGES = 4;
 
+/* "Maximum per turn" means per TURN of the other person, not per pause (Ken, November
+ * 13 2026).
+ *
+ * arm() runs at every pause in the other person's speech, and it used to start the
+ * count over each time. So the maximum never applied to a turn with pauses in it, and
+ * the first phrase came back 2 seconds after every one of them. Ken's iPad report:
+ * seven holding phrases in about a minute, in one turn of his, with "The placeholders
+ * kept firing and I couldn't complete a sentence." On an iPad with paid hearing each
+ * phrase also closes the microphone for about 3 seconds, so every one cost words.
+ *
+ * Now the count runs for the whole turn. The first phrase still comes the initial
+ * delay after a pause; once one has been said, a later pause in the same turn waits
+ * the subsequent delay, and nothing more is said once the maximum is reached. The
+ * other person carrying on still stops the timer (stop()), as before - it no longer
+ * resets the count. The turn ends when the user says something (noteExchange for a
+ * reply, endTurn for Say again, Ask them to repeat and the like), when a new turn of
+ * the other person starts (endTurn in startFreshListening), or when the conversation
+ * ends (resetConversation).
+ */
+
 // A user turn was committed, so the other person has now seen one more full
-// exchange of how this device behaves.
-export function noteExchange() { exchanges++; }
+// exchange of how this device behaves - and their turn is over.
+export function noteExchange() { exchanges++; turnCount = 0; }
+
+// The other person's turn is over without a reply being committed - the user said
+// something else (Say again, Ask them to repeat), or a new turn of theirs starts. The
+// next turn gets its own holding phrases.
+export function endTurn() { turnCount = 0; }
 
 // A conversation ended or a new one started - the next person has learned nothing
 // yet, so the ladder starts over at the user's initial delay.
-export function resetConversation() { exchanges = 0; }
+export function resetConversation() { exchanges = 0; turnCount = 0; }
 
 // How long to wait before the FIRST placeholder of this turn. Deliberately not
 // clamped to an absolute ceiling: a user who has chosen both the longest start and
@@ -110,6 +135,17 @@ export function resetConversation() { exchanges = 0; }
 function initialDelayFor({ initialDelay, placeholderEaseOff }) {
     const step = Number(placeholderEaseOff) || 0;
     return initialDelay + step * Math.min(exchanges, EASE_OFF_EXCHANGES);
+}
+
+// This turn has had as many as the user allows (-1 = no limit; 0 is handled apart).
+function capReached({ maxPlaceholders }) {
+    return maxPlaceholders >= 1 && turnCount >= maxPlaceholders;
+}
+
+// How long to wait before the next phrase of this turn: the initial delay before the
+// first, the subsequent delay before any later one - after whichever pause.
+function delayForNext(settings) {
+    return turnCount === 0 ? initialDelayFor(settings) : settings.subsequentDelay;
 }
 // A gate the app sets so a placeholder never speaks OVER the user's own statement
 // (a spoken command / response / Express phrase). Pressing a speaking button must
@@ -212,14 +248,15 @@ export function arm() {
     if (timer) { clearTimeout(timer); timer = null; }
     armed = true;
     armTime = Date.now();
-    count = 0;
-    // lastIndex is NOT reset here (CR-148): it is what stops the same phrase being
-    // said twice in a row, and a pause is not a reason to forget the last one said.
+    // Neither the count nor lastIndex is reset here. The count runs for the whole
+    // turn (see "per TURN" above), and lastIndex is what stops the same phrase being
+    // said twice in a row (CR-148): a pause is not a reason to forget either.
     const settings = storage.loadPlaceholderSettings();
-    // 0 = the user wants no placeholders at all (they read as artificial).
-    if (settings.maxPlaceholders === 0) { active = false; return; }
+    // 0 = the user wants no placeholders at all (they read as artificial); and a turn
+    // that has had its maximum gets no more, however many pauses it has.
+    if (settings.maxPlaceholders === 0 || capReached(settings)) { active = false; return; }
     active = true;
-    timer = setTimeout(speakNext, Math.max(0, initialDelayFor(settings) * 1000));
+    timer = setTimeout(speakNext, Math.max(0, delayForNext(settings) * 1000));
 }
 
 // Called once the classification is back and the turn warrants placeholders.
@@ -235,16 +272,16 @@ export async function start() {
     // 0 = the user wants no placeholders at all (they read as artificial).
     if (maxPlaceholders === 0) { stop(); return; }
     if (active) { armed = false; return; }   // arm() is already driving the ladder
+    // A turn that has had its maximum: arm() scheduled nothing on purpose, and this
+    // confirm must not schedule one behind its back.
+    if (capReached(settings)) { armed = false; return; }
     // Defensive: start() without a preceding arm(). Measure the remainder from the
-    // pause if we have one, else from now.
+    // pause if we have one, else from now. The count and lastIndex are kept (see arm).
     if (timer) { clearTimeout(timer); timer = null; }
     const base = armed ? armTime : Date.now();
     armed = false;
     active = true;
-    count = 0;
-    // lastIndex is NOT reset here (CR-148): it is what stops the same phrase being
-    // said twice in a row, and a pause is not a reason to forget the last one said.
-    timer = setTimeout(speakNext, Math.max(0, initialDelayFor(settings) * 1000 - (Date.now() - base)));
+    timer = setTimeout(speakNext, Math.max(0, delayForNext(settings) * 1000 - (Date.now() - base)));
 }
 
 /* Is one of the ladder's own phrases being spoken right now? Read by the Listen
@@ -294,29 +331,29 @@ async function speakNext() {
     // in and cancelling it. No await between here and tts.speak below, so this one
     // check holds until we actually speak.
     if (userSpeaking()) { scheduleNext(); return; }
-    // Role by position: the first placeholder acknowledges, later ones say
-    // "still thinking". Both pools are partner-statement independent, so neither
-    // needs to know what kind of turn this was.
-    const phrase = count === 0
+    // Role by position in the turn: the first placeholder acknowledges, later ones
+    // say "still thinking" - also after a pause, since the turn has already been
+    // acknowledged. Both pools are partner-statement independent, so neither needs
+    // to know what kind of turn this was.
+    const phrase = turnCount === 0
         ? pick(pools.acknowledgment, 'acknowledgment')
         : pick(pools.thinking, 'thinking');
-    count++;
+    turnCount++;
     if (phrase) {
         // ⚠ THE TEXT GOES WITH IT, not only the count. This is a sentence said ALOUD
         // in the user's own voice, which the other person heard - so a record of the
         // conversation that leaves it out is a record with the app's own speech missing
         // from it (Ken, September 10 2026, asking whether a conversation can be
         // recreated to the second). The count alone could never do that.
-        try { onSpoken({ n: count, text: phrase }); } catch { /* reporting must never stop the phrase */ }
+        try { onSpoken({ n: turnCount, text: phrase }); } catch { /* reporting must never stop the phrase */ }
         const speaking = tts.speak(phrase);
         ownUtterance = tts.currentUtterance();
         await speaking;
     }
     if (!active) return;
-    // Cap: stop after maxPlaceholders placeholders. -1 = no limit (0 = none is
+    // Cap: no more once this TURN has had maxPlaceholders. -1 = no limit (0 = none is
     // handled in arm(), which never schedules a first placeholder).
-    const { maxPlaceholders } = storage.loadPlaceholderSettings();
-    if (maxPlaceholders >= 1 && count >= maxPlaceholders) return;
+    if (capReached(storage.loadPlaceholderSettings())) return;
     scheduleNext();
 }
 

@@ -3689,7 +3689,8 @@ export function loadPlaceholderSettings() {
         // options rather than covering the wait for them.
         initialDelay: checkedNumber('initialDelay', settings.initialDelay, 2),
         subsequentDelay: checkedNumber('subsequentDelay', settings.subsequentDelay, 10),
-        // Cap on placeholders spoken per choosing window. Default 2 so the user
+        // Cap on placeholders spoken per turn of the other person, however many pauses
+        // it has (Ken, November 13 2026; it was per pause before). Default 2 so the user
         // hears at most one "I heard you" placeholder plus one "still thinking" placeholder
         // — two different roles, never two same-category placeholders back to back.
         // 0 = none (the user finds placeholders artificial/robotic); -1 = no limit.

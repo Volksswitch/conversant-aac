@@ -19,6 +19,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 beforeEach(() => {
     placeholders.stop();
     placeholders.setUserSpeakingGate(() => false);
+    // The module is shared across tests, and since November 13 2026 its count runs for
+    // a whole turn: without this, a phrase spoken in one test uses up the next test's
+    // "Maximum per turn". Each test is a fresh conversation, as in placeholders.test.mjs.
+    placeholders.resetConversation();
     resetLocalStorage();
     resetSpoken();
 });
