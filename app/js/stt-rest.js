@@ -149,7 +149,7 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
     function releaseHalfOpen() {
         try { if (stream) stream.getTracks().forEach((t) => t.stop()); } catch { /* gone */ }
         stream = null;
-        try { if (audioCtx) audioCtx.close(); } catch { /* gone */ }
+        /* the shared listening context is kept (audio-session.js) */
         audioCtx = null;
     }
     let rate = 48000;
@@ -340,14 +340,16 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
                 return;
             }
             if (!wanted) { starting = false; releaseHalfOpen(); return false; }
-            const Ctor = window.AudioContext || window.webkitAudioContext;
-            audioCtx = new Ctor();
-            // Created after an await, so outside the tap: on an iPad it starts suspended
-            // and would hear nothing while reporting that it was listening (CR-276).
-            if (audioCtx.state !== 'running') {
-                try { await audioCtx.resume(); } catch { /* needs a gesture */ }
-                if (!wanted) { starting = false; releaseHalfOpen(); return false; }
+            // The shared listening context, woken by a tap; see audio-session.js.
+            audioCtx = audioSession.captureContext();
+            if (!(await audioSession.wake(audioCtx))) {
+                starting = false;
+                releaseHalfOpen();
+                micCheck.noteStuck('audio would not start');
+                if (onStatus) onStatus('idle');   // button dark: the next Listen tap wakes it
+                return false;
             }
+            if (!wanted) { starting = false; releaseHalfOpen(); return false; }
             rate = audioCtx.sampleRate || 48000;
             micCheck.noteStart({ stream, audioCtx });
             sourceNode = audioCtx.createMediaStreamSource(stream);
@@ -385,7 +387,7 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
             try { if (processor) processor.disconnect(); } catch { /* already gone */ }
             try { if (sourceNode) sourceNode.disconnect(); } catch { /* already gone */ }
             try { if (stream) stream.getTracks().forEach((t) => t.stop()); } catch { /* already gone */ }
-            try { if (audioCtx) audioCtx.close(); } catch { /* already gone */ }
+            /* the shared listening context is kept (audio-session.js) */
             processor = sourceNode = stream = audioCtx = null;
             reset();
             if (onStatus) onStatus('idle');

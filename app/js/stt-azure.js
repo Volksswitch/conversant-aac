@@ -289,7 +289,7 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
     function releaseHalfOpen() {
         try { if (stream) stream.getTracks().forEach((t) => t.stop()); } catch { /* gone */ }
         stream = null;
-        try { if (audioCtx) audioCtx.close(); } catch { /* gone */ }
+        /* the shared listening context is kept (audio-session.js) */
         audioCtx = null;
     }
     let rate = 48000;
@@ -464,10 +464,14 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
                 return false;
             }
 
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            audioCtx = new AudioCtx();
-            if (audioCtx.state !== 'running') {
-                try { await audioCtx.resume(); } catch { /* a gesture is needed; capture still works */ }
+            // The shared listening context, woken by a tap; see audio-session.js.
+            audioCtx = audioSession.captureContext();
+            if (!(await audioSession.wake(audioCtx))) {
+                starting = false;
+                releaseHalfOpen();
+                micCheck.noteStuck('audio would not start');
+                if (onStatus) onStatus('stopped');   // button dark: the next Listen tap wakes it
+                return false;
             }
             rate = audioCtx.sampleRate;
             if (!wanted) { starting = false; releaseHalfOpen(); return false; }
@@ -526,7 +530,7 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
             if (processor) { try { processor.disconnect(); } catch { /* gone */ } processor = null; }
             if (sourceNode) { try { sourceNode.disconnect(); } catch { /* gone */ } sourceNode = null; }
             if (stream) { stream.getTracks().forEach((t) => { try { t.stop(); } catch { /* gone */ } }); stream = null; }
-            if (audioCtx) { try { audioCtx.close(); } catch { /* gone */ } audioCtx = null; }
+            audioCtx = null;   // the shared listening context is kept (audio-session.js)
             if (onStatus) onStatus('stopped');
         },
 

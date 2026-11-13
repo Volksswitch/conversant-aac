@@ -38,6 +38,7 @@ const stats = {
     connected: 0,          // service connections that opened (streaming services)
     mutedAtStart: 0,
     inputs: {},            // kind of input device -> count of starts
+    stuck: {},             // starts that could not finish, by where they stopped
     levels: new Array(8).fill(0),   // frames by loudness band (LEVEL_BANDS)
     gate: null,            // the voice gate's latest { floor, open }
     settings: null,        // what the device applied to the microphone, at the last start
@@ -118,12 +119,15 @@ function levelBands() {
 }
 
 export function noteSpeech() { stats.speechSpans++; }
+/** A start that could not finish (Ken's iPad, 0.15.7: the audio never woke). */
+export function noteStuck(where) { stats.stuck[where] = (stats.stuck[where] || 0) + 1; }
 export function noteConnected() { stats.connected++; }
 export function noteStop() { closeRun(); }
 
 /** One line for the problem report. */
 export function summary() {
-    if (!stats.starts) return 'no paid listening this session';
+    const stuck = Object.entries(stats.stuck).map(([k, n]) => `${k} x${n}`).join(', ');
+    if (!stats.starts) return stuck ? `no paid listening started; stuck: ${stuck}` : 'no paid listening this session';
     const noSound = stats.runsWithNoSound + (runFrames === 0 ? 1 : 0);
     const notRunning = Object.entries(stats.notRunning).map(([k, n]) => `${k}x${n}`).join(',') || 'none';
     const inputs = Object.entries(stats.inputs).map(([k, n]) => `${k}x${n}`).join(',') || 'unknown';
@@ -139,13 +143,14 @@ export function summary() {
 ` +
            `    levels: ${levelBands()}
 ` +
-           `    settings: ${stats.settings || 'unknown'}`;
+           `    settings: ${stats.settings || 'unknown'}` +
+           (stuck ? `\n    stuck: ${stuck}` : '');
 }
 
 /** For tests only. */
 export function _reset() {
     Object.assign(stats, { starts: 0, notRunning: {}, runsWithNoSound: 0, frames: 0, loudest: 0,
-        speechSpans: 0, connected: 0, mutedAtStart: 0, inputs: {},
+        speechSpans: 0, connected: 0, mutedAtStart: 0, inputs: {}, stuck: {},
         levels: new Array(8).fill(0), gate: null, settings: null });
     runFrames = null;
 }

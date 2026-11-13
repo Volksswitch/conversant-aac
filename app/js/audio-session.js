@@ -158,6 +158,57 @@ export function forListening() {
 }
 
 /*
+ * ONE AUDIO CONTEXT FOR LISTENING, WOKEN BY A TAP (Ken's iPad, 0.15.7, November 13 2026).
+ *
+ * Each paid service used to make a new audio context every time it started listening,
+ * AFTER the microphone opened. On an iPad a new context starts asleep and only wakes
+ * inside a tap - and by then there was no tap left: the listening tone plays first and
+ * the microphone opens half a second later, and automatic listening starts with no tap
+ * at all. The wake-up then never finished: the iPad showed its microphone icon, the
+ * Listen button stayed dark, and nothing was heard, every time.
+ *
+ * So there is ONE context for listening, made and woken during a real tap (Start, and
+ * every Listen tap, call unlockCapture), and kept for the life of the page. A context
+ * that is already awake needs no tap to be used again.
+ */
+let captureCtx = null;
+let captureCtor = null;   // which constructor made it; it never changes outside tests
+
+export function captureContext() {
+    const Ctor = window.AudioContext || window.webkitAudioContext;
+    if (!captureCtx || captureCtx.state === 'closed' || captureCtor !== Ctor) {
+        captureCtx = new Ctor();
+        captureCtor = Ctor;
+    }
+    return captureCtx;
+}
+
+/** Call from inside a real tap: makes the listening context and wakes it. */
+export function unlockCapture() {
+    try {
+        const c = captureContext();
+        if (c.state !== 'running') c.resume().catch(() => {});
+    } catch { /* no audio here; starting will report it */ }
+}
+
+/*
+ * Wake a context, with a time limit. resume() on an iPad can wait forever rather than
+ * fail when there is no tap, and a wait that never ends left listening stuck for the
+ * rest of the session. Returns whether it is awake.
+ */
+export async function wake(ctx, ms = 1500) {
+    if (!ctx) return false;
+    if (ctx.state === 'running') return true;
+    let timer;
+    await Promise.race([
+        Promise.resolve().then(() => ctx.resume()).catch(() => {}),
+        new Promise((r) => { timer = setTimeout(r, ms); }),
+    ]);
+    clearTimeout(timer);
+    return ctx.state === 'running';
+}
+
+/*
  * Open the microphone for a paid service. Shared by all three, so the request and the
  * recovery below cannot drift between them.
  *

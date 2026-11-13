@@ -26,6 +26,11 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+### On an iPad
+
+- With a paid service hearing the other person, pressing Listen could show the iPad's microphone symbol while the Listen button stayed dark and nothing was heard. Listen now starts properly. If it ever cannot, the button stays dark and pressing it again starts it.
+
+
 ## Version 0.15.7
 
 ### On an iPad

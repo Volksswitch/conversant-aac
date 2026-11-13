@@ -22,6 +22,12 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.8": [
+    {
+      "for": "ipad",
+      "note": "With a paid service hearing the other person, pressing Listen could show the iPad's microphone symbol while the Listen button stayed dark and nothing was heard. Listen now starts properly. If it ever cannot, the button stays dark and pressing it again starts it."
+    }
+  ],
   "0.15.7": [
     {
       "for": "ipad",

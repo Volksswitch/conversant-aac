@@ -170,9 +170,11 @@ test('the problem report can tell no sound from quiet sound', async () => {
         await source.start();
         source.stop();
     } finally { globalThis.window.AudioContext = Plain; }
+    // An audio system that will not wake no longer leaves listening stuck: the start
+    // gives up after a time limit, says where, and the next Listen tap tries again
+    // (Ken's iPad, 0.15.7).
     let s = mic.summary();
-    assert.match(s, /audioNotRunningAtStart=suspendedx1/);
-    assert.match(s, /startsWithNoSound=1/);
+    assert.match(s, /no paid listening started; stuck: audio would not start x1/);
 
     // Sound that arrives but stays under the speech threshold.
     source = createSource({ getKey: () => 'k', onText() {}, onStatus() {}, onBilled() {} });
@@ -180,8 +182,9 @@ test('the problem report can tell no sound from quiet sound', async () => {
     processor.onaudioprocess({ inputBuffer: { getChannelData: () => new Float32Array(4096).fill(0.005) } });
     source.stop();
     s = mic.summary();
-    assert.match(s, /startsWithNoSound=1 frames=1 loudest=0\.005/);
+    assert.match(s, /startsWithNoSound=0 frames=1 loudest=0\.005/);
     assert.match(s, /speechDetected=0/);
+    assert.match(s, /stuck: audio would not start x1/, 'the stuck start is still reported');
 });
 
 // Cross-layer (November 13 2026): the real capture code, the real gate and the real

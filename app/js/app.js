@@ -78,6 +78,7 @@ import * as reviewUI from './review-ui.js';
 import * as tapGuard from './tap-guard.js';
 import * as switchAccess from './switch-access.js';
 import { SWITCH_APP_SETTINGS, changedFromStart, methodsFor } from './switch-settings.js';
+import * as audioSession from './audio-session.js';
 
 // The platform verdict on partner capture (see platform.js), or null when capture
 // is expected to work. Non-null drives the pre-start warning; it does NOT by
@@ -2142,6 +2143,7 @@ async function handleStart() {
     // Same reason, for the paid voice: iOS refuses to start audio outside a user
     // gesture, and placeholders fire on TIMERS — so without this the app would go
     // silent exactly when it is trying to hold the floor.
+    audioSession.unlockCapture();   // wake the listening audio inside this tap
     tts.unlockAudio();
     // Same reason again, and it must stay ABOVE the first await below: a fullscreen
     // request is only granted while user activation lasts, and the first await in an
@@ -2366,6 +2368,7 @@ function finishStart() {
 
 function toggleListening() {
     chime.unlock();   // a genuine tap — see handleStart
+    audioSession.unlockCapture();   // and wakes the listening audio (audio-session.js)
     // Practice Mode: "Start Listening" does NOT open the mic — it cues the AI
     // partner to speak, reinforcing the same step (and honoring the same
     // manualListenArmed / auto-resume gate) as a real conversation.

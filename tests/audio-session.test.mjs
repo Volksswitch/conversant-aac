@@ -159,3 +159,44 @@ test('a refused permission is not retried', async () => {
     await assert.rejects(audioSession.openMic(gum, async () => {}), { name: 'NotAllowedError' });
     assert.equal(calls, 1, 'asking again would only show the permission prompt again');
 });
+
+// Ken's iPad, 0.15.7: the microphone icon showed, the Listen button stayed dark and
+// nothing was heard - the listening audio was made after the tap was over and never
+// woke. One listening context, woken inside the tap and kept.
+test('a wake that never finishes gives up instead of hanging', async () => {
+    const stuck = { state: 'suspended', resume: () => new Promise(() => {}) };
+    const started = Date.now();
+    assert.equal(await audioSession.wake(stuck, 50), false);
+    assert.ok(Date.now() - started < 1000);
+    const fine = { state: 'suspended', resume() { this.state = 'running'; return Promise.resolve(); } };
+    assert.equal(await audioSession.wake(fine, 50), true);
+});
+
+test('the listening context is made once, woken by the tap, and reused', () => {
+    const real = globalThis.window.AudioContext;
+    let made = 0, resumed = 0;
+    globalThis.window.AudioContext = class {
+        constructor() { made++; this.state = 'suspended'; }
+        resume() { resumed++; this.state = 'running'; return Promise.resolve(); }
+    };
+    try {
+        audioSession.unlockCapture();                   // the Listen tap
+        const a = audioSession.captureContext();
+        assert.equal(a.state, 'running', 'woken inside the tap');
+        assert.equal(audioSession.captureContext(), a, 'the same context every start');
+        audioSession.unlockCapture();
+        assert.equal(made, 1);
+        assert.equal(resumed, 1, 'an awake context is not woken again');
+    } finally { globalThis.window.AudioContext = real; }
+});
+
+test('no paid service makes its own listening context or closes the shared one', () => {
+    for (const f of ['stt-deepgram.js', 'stt-azure.js', 'stt-rest.js']) {
+        const src = readFileSync(new URL(`../app/js/${f}`, import.meta.url), 'utf8')
+            .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+        assert.match(src, /audioCtx = audioSession\.captureContext\(\)/, f);
+        assert.doesNotMatch(src, /audioCtx\.close\(\)/, `${f} must not close the shared context`);
+    }
+    const app = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
+    assert.match(app, /function toggleListening\(\) \{[^}]*audioSession\.unlockCapture\(\)/, 'the Listen tap wakes it');
+});
