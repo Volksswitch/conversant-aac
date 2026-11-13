@@ -153,3 +153,33 @@ test('a paid source launched at start-up is suspended and resumed with the page'
         globalThis.document = realDoc;
     }
 });
+
+// The microphone check (Ken, November 12 2026): the problem report must tell "no
+// sound reached the app" from "sound arrived but was too quiet". Driven through the
+// real listening code, not by calling the check directly.
+test('the problem report can tell no sound from quiet sound', async () => {
+    const mic = await import('../app/js/mic-check.js');
+    mic._reset();
+    // An iPad whose audio system stays suspended: no frames ever arrive.
+    const Plain = globalThis.window.AudioContext;
+    globalThis.window.AudioContext = class extends Plain {
+        constructor() { super(); this.state = 'suspended'; }
+    };
+    try {
+        source = createSource({ getKey: () => 'k', onText() {}, onStatus() {}, onBilled() {} });
+        await source.start();
+        source.stop();
+    } finally { globalThis.window.AudioContext = Plain; }
+    let s = mic.summary();
+    assert.match(s, /audioNotRunningAtStart=suspendedx1/);
+    assert.match(s, /startsWithNoSound=1/);
+
+    // Sound that arrives but stays under the speech threshold.
+    source = createSource({ getKey: () => 'k', onText() {}, onStatus() {}, onBilled() {} });
+    await source.start();
+    processor.onaudioprocess({ inputBuffer: { getChannelData: () => new Float32Array(4096).fill(0.005) } });
+    source.stop();
+    s = mic.summary();
+    assert.match(s, /startsWithNoSound=1 frames=1 loudest=0\.005/);
+    assert.match(s, /speechDetected=0/);
+});

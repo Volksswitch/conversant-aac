@@ -266,7 +266,7 @@ export function stableInfo(info) {
     delete copy.when;
     if (copy.app) delete copy.app.url;
     if (copy.storage) { delete copy.storage.usageMB; delete copy.storage.quotaMB; delete copy.storage.reconnect; }
-    if (copy.speech) { delete copy.speech.listening; delete copy.speech.listenDelay; }
+    if (copy.speech) { delete copy.speech.listening; delete copy.speech.listenDelay; delete copy.speech.microphone; }
     if (copy.display && !copy.display.error) {
         const d = copy.display;
         copy.display = { screen: d.screen, devicePixelRatio: d.devicePixelRatio, nativeResolution: d.nativeResolution };

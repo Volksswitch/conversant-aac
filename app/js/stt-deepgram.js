@@ -54,6 +54,7 @@
  */
 
 import * as vad from './vad.js';
+import * as micCheck from './mic-check.js';
 
 const ENDPOINT = 'wss://api.deepgram.com/v1/listen';
 const MODEL = 'nova-3';
@@ -240,9 +241,11 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
         const frame = toLinear16(floats);
         const level = vad.rms(floats);
         const edge = gate.push(level, now);
+        micCheck.noteFrame(level);
 
         if (edge === 'open') {
             openedAt = now;
+            micCheck.noteSpeech();
             // Flush what was already in hand — the start of the word that opened
             // the gate is in there. It is billed like any other audio sent (CR-158).
             for (const f of preRoll) { send(f); sentSamples += f.byteLength / 2; }
@@ -324,6 +327,7 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
             }
             const rate = audioCtx.sampleRate;
             if (!wanted) { starting = false; releaseHalfOpen(); return false; }
+            micCheck.noteStart({ stream, audioCtx });
 
             // Shared with testKey, so the Test button cannot pass while this fails.
             const params = listenParams(rate);
@@ -378,6 +382,7 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
                 // when the socket failed, which reads as the button not working rather
                 // than as the connection being refused (Ken, iPad, August 3 2026).
                 // What arrived during the handshake goes first, in order (CR-006).
+                micCheck.noteConnected();
                 for (const b of pending) ws.send(b);
                 pending = [];
                 if (onStatus) onStatus('listening');
@@ -416,6 +421,7 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
             wanted = false;
             if (!running) return;
             running = false;
+            micCheck.noteStop();
             // A span in progress is still counted.
             if (gate && gate.isOpen()) reportBilled();
             if (gate) gate.reset();

@@ -46,6 +46,7 @@ const SHELL = [
   './js/stt-deepgram.js',
   './js/stt-azure.js',
   './js/vad.js',
+  './js/mic-check.js',
   './js/tts.js',
   './js/llm.js',
   './js/suggest-provider.js',

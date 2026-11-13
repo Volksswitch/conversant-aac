@@ -335,7 +335,7 @@ test('CR-071: system info counts as changed only when the setup changes', () => 
     const a = base();
     const b = base();
     b.when = '2026-10-08T00:00:00Z'; b.app.url = 'https://a/?x=1'; b.storage.usageMB = 9;
-    b.storage.reconnect = 'other'; b.speech.listening = { n: 50 }; b.display.layoutViewport = { w: 900, h: 600 };
+    b.storage.reconnect = 'other'; b.speech.listening = { n: 50 }; b.speech.microphone = 'starts=9'; b.display.layoutViewport = { w: 900, h: 600 };
     assert.equal(hashOf(stableInfo(a)), hashOf(stableInfo(b)));
     const c = base();
     c.settings.colorScheme = 'dark';

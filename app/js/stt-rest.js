@@ -29,6 +29,7 @@
  * that page and is from documentation alone — see the note on it in speech-catalog.js.
  */
 import * as vad from './vad.js';
+import * as micCheck from './mic-check.js';
 import { describeFailure, blobToBase64 } from './speech-catalog.js';
 import { TARGET_RATE, downsample, floatToPcm16, encodeWav } from './stt-azure.js';
 
@@ -281,6 +282,8 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
     function handleFrame(floats, now) {
         const level = vad.rms(floats);
         const edge = gate.push(level, now);
+        micCheck.noteFrame(level);
+        if (edge === 'open') micCheck.noteSpeech();
         // Copy: the buffer the browser hands over is REUSED for the next frame, so a
         // kept reference would leave every buffered frame holding the most recent audio.
         const frame = Float32Array.from(floats);
@@ -347,6 +350,7 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
                 if (!wanted) { starting = false; releaseHalfOpen(); return false; }
             }
             rate = audioCtx.sampleRate || 48000;
+            micCheck.noteStart({ stream, audioCtx });
             sourceNode = audioCtx.createMediaStreamSource(stream);
             processor = audioCtx.createScriptProcessor(4096, 1, 1);
             gate = vad.createGate({ hangMs: HANG_MS });
@@ -377,6 +381,7 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
             wanted = false;
             if (!running) return;
             running = false;
+            micCheck.noteStop();
             generation++;                    // abandon anything still in flight
             try { if (processor) processor.disconnect(); } catch { /* already gone */ }
             try { if (sourceNode) sourceNode.disconnect(); } catch { /* already gone */ }

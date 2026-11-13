@@ -56,6 +56,7 @@
  */
 
 import * as vad from './vad.js';
+import * as micCheck from './mic-check.js';
 
 export const DEFAULT_REGION = 'eastus';
 
@@ -401,6 +402,8 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
     function handleFrame(floats, now) {
         const level = vad.rms(floats);
         const edge = gate.push(level, now);
+        micCheck.noteFrame(level);
+        if (edge === 'open') micCheck.noteSpeech();
         // Copy: the buffer the browser hands over is REUSED for the next frame, so
         // keeping a reference would leave every buffered frame holding whatever the
         // most recent audio happened to be.
@@ -474,6 +477,7 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
             }
             rate = audioCtx.sampleRate;
             if (!wanted) { starting = false; releaseHalfOpen(); return false; }
+            micCheck.noteStart({ stream, audioCtx });
 
             gate = vad.createGate({ hangMs: HANG_MS });
             const FRAME_SAMPLES = 4096;
@@ -517,6 +521,7 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
             wanted = false;
             if (!running) return;
             running = false;
+            micCheck.noteStop();
             // ⚠ A SPAN IN HAND IS DROPPED, NOT SENT (CR-157). Its reply would arrive after
             // the stop and be thrown away, so sending it only paid for words never used;
             // what was heard up to the stop is taken from the live transcript instead.
