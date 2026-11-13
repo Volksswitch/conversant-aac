@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.15.5
+
 ### On an iPad
 
 - What Conversant says while it is listening, with a paid service hearing the other person, is louder again: twice the boost added in the last update.
