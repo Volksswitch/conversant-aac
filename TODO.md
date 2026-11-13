@@ -37,6 +37,11 @@ the one that quietly waits forever.
 
 ## Open
 
+### Kenny's quiet iPad microphone: decide once his 0.15.8 report arrives
+- **Raised:** 2026-11-13 - Kenny's problem reports (iPadOS 27.3 beta, Home Screen app, Deepgram hearing). On 0.15.2, with echo cancellation still on, his wife talking beside him peaked at about 0.008 and the room measured 0.0004, against 0.26 for Ken's own voice on his iPad.
+- **What is wanted:** read Kenny's first report on 0.15.8 (echo cancellation off, speech level following the room, mic closed while the app speaks). Ask him to have his wife talk for half a minute at normal distance with Listen on, then send a report. If her voice still barely clears the room in the `levels:` bands, choose between (a) a boost on the input that Conversant applies itself, before the speech gate and before sending to Deepgram, and (b) turning echo cancellation back on for an iPad: its reason (the phone-call sound) no longer applies now that the microphone is closed while the app speaks, and on Ken's iPad turning it off made his voice about 50 times quieter (0.26 to 0.005), because the iPad's automatic volume goes with it.
+- **Why not now:** Ken chose to wait for Kenny's evidence rather than change listening again blind; the two options pull in different directions and his report decides between them.
+
 ### "Press again": rethink the cue for other languages and for users who do not read
 - **Raised:** 2026-11-13 - Ken, approving the "Press again" tag on a button waiting for its second tap or press (End conversation and "Don't save" always; any button with "Two taps" chosen).
 - **What is wanted:** decide whether words are still the right cue when (a) other languages arrive, where the same idea can take many more characters and the tag may not fit over a small button, and (b) the app serves users with lower literacy, who cannot read it. Alternatives to weigh: changing the button's background color while it waits, or a flashing or pulsing background. Caution on the second: the Listen button already pulses, and there it means the microphone is on, so a pulse here would give one look two meanings.
