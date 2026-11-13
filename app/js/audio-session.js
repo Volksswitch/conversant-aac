@@ -75,7 +75,9 @@ function session() {
  * Off an iPad there is no chain at all: output() returns the speakers directly, so
  * nothing about any other device changes.
  */
-export const LISTENING_BOOST = 2.5;      // about 8 dB; a first guess, to be tuned by ear
+// 5, about 14 dB. Ken heard 2.5 on his iPad in 0.15.4 and asked for twice as much
+// (November 13 2026). At this level the limiter does real work on loud syllables.
+export const LISTENING_BOOST = 5;
 let listening = false;
 const boosts = new Set();               // gain nodes of every chain made so far
 
