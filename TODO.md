@@ -37,6 +37,17 @@ the one that quietly waits forever.
 
 ## Open
 
+### Switch access: a device test plan
+- **Raised:** 2026-11-12 - Ken, reviewing the Switch Access Design: "Need a test plan for all the devices to ensure that all the outstanding questions and decisions are tested and answered."
+- **What is wanted:** a short plan listing each device (iPad in Safari and installed, Android, a Surface, a Chromebook), the switch interface to use on it, and which questions in section 6 of `Documents/Conversant AAC Switch Access Design.docx` it has to answer (at least issues 1, 2, 3 and 8, plus the iPad sound check in section 2.4).
+- **Why not now:** it depends on which switches and interfaces are on hand, and the first build has to exist before the devices can be tested against it.
+
+### See which settings testers actually use
+- **Raised:** 2026-11-12 - Ken, reviewing the Switch Access Design: "How can we report on whether particular settings - any setting in the Settings panel - are getting used or not?"
+- **What exists:** each weekly report already carries the tester's full settings (keys left out, lists as counts) whenever they change, so the data is arriving in the Sheet.
+- **What is wanted:** teach "evaluate beta" to list, per tester, every setting that differs from its starting value, and count across testers how many changed each one. For switch access, compare against the starting values for that number of switches. Limits to state in its output: it shows where settings ended up, not what a tester tried and put back, and a setting left at its default may be a deliberate choice.
+- **Why not now:** nothing is broken, and it is most useful once switch access is built and testers have had time to change things.
+
 ### Question sessions: nothing checks the total size of a topic's documents
 - **Raised:** 2026-11-09 - Ken asked how much material a topic can hold. Each document is capped at about 65,000 words (400,000 characters) and a topic at 20 documents, but nothing adds them up. Twenty long documents (about 1.3 million words) would be more than the AI can read in one request (about a million tokens, roughly 700,000 words), and every question would fail with an ordinary "couldn't get answers" error rather than saying why.
 - **What is wanted:** a check on the topic's form that adds up the words in the documents checked, says when the total is too large, and ideally shows the running total so a presenter can see how much each question sends. Also measure the wait and the cost at about 30,000-50,000 words, which is beyond the 22,000 words tested.
