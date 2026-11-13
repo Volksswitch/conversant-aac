@@ -28,6 +28,7 @@ import * as tapGuard from './tap-guard.js';
 import * as keyboard from './keyboard.js';
 import { createScanner } from './scan-rules.js';
 import { keyMap, keyName, raceWait, STARTING_VALUES } from './switch-settings.js';
+import * as pressAgain from './press-again.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -93,10 +94,11 @@ function labelOf(el) {
     return (el.getAttribute('aria-label') || el.textContent || el.value || '').trim().replace(/\s+/g, ' ').slice(0, 80);
 }
 
-const ALWAYS_TWO = ['endConversationBtn', 'privacyBtn'];
+// Which buttons need a second press is tap-guard's one list, for touch and switches
+// alike (End conversation and "Don't save" always do).
 function itemNode(el, extra = {}) {
     return { key: keyFor(el), kind: 'item', label: labelOf(el), el,
-             needsTwo: ALWAYS_TWO.includes(el.id) || tapGuard.needsSecondTap(el), ...extra };
+             needsTwo: tapGuard.needsSecondTap(el), ...extra };
 }
 function groupNode(key, label, el, kids, extra = {}) {
     return { key, kind: 'group', label, el, kids, exitByPass: scan.exit === 'pass', ...extra };
@@ -675,6 +677,7 @@ function clearMarks() {
     document.querySelectorAll('.scan-hl, .scan-held, .scan-in, .scan-chosen').forEach((e) => e.classList.remove('scan-hl', 'scan-held', 'scan-in'));
     if (frameEl) frameEl.hidden = true;
     for (const r of regionEls) r.hidden = true;
+    pressAgain.hide();
 }
 // A REGION's highlight is a box drawn OVER it, not an outline on the region itself: the
 // buttons inside a region cover its own outline, so the response options' highlight was
@@ -714,6 +717,7 @@ function draw() {
         }
     } else if (n.el) {
         n.el.classList.add(scanner.held() ? 'scan-held' : 'scan-hl');
+        if (scanner.held()) pressAgain.show(n.el);
         try { n.el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch { /* ignore */ }
     }
     flush();

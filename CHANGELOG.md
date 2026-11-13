@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- "End conversation" and "Don't save" now always ask for a second tap, even if you chose "One tap". Switch users already had this. You have at least 2 seconds for the second tap.
+- A button that is waiting for its second tap now says "Press again" on it, so you can tell your first tap worked.
+
 ## Version 0.15.0
 
 ### Everyone

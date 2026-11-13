@@ -5374,6 +5374,22 @@ body.conv-bottom     .danger-dialog {
     box-shadow: inset 0 0 0 3px var(--scan-hl-inner), 0 0 0 3px var(--scan-hl-inner);
 }
 .scan-region[hidden] { display: none; }
+/* "Press again": on a button waiting for its second tap or press, for every user
+   (press-again.js, Ken, November 13 2026). Drawn over the button in the switch
+   highlight's colors, so nothing moves. */
+#pressAgainTag {
+    position: fixed;
+    z-index: 2147483001;
+    pointer-events: none;
+    padding: 0.1rem 0.6rem;
+    border-radius: 4px;
+    background: var(--scan-hl);
+    color: var(--scan-hl-inner);
+    font-weight: bold;
+    font-size: 1rem;
+    white-space: nowrap;
+}
+#pressAgainTag[hidden] { display: none; }
 /* Under switch access the scan highlight is the only marker of where you are. The
    browser's own focus ring (blue) otherwise lands on a button the app focused - the
    Settings button, when Settings closes and focus returns to it - and reads as a

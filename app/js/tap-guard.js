@@ -22,6 +22,7 @@
  */
 
 import * as storage from './storage.js';
+import * as pressAgain from './press-again.js';
 
 const RULES = [];
 let armed = null;
@@ -29,9 +30,27 @@ let armedClass = '';
 let armedKey = '';
 let timer = null;
 
-/** Guard every element matching `selector`, unless `exempt(el, target)` says not to. */
-export function addRule(selector, { exempt = null, armClass = 'tap-armed' } = {}) {
-    RULES.push({ selector, exempt, armClass });
+/**
+ * Guard every element matching `selector`, unless `exempt(el, target)` says not to.
+ * `always` (a function): when it returns true the control needs two taps even with
+ * "One tap" chosen; when false the rule is skipped and a later rule may apply.
+ */
+export function addRule(selector, { exempt = null, armClass = 'tap-armed', always = null } = {}) {
+    RULES.push({ selector, exempt, armClass, always });
+}
+
+// A control that always asks for a second tap gets at least 2 seconds for it, whatever
+// "Time allowed between the two taps" says - the same as a switch user (Ken, November
+// 13 2026: "Let's treat everyone the same way"). Someone who chose one tap is not
+// expecting to tap twice, so 0.4 s would leave them no time to read "Press again".
+export const ALWAYS_SECOND_MS = 2000;
+export function secondTapMs(el) {
+    const m = el ? match(el) : null;
+    const base = storage.loadDoubleTapMs();
+    return m && m.rule.always ? Math.max(ALWAYS_SECOND_MS, base) : base;
+}
+function guarded(m) {
+    return !!m && (!!m.rule.always || doubleTapOn());
 }
 
 export function doubleTapOn() {
@@ -44,6 +63,7 @@ function match(target) {
     for (const rule of RULES) {
         const el = target.closest(rule.selector);
         if (!el || el.disabled) continue;
+        if (rule.always && !rule.always(el)) continue;
         if (rule.exempt && rule.exempt(el, target)) return null;
         return { el, rule };
     }
@@ -56,9 +76,8 @@ function match(target) {
  * ask this first, so an arming tap does not count as a press.
  */
 export function isArmingTap(target) {
-    if (!doubleTapOn()) return false;
     const m = match(target);
-    return !!m && !sameAsArmed(m.el);
+    return guarded(m) && !sameAsArmed(m.el);
 }
 
 // ⚠ THE EXPRESS PANEL REDRAWS ITSELF (CR-161) - when the partner's choices arrive, a
@@ -77,7 +96,7 @@ function sameAsArmed(el) {
  * confirmed press through. Otherwise every choice would take four presses.
  */
 export function needsSecondTap(el) {
-    return doubleTapOn() && !!match(el);
+    return guarded(match(el));
 }
 let passOnce = false;
 export function letNextThrough(on = true) { passOnce = !!on; }
@@ -85,6 +104,7 @@ export function letNextThrough(on = true) { passOnce = !!on; }
 export function disarm() {
     if (timer) { clearTimeout(timer); timer = null; }
     if (armed) armed.classList.remove(armedClass);
+    if (armed) pressAgain.hide(armed);
     armed = null;
     armedKey = '';
     armedClass = '';
@@ -96,7 +116,8 @@ function arm(el, cls) {
     armedKey = el.dataset.tapKey || '';
     armedClass = cls;
     el.classList.add(cls);
-    timer = setTimeout(disarm, storage.loadDoubleTapMs());
+    pressAgain.show(el);
+    timer = setTimeout(disarm, secondTapMs(el));
 }
 
 let installed = false;
@@ -105,9 +126,8 @@ export function install() {
     installed = true;
     document.addEventListener('click', (e) => {
         if (passOnce) { passOnce = false; disarm(); return; }
-        if (!doubleTapOn()) return;
         const m = match(e.target);
-        if (!m) return;
+        if (!guarded(m)) return;
         if (sameAsArmed(m.el)) { disarm(); return; }   // the second tap: let it act
         arm(m.el, m.rule.armClass);
         e.preventDefault();

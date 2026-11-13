@@ -22,6 +22,10 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.1": [
+    "\"End conversation\" and \"Don't save\" now always ask for a second tap, even if you chose \"One tap\". Switch users already had this. You have at least 2 seconds for the second tap.",
+    "A button that is waiting for its second tap now says \"Press again\" on it, so you can tell your first tap worked."
+  ],
   "0.15.0": [
     "In \"In my own words\", the key where Enter used to be now shows the word the keyboard suggests. Tap it to finish the word; it adds the space for you. It's blank when there's no suggestion. Elsewhere, Enter is unchanged.",
     "A new keyboard layout, \"Most-used letters first\", puts the letters you type most at the start of each row. It's the same shape as QWERTY, so a keyguard made for QWERTY fits it. Choose it in Settings, on the Express Panel and Keyboard tab.",

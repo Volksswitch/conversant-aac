@@ -118,6 +118,7 @@ const SHELL = [
   './js/help-mode.js',
   './js/sections.js',
   './js/tap-guard.js',
+  './js/press-again.js',
   './js/scan-rules.js',
   './js/switch-settings.js',
   './js/switch-access.js',

@@ -321,6 +321,8 @@ try {
     await page.keyboard.press('Enter');
     await pace(900);                         // slower than the 0.4 s touch window
     check(/scan-held/.test((await hl()).cls), 'End conversation waits for a second press');
+    check(await page.evaluate(() => { const t = document.getElementById('pressAgainTag');
+        return !!t && !t.hidden && t.textContent === 'Press again'; }), 'the button waiting for a second press says "Press again"');
     await page.keyboard.press('Enter');
     await pace(800);
     check(await page.evaluate(() => !document.querySelector('#transcriptLog').textContent.trim()
@@ -373,6 +375,25 @@ try {
     const withoutHighlight = await boxes();
     check(JSON.stringify(withHighlight) === JSON.stringify(withoutHighlight), `no button moved or changed size with switch access on (${withHighlight.length} buttons)`);
     check(await page.evaluate(() => !document.querySelector('.scan-hl, .scan-held')), 'turning switch access off removes the highlight');
+
+    // ---- Direct select, "One tap": End conversation still takes a second tap.
+    await page.evaluate(async () => { (await import('/js/storage.js')).saveExpressTapMode('single'); });
+    if (!(await page.evaluate(() => window.__mic.isOn()))) await page.click('#listenBtn');
+    await pace(600);
+    const micBefore = await page.evaluate(() => window.__mic.isOn());
+    await page.click('#endConversationBtn');
+    await pace(900);
+    check(micBefore && await page.evaluate(() => window.__mic.isOn()
+        && !document.getElementById('pressAgainTag').hidden),
+        'with one tap chosen, a first tap on End conversation only shows "Press again"');
+    await page.click('#endConversationBtn');
+    await pace(800);
+    check(await page.evaluate(() => !window.__mic.isOn() && document.getElementById('pressAgainTag').hidden),
+        'a second tap within 2 seconds ends the conversation');
+    await page.click('#listenBtn');
+    await pace(400);
+    check(await page.evaluate(() => window.__mic.isOn() && document.getElementById('pressAgainTag').hidden),
+        'Listen still takes one tap');
 } finally {
     await browser.close();
     server.kill();

@@ -1011,6 +1011,13 @@ function initApp() {
     // paging's own listeners, which ask it whether a tap only armed something.
     // In review, those two positions are Rewrite and Clear, which change what review
     // records, so they follow the setting like every other button (October 6 2026).
+    // End conversation and "Don't save" ALWAYS ask for a second tap, for everyone, as
+    // they always did for a switch user (Ken, November 13 2026: "Let's treat everyone
+    // the same way"). Not in Conversation Review, where those two positions are Jump
+    // and Hear it. First, so this rule wins over the general Command Bar one.
+    tapGuard.addRule('#endConversationBtn, #privacyBtn', {
+        always: () => !reviewUI.isActive(),
+    });
     tapGuard.addRule('#listenControls > button');
     tapGuard.addRule('#regenerateBtn');
     tapGuard.addRule('#composerOverlay button');
@@ -5028,8 +5035,9 @@ function handleWindDown() {
 // stop listening, invalidate in-flight generation, commit the partner's pending
 // (uncommitted) turn to the log if they spoke without a reply (Ken, July 12 2026),
 // clear the palette/transcript, and reset the engine (empty stack, floor OPEN). No
-// danger-confirm — it's the "hang up" control, and the conversation history is
-// already logged exchange-by-exchange.
+// danger-confirm card — it's the "hang up" control, and the conversation history is
+// already logged exchange-by-exchange — but it always takes a second tap ("Press
+// again"), for every user (tap-guard rule in initApp, Ken, November 13 2026).
 async function handleEndConversation() {
     const wasPractice = practiceMode;
     // Exit Practice Mode BEFORE teardown so the paths (resumeOrIdle, stamps) revert
