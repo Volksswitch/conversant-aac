@@ -52,6 +52,24 @@ export function micProcessing(ipad = (() => { try { return platform.isIOS(); } c
         : { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
 }
 
+/*
+ * Why the microphone would not open, for the error log and the problem report.
+ *
+ * Every paid service used to report any failure here as "not-allowed", which reads
+ * as "permission refused" whatever actually happened. On Ken's iPad (0.15.5,
+ * November 13 2026) the first Listen after launch failed that way and the second, a
+ * few seconds later, opened normally - which a refused permission would not do. The
+ * browser says which kind of failure it was; this keeps it.
+ *
+ * A refused permission keeps the old word, so nothing that reads it changes.
+ */
+export function micFailure(err) {
+    const name = (err && err.name) || 'Error';
+    if (name === 'NotAllowedError' || name === 'SecurityError') return 'not-allowed';
+    const msg = String((err && err.message) || '').replace(/\s+/g, ' ').slice(0, 120);
+    return `microphone failed (${name}${msg ? `: ${msg}` : ''})`;
+}
+
 function session() {
     try {
         const s = typeof navigator !== 'undefined' ? navigator.audioSession : null;

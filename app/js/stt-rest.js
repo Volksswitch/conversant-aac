@@ -336,9 +336,9 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
                 stream = await navigator.mediaDevices.getUserMedia({
                     audio: audioSession.micProcessing(),   // call processing off on an iPad; see audio-session.js
                 });
-            } catch {
+            } catch (err) {
                 starting = false;
-                if (onStatus) onStatus('error', 'The microphone could not be opened.');
+                if (onStatus) onStatus('error', `The microphone could not be opened: ${audioSession.micFailure(err)}`);
                 return;
             }
             if (!wanted) { starting = false; releaseHalfOpen(); return false; }

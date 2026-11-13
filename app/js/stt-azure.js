@@ -459,9 +459,9 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
                     // Call processing is off on an iPad; see audio-session.js.
                     audio: audioSession.micProcessing(),
                 });
-            } catch {
+            } catch (err) {
                 starting = false;
-                if (onStatus) onStatus('error', 'not-allowed');
+                if (onStatus) onStatus('error', audioSession.micFailure(err));
                 return false;
             }
 

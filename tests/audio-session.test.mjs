@@ -127,3 +127,12 @@ test('every paid voice plays through the shared output', () => {
         assert.match(src, /node\.connect\(audioSession\.output\(c\)\)/, f);
     }
 });
+
+// A failure to open the microphone is named, not lumped in with "permission refused"
+// (Ken's iPad, 0.15.5: the first Listen failed as "not-allowed", the second worked).
+test('a microphone failure says which kind it was', () => {
+    assert.equal(audioSession.micFailure({ name: 'NotAllowedError', message: 'denied' }), 'not-allowed');
+    assert.equal(audioSession.micFailure({ name: 'NotReadableError', message: 'Could not start audio source' }),
+        'microphone failed (NotReadableError: Could not start audio source)');
+    assert.equal(audioSession.micFailure(null), 'microphone failed (Error)');
+});
