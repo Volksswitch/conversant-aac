@@ -52,7 +52,7 @@ the one that quietly waits forever.
 ### iPad listening: check the November 13 fixes on a real iPad
 - **Raised:** 2026-11-13 - the bug hunt of 0.15.2 to 0.15.8 found eight problems in how the microphone closes and reopens around the app's own speech (iPad, paid hearing), plus smaller items. **All were fixed the same day in the 0.15.9 dev build (Ken: "fix all eight")**, with tests in `tests/ipad-listening.test.mjs` and `tests/vad.test.mjs`, each checked to fail on the code from before the fixes. The old entry "iPad listening: fix the problems found in the November 13 changes" and its findings folder are deleted because the work is done. The tests use a pretend microphone, so these questions about the real device remain.
 - **What is wanted:** on Ken's iPad, with a paid service hearing:
-  1. How long the iPad takes to hand the microphone back after a holding phrase. It decides how often the fixed problems 1, 3 and 5 would have struck, and how long the partner goes unheard after each phrase.
+  1. How long the iPad takes to hand the microphone back after a holding phrase. It decides how often the fixed problems 1, 3 and 5 would have struck, and how long the partner goes unheard after each phrase. **First answer, from Ken's 0.15.9 problem report (2026-11-13, Deepgram):** each holding phrase closed the microphone for about 3 seconds: the phrase itself, then about a second and a half before the microphone was back. The report gives times only to the second, so this is rough.
   2. What the iPad does with a microphone request when Conversant goes to the background: finish it, hold it, or refuse it. Both outcomes are now handled; this says which one users meet.
   3. Whether the iPad refuses a microphone request made just after Conversant sets its audio to "playback".
   4. What stops the listening audio by itself (a phone call, Siri, an alarm, the lock screen, another app's sound) and whether it starts again on its own. A reply tap now wakes it, as well as Start and Listen.
@@ -65,6 +65,12 @@ the one that quietly waits forever.
   - **With Deepgram,** the last fraction of a second still on its way when the microphone closes for speech is not recovered. The findings called this optional; it would mean keeping the connection open briefly after the microphone closes.
   - **A trip to the home screen** still throws away an Azure, Google Cloud or ElevenLabs sentence that is being transcribed at that moment: the same cause as problem 3, at a different moment, and not part of the findings. The fix would be to use the new "pause" for that trip as well.
 - **Why not now:** needs the device; nothing here can be checked on a computer. The three items left alone each need Ken's go-ahead before they are worth building.
+
+### Holding phrases: the limit "per turn" is counted per pause
+- **Raised:** 2026-11-13 - Ken's 0.15.9 problem report from his iPad (Home Screen app, Deepgram hearing): *"The placeholders kept firing and I couldn't complete a sentence."*
+- **What happened:** in one turn of Ken's, with no reply chosen, seven holding phrases played in about a minute. Every pause of half a second starts the holding phrases over from the beginning (`placeholders.arm()` sets the count back to zero), so the first one plays 2 seconds after any pause, and "Maximum per turn" (2) never stops them. On an iPad with paid hearing, each phrase also closes the microphone for about 3 seconds, so anything said then is lost. Turning Listen off did not stop phrases already waiting; that is by design, because the other person's turn is still open.
+- **Recommendation:** count holding phrases per turn of the other person. The first comes 2 seconds after a pause, as now. Later ones in the same turn come only after the longer wait (10 seconds by default), however many pauses there are, and never more than the maximum until the user replies or the conversation ends. In Ken's report that is 2 phrases instead of 7, the second after 10 seconds of quiet. This applies on every device, not only the iPad.
+- **Why not now:** waiting for Ken's decision.
 
 ### "Press again": rethink the cue for other languages and for users who do not read
 - **Raised:** 2026-11-13 - Ken, approving the "Press again" tag on a button waiting for its second tap or press (End conversation and "Don't save" always; any button with "Two taps" chosen).
