@@ -62,15 +62,21 @@ test('the shared listening code switches the audio type at every paid stop and s
     assert.match(src, /audioSession\.forListening\(\);\s*externalSource\.start\(\)/);
 });
 
-// Call processing off on an iPad, unchanged everywhere else (Ken, November 13 2026).
-// The platform is read once when platform.js loads, so the two cases are passed in;
-// the last check is that, left to itself, a desktop (this test run) asks as before.
-test('an iPad asks for no call processing; other devices ask for it as before', () => {
-    assert.deepEqual(audioSession.micProcessing(true),
-        { echoCancellation: false, noiseSuppression: false, autoGainControl: false });
-    assert.deepEqual(audioSession.micProcessing(false),
+// Call processing ON for every device, the iPad included (Ken, November 13 2026). It was
+// off on an iPad from 0.15.3 to 0.15.8, and that made the microphone about 50 times
+// quieter: Kenny's 0.15.8 report showed his wife, a couple of feet away, never above
+// 0.0005 against a speech bar of 0.004, so nothing was heard. The platform is read once
+// when platform.js loads and this run is not an iPad, so the source check is what stops
+// a device-specific "off" coming back unnoticed (comments stripped: the explanation in
+// audio-session.js names the old setting).
+test('every device, the iPad included, asks for call processing', () => {
+    assert.deepEqual(audioSession.micProcessing(),
         { echoCancellation: true, noiseSuppression: true, autoGainControl: true });
-    assert.deepEqual(audioSession.micProcessing(), audioSession.micProcessing(false));
+    const src = readFileSync(new URL('../app/js/audio-session.js', import.meta.url), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    for (const name of ['echoCancellation', 'noiseSuppression', 'autoGainControl']) {
+        assert.doesNotMatch(src, new RegExp(`${name}\\s*:\\s*false`), `${name} must not be turned off again`);
+    }
 });
 
 test('every paid service opens the microphone through the one shared request', () => {

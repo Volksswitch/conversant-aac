@@ -27,29 +27,29 @@
 import * as platform from './platform.js';
 
 /*
- * What to ask for when a paid service opens the microphone.
+ * What to ask for when a paid service opens the microphone: the device's own call
+ * processing (echo cancellation, noise suppression, automatic volume) ON, on every
+ * device, the iPad included.
  *
- * ON AN iPAD, NO CALL PROCESSING (Ken, November 13 2026). With echo cancellation the
- * iPad puts the whole app into its call mode while listening, and call mode changes
- * what the app SAYS as well as what it hears: a holding phrase that started while the
- * microphone was on sounded like a phone call, then clear the moment listening
- * stopped - "almost two different voices". A beta tester's iPad also heard him about
- * thirty times more quietly than Voice Memos does, and Voice Memos uses none of this
- * processing. All three are switched off together because on an iPad they are one
- * piece of processing, and asking for any one of them may bring the call mode back.
+ * ⚠ IT WAS OFF ON AN iPAD FROM 0.15.3 TO 0.15.8, AND THAT MADE THE MICROPHONE ABOUT 50
+ * TIMES QUIETER (turned back on for 0.15.9, Ken, November 13 2026). It was turned off
+ * because the iPad's call mode made the app's own voice sound like a phone call while
+ * the microphone was open, and because a beta tester's iPad heard him about thirty
+ * times more quietly than Voice Memos, which uses none of this processing. What it
+ * did instead: on an iPad, echoCancellation:false takes the automatic volume with it
+ * (one switch for all three), so Ken's voice fell from 0.26 to 0.005, and Kenny's wife,
+ * a couple of feet away, from 0.008 to under 0.0005. That is below the speech gate's
+ * lowest bar (vad.js, 0.004), so nothing was sent and nothing was heard (Kenny's
+ * 0.15.8 problem report). Voice Memos' loudness cannot be reached this way.
  *
- * What it costs: the microphone hears the app's own voice more strongly while a
- * holding phrase plays. stt.js already ignores words that match what the app just
- * said, and does not count sound as the partner speaking while the app is talking;
- * those two now do more of the work, and the paid service is sent (and bills for)
- * those few seconds.
- *
- * Everywhere else the request is what it always was.
+ * The phone-call sound no longer needs this: since 0.15.6 stt.js closes the paid
+ * microphone on an iPad whenever the app speaks (pauseForSpeech), and the voice was
+ * clear the moment listening stopped. Do not turn processing off again to make the
+ * input louder. If an iPad is still too quiet with it on, a gain the app applies
+ * before the speech gate is the lever (TODO.md, "Kenny's quiet iPad microphone").
  */
-export function micProcessing(ipad = (() => { try { return platform.isIOS(); } catch { return false; } })()) {
-    return ipad
-        ? { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
-        : { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+export function micProcessing() {
+    return { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
 }
 
 /*
@@ -92,6 +92,12 @@ function session() {
  *
  * Off an iPad there is no chain at all: output() returns the speakers directly, so
  * nothing about any other device changes.
+ *
+ * ⚠ THE BOOST WAS SIZED FOR CALL PROCESSING OFF, which ended with 0.15.9 (see
+ * micProcessing). With processing on, a phrase played while the microphone is open was
+ * at normal volume (Ken, 0.15.2), so x5 would make it loud. Since 0.15.6 that rarely
+ * happens on an iPad, because the microphone closes while the app speaks. Whether to
+ * keep the boost is Ken's call (TODO.md, "Kenny's quiet iPad microphone").
  */
 // 5, about 14 dB. Ken heard 2.5 on his iPad in 0.15.4 and asked for twice as much
 // (November 13 2026). At this level the limiter does real work on loud syllables.

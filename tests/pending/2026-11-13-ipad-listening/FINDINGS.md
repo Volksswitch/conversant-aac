@@ -54,16 +54,20 @@ From CLAUDE.md, iPad section, November 13 2026. A fix must keep all of these:
 - **Words the partner says WHILE a phrase plays are not heard.** Ken's accepted cost,
   with his reasoning: in ordinary conversation nobody expects to be heard while talking
   over someone.
-- The **x5 boost** through a limiter while an iPad is listening; **call processing off**
-  on an iPad; the **room-following speech bar**, with its accepted cost that a cough or a
-  door in a quiet room is more likely to be sent and billed.
+- The **room-following speech bar**, with its accepted cost that a cough or a door in a
+  quiet room is more likely to be sent and billed.
+- **Call processing is ON on an iPad again** (turned back on for 0.15.9 after Kenny's
+  0.15.8 report; it was off from 0.15.3 to 0.15.8). Whether to keep the **x5 boost**,
+  which was sized for processing off, is open in the Kenny TODO entry.
 - **A holding phrase always finishes** (October 9 2026): stopping listening must not cut
   it off.
 
-**Coordinate problems 7 and 8 with the TODO entry "Kenny's quiet iPad microphone".** That
-decision (an input boost, or echo cancellation back on) changes every input level. Since
-call processing was turned off, Ken's own voice on his iPad fell from 0.26 to 0.005, so on
-an iPad nearly every partner is now in the quiet range that problem 7 affects.
+**Coordinate problems 7 and 8 with the TODO entry "Kenny's quiet iPad microphone".** Call
+processing is back on for 0.15.9 because with it off the iPad input was about 50 times
+quieter (Ken's voice 0.26 to 0.005; Kenny's wife under 0.0005, so nothing was heard). With
+it on, Kenny's wife reached 0.008 on 0.15.2, only twice the speech gate's 0.004 minimum,
+so quiet setups like his are still the ones problem 7 affects. An input gain, if one is
+added later, would change every level again.
 
 ---
 
@@ -248,8 +252,8 @@ an iPad nearly every partner is now in the quiet range that problem 7 affects.
   depends on how much the voice varies: when its loudest sounds are 4 or more times its
   quietest, it gets through after 1.2 to 1.7 seconds and the 1.2-second pre-roll keeps its
   start. So real voices may be fine; Kenny's reports (the `levels:` line) should show it.
-- **How serious:** medium, and on an iPad it can apply to nearly every partner (see the
-  note under "Decisions"). Partners louder than 0.020 are never affected.
+- **How serious:** medium, for quiet setups like Kenny's (see the note under
+  "Decisions"). Partners louder than 0.020 are never affected.
 - **For the fix:** every source's `start()` calls `vad.createGate()`, and the floor starts
   unknown (`floor = null`; the fixed bar applies for `floorMinMs`). Suggested: carry the
   last measured floor from one gate to the next (same microphone, same room), for example
