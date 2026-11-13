@@ -25,7 +25,7 @@ const RELEASE_NOTES = {
   "0.15.3": [
     {
       "for": "ipad",
-      "note": "With a paid service hearing the other person, what Conversant says while it is listening, such as \"Let me think about that\", should now sound as clear as everything else instead of like a phone call."
+      "note": "With a paid service hearing the other person, what Conversant says while it is listening, such as \"I'm working out my answer\", should now sound as clear as everything else instead of like a phone call."
     }
   ],
   "0.15.2": [

@@ -28,7 +28,7 @@ forgetting to tag one is only ever noise, never silence.
 
 ### On an iPad
 
-- With a paid service hearing the other person, what Conversant says while it is listening, such as "Let me think about that", should now sound as clear as everything else instead of like a phone call.
+- With a paid service hearing the other person, what Conversant says while it is listening, such as "I'm working out my answer", should now sound as clear as everything else instead of like a phone call.
 
 ## Version 0.15.2
 
