@@ -42,10 +42,10 @@ the one that quietly waits forever.
 - **What is wanted:** browser checks (in `scripts/switch-access/browser-check.mjs`) for inverse scanning, hold to move, acting on release, the Leave outline in Settings, a drop-down opened as a list, and a newer set of options held while the highlight is inside the options; then the device checks. The three prototypes still show Leave buttons in Settings, where the app now uses the outline (Design section 3.2).
 - **Why not now:** the core path is checked end to end (45 checks); these are variations, and the device checks need switch hardware.
 
-### Switch access: a device test plan
-- **Raised:** 2026-11-12 - Ken, reviewing the Switch Access Design: "Need a test plan for all the devices to ensure that all the outstanding questions and decisions are tested and answered."
-- **What is wanted:** a short plan listing each device (iPad in Safari and installed, Android, a Surface, a Chromebook), the switch interface to use on it, and which questions in section 6 of `Documents/Conversant AAC Switch Access Design.docx` it has to answer (at least issues 1, 2, 3 and 8, plus the iPad sound check in section 2.4).
-- **Why not now:** it depends on which switches and interfaces are on hand, and the first build has to exist before the devices can be tested against it.
+### Switch access: run the device test plan
+- **Raised:** 2026-11-12 - Ken, reviewing the Switch Access Design: "Need a test plan for all the devices to ensure that all the outstanding questions and decisions are tested and answered." **Plan written 2026-11-13:** `Documents/Conversant AAC Switch Access Device Test Plan.docx` (Parts A to H; iPad in Safari and installed, Android tablet; a Chromebook and a MacBook are not tested separately because both run Chrome like the PC).
+- **What is wanted:** Ken runs it with a real switch interface and sends back the filled-in Result column. The steps marked "Record" decide: whether "Act on release" (and inverse, hold to move, a long "ignore presses shorter than") can start sound on an iPad (Design issue 3; if not, gray it out there); whether presses reach Conversant with iPad Switch Control or Android Switch Access on (issue 2); whether a switch user is stuck at the browser's microphone or folder prompt; whether Android treats a mouse's right button as Back; and whether the iPad sends a middle mouse button.
+- **Why not now:** it needs the devices, a switch interface, a keyboard and a mouse in hand.
 
 ### See which settings testers actually use
 - **Raised:** 2026-11-12 - Ken, reviewing the Switch Access Design: "How can we report on whether particular settings - any setting in the Settings panel - are getting used or not?"
