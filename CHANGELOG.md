@@ -29,6 +29,10 @@ forgetting to tag one is only ever noise, never silence.
 - Settings → About now names the app's license correctly: Apache License 2.0. It said MIT.
 - If you pay for a service to hear the other person, Conversant now adjusts to how quiet your room is, so a microphone that reaches it quietly can still be heard. Before, quiet speech could go unheard with nothing on screen to say why.
 
+### On an iPad
+
+- With a paid service hearing the other person, Conversant's voice could turn very quiet once it stopped listening, and stay quiet until you pressed Listen again. It should now stay at your normal volume.
+
 ## Version 0.15.1
 
 - "End conversation" and "Don't save" now always ask for a second tap, even if you chose "One tap". Switch users already had this. You have at least 2 seconds for the second tap.

@@ -3,6 +3,7 @@ import * as deepgram from './stt-deepgram.js';
 import * as azure from './stt-azure.js';
 import * as sttRest from './stt-rest.js';
 import { STT_PROVIDERS } from './speech-catalog.js';
+import * as audioSession from './audio-session.js';
 
 let recognition = null;
 // A non-browser capture backend (Deepgram or Azure), or null when using the built-in
@@ -755,6 +756,7 @@ function handleSourceError(detail) {
     // path reaches here too, with no external source.
     if (externalSource) {
         try { externalSource.stop(); } catch { /* already stopped */ }
+        audioSession.forSpeaking();
     }
     if (onStatusChange) onStatusChange('error', detail);
 }
@@ -777,7 +779,12 @@ function commitPendingInterim() {
 }
 
 function suspendSource() {
-    if (externalSource) { commitPendingInterim(); try { externalSource.stop(); } catch { /* not running */ } return; }
+    if (externalSource) {
+        commitPendingInterim();
+        try { externalSource.stop(); } catch { /* not running */ }
+        audioSession.forSpeaking();
+        return;
+    }
     try { recognition.stop(); } catch { /* not running */ }
 }
 
@@ -818,6 +825,8 @@ function reallyOpen(alreadyReported) {
         // Async: the paid backend needs microphone permission and a socket. Its own
         // status callback reports 'listening' once it is actually up, so the button
         // does not claim to be listening before anything can be heard.
+        // On an iPad, hand the audio type back to Safari first (audio-session.js).
+        audioSession.forListening();
         externalSource.start();
         return;
     }
@@ -860,7 +869,14 @@ export function stopListening() {
     suspendedForHidden = false;   // a deliberate stop outranks a backgrounded suspend
     openedAt = 0;                 // the run is over; the next Listen starts a new clock
     clearSilenceTimer();
-    if (externalSource) { commitPendingInterim(); return externalSource.stop(); }
+    if (externalSource) {
+        commitPendingInterim();
+        const r = externalSource.stop();
+        // An iPad left the voice very quiet once the microphone closed (Ken, November
+        // 13 2026); say it is ordinary playback now. Nothing happens off an iPad.
+        audioSession.forSpeaking();
+        return r;
+    }
     // Keep what was heard up to this moment: the late result the browser sends after a
     // stop is now ignored, so the in-progress words are kept here instead (CR-098).
     commitPendingInterim();

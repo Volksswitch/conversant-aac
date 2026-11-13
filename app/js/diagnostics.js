@@ -27,6 +27,7 @@ import * as platform from './platform.js';
 import * as viewport from './viewport.js';
 import * as stt from './stt.js';
 import * as micCheck from './mic-check.js';
+import * as audioSession from './audio-session.js';
 import * as worldview from './worldview.js';
 import * as relationships from './relationships.js';
 import * as places from './places.js';
@@ -137,6 +138,8 @@ export async function collectSystemInfo({ appVersion = '?', buildId = '?' } = {}
     // "the microphone delivered nothing" apart from "it was too quiet to count as
     // speech" - the first beta report could not (Ken, November 12 2026).
     try { info.speech.microphone = micCheck.summary(); } catch { /* ignore */ }
+    // What the app last told an iPad about its sound (audio-session.js).
+    try { info.speech.audioSession = audioSession.describe(); } catch { /* ignore */ }
     try {
         // The voice roster answers "why is my voice not in the list", which has no
         // other route on a device with no console. Names only — no settings, no

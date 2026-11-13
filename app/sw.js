@@ -43,6 +43,7 @@ const SHELL = [
   './css/styles.css',
   './js/app.js',
   './js/stt.js',
+  './js/audio-session.js',
   './js/stt-deepgram.js',
   './js/stt-azure.js',
   './js/vad.js',
