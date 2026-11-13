@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.15.3
+
 ### On an iPad
 
 - With a paid service hearing the other person, what Conversant says while it is listening, such as "I'm working out my answer", should now sound as clear as everything else instead of like a phone call.
