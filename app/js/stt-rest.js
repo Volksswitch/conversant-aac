@@ -32,6 +32,7 @@ import * as vad from './vad.js';
 import * as micCheck from './mic-check.js';
 import { describeFailure, blobToBase64 } from './speech-catalog.js';
 import { TARGET_RATE, downsample, floatToPcm16, encodeWav } from './stt-azure.js';
+import * as audioSession from './audio-session.js';
 
 // Long enough for a cold connection, short enough that one stuck request does not leave
 // a whole phrase unheard while the partner waits.
@@ -333,7 +334,7 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
                 // The same cleanup as the other paid recognizers (CR-276): the app speaks
                 // through the device it listens with.
                 stream = await navigator.mediaDevices.getUserMedia({
-                    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+                    audio: audioSession.micProcessing(),   // call processing off on an iPad; see audio-session.js
                 });
             } catch {
                 starting = false;

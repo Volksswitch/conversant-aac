@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+### On an iPad
+
+- With a paid service hearing the other person, what Conversant says while it is listening, such as "Let me think about that", should now sound as clear as everything else instead of like a phone call.
+
 ## Version 0.15.2
 
 - Settings → About now names the app's license correctly: Apache License 2.0. It said MIT.

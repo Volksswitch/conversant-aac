@@ -24,6 +24,34 @@
  *   - Never throws: a diagnostic or a volume fix must not break listening.
  */
 
+import * as platform from './platform.js';
+
+/*
+ * What to ask for when a paid service opens the microphone.
+ *
+ * ON AN iPAD, NO CALL PROCESSING (Ken, November 13 2026). With echo cancellation the
+ * iPad puts the whole app into its call mode while listening, and call mode changes
+ * what the app SAYS as well as what it hears: a holding phrase that started while the
+ * microphone was on sounded like a phone call, then clear the moment listening
+ * stopped - "almost two different voices". A beta tester's iPad also heard him about
+ * thirty times more quietly than Voice Memos does, and Voice Memos uses none of this
+ * processing. All three are switched off together because on an iPad they are one
+ * piece of processing, and asking for any one of them may bring the call mode back.
+ *
+ * What it costs: the microphone hears the app's own voice more strongly while a
+ * holding phrase plays. stt.js already ignores words that match what the app just
+ * said, and does not count sound as the partner speaking while the app is talking;
+ * those two now do more of the work, and the paid service is sent (and bills for)
+ * those few seconds.
+ *
+ * Everywhere else the request is what it always was.
+ */
+export function micProcessing(ipad = (() => { try { return platform.isIOS(); } catch { return false; } })()) {
+    return ipad
+        ? { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+        : { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+}
+
 function session() {
     try {
         const s = typeof navigator !== 'undefined' ? navigator.audioSession : null;

@@ -57,6 +57,7 @@
 
 import * as vad from './vad.js';
 import * as micCheck from './mic-check.js';
+import * as audioSession from './audio-session.js';
 
 export const DEFAULT_REGION = 'eastus';
 
@@ -455,14 +456,8 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
             wanted = true;
             try {
                 stream = await navigator.mediaDevices.getUserMedia({
-                    audio: {
-                        // The app speaks through the same device it listens with, so
-                        // the browser's own cancellation is worth having on top of the
-                        // transcript-level echo filter in stt.js.
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true,
-                    },
+                    // Call processing is off on an iPad; see audio-session.js.
+                    audio: audioSession.micProcessing(),
                 });
             } catch {
                 starting = false;

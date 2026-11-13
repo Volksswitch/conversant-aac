@@ -22,6 +22,12 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.3": [
+    {
+      "for": "ipad",
+      "note": "With a paid service hearing the other person, what Conversant says while it is listening, such as \"Let me think about that\", should now sound as clear as everything else instead of like a phone call."
+    }
+  ],
   "0.15.2": [
     "Settings → About now names the app's license correctly: Apache License 2.0. It said MIT.",
     "If you pay for a service to hear the other person, Conversant now adjusts to how quiet your room is, so a microphone that reaches it quietly can still be heard. Before, quiet speech could go unheard with nothing on screen to say why.",

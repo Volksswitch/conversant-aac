@@ -61,3 +61,23 @@ test('the shared listening code switches the audio type at every paid stop and s
     assert.equal(switches, stops - 1, `${stops} stops, ${switches} switches to playback`);
     assert.match(src, /audioSession\.forListening\(\);\s*externalSource\.start\(\)/);
 });
+
+// Call processing off on an iPad, unchanged everywhere else (Ken, November 13 2026).
+// The platform is read once when platform.js loads, so the two cases are passed in;
+// the last check is that, left to itself, a desktop (this test run) asks as before.
+test('an iPad asks for no call processing; other devices ask for it as before', () => {
+    assert.deepEqual(audioSession.micProcessing(true),
+        { echoCancellation: false, noiseSuppression: false, autoGainControl: false });
+    assert.deepEqual(audioSession.micProcessing(false),
+        { echoCancellation: true, noiseSuppression: true, autoGainControl: true });
+    assert.deepEqual(audioSession.micProcessing(), audioSession.micProcessing(false));
+});
+
+test('every paid service opens the microphone through the one shared request', () => {
+    for (const f of ['stt-deepgram.js', 'stt-azure.js', 'stt-rest.js']) {
+        const src = readFileSync(new URL(`../app/js/${f}`, import.meta.url), 'utf8')
+            .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+        assert.match(src, /getUserMedia\(\{\s*audio: audioSession\.micProcessing\(\),?\s*\}\)/, f);
+        assert.doesNotMatch(src, /echoCancellation/, `${f} must not set its own`);
+    }
+});
