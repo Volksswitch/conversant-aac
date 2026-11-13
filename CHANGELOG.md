@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.15.9
+
 ### On an iPad
 
 - With a paid service hearing the other person, Conversant could hear nothing at all, because since version 0.15.3 the iPad passed on the other person's voice far too quietly. Their voice now comes through at its normal level again.
