@@ -49,7 +49,7 @@
         "placeholders": "What the app says to hold your place while you choose a response, how long it waits, and the wording itself."
     },
     "sections": {
-        "switchCount": "Whether you use touch or switches, and how many switches. Choosing switches turns on scanning and sets a few settings that suit it.",
+        "switchCount": "Whether you use direct select or switches, and how many switches. Choosing switches turns on scanning and sets a few settings that suit it.",
         "switchKeysGroup": "The keys your switches send, whether mouse buttons count as switches, and a line that lights up so you can test them.",
         "switchEveryScreen": "On every screen: how the highlight moves, what holding a switch does, how stops are grouped, and how stray presses are handled.",
         "switchMethodGroup": "On every screen, how the highlight moves from stop to stop, and how long it waits on each one.",
@@ -135,7 +135,7 @@
         "screenOrientation": "Choose whether the screen turns with the device, stays upright, or stays sideways."
     },
     "controls": {
-        "switchCountInput": "Touch, or how many switches you use. Choosing switches turns on scanning. Choosing a different number puts back its starting values.",
+        "switchCountInput": "Direct select, or how many switches you use. Choosing switches turns on scanning. Choosing a different number puts back its starting values.",
         "switchKeySet1": "Press this, then press your first switch. The app learns the key it sends.",
         "switchKeySet2": "Press this, then press your second switch. The app learns the key it sends.",
         "switchKeySet3": "Press this, then press your third switch. The app learns the key it sends.",

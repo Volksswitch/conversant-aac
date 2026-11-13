@@ -121,7 +121,7 @@ try {
     await pace(500);
     check(!!(await page.$('#firstLaunchChoice')), 'the first launch asks touch or switches');
     check(await page.$eval('#startBtn', (b) => b.hidden), 'the Start button waits for the answer');
-    check((await hl()).text === 'Touch', 'the highlight starts on Touch');
+    check((await hl()).text === 'Direct select', 'the highlight starts on Direct select');
     // Wait for "Two switches", then press switch 1.
     let onTwo = false;
     for (let i = 0; i < 40 && !onTwo; i++) { onTwo = (await hl()).text === 'Two switches'; if (!onTwo) await pace(150); }
@@ -209,6 +209,12 @@ try {
     await pace(1500);
     h = await hl();
     check(h.id === 'responseArea', 'new options highlight the whole response options region');
+    check(await page.evaluate(() => {
+        const box = document.querySelector('.scan-region.scan-region-strong');
+        if (!box || box.hidden) return false;
+        const a = box.getBoundingClientRect(), b = document.getElementById('responseArea').getBoundingClientRect();
+        return Math.abs(a.left - b.left) < 2 && Math.abs(a.width - b.width) < 2 && getComputedStyle(box).zIndex > 1000;
+    }), 'the highlight on the options region is drawn over the cards, not under them');
     await choose();
     h = await hl();
     check(/response-card/.test(h.cls), 'choosing the region goes to the first option');
@@ -281,6 +287,45 @@ try {
     await choose();
     await pace(500);
     check(!(await page.$eval('#settingsDialog', (d) => d.open)), 'switch 2 closed Settings');
+    check(await page.evaluate(() => {
+        const a = document.activeElement;
+        return !a || a === document.body || !a.matches(':focus-visible') || getComputedStyle(a).outlineStyle === 'none'
+            || a.classList.contains('scan-hl');
+    }), 'no browser focus ring is left on the Settings button');
+
+    // ---- A goodbye moves the highlight to Listen, so listening can be turned off.
+    await moveUntil((x) => x.id === 'listenControls', 60);
+    await choose();
+    await moveUntil((x) => x.id === 'windDownBtn', 12);
+    await choose();
+    await pace(600);
+    h = await moveUntil((x) => x.id === 'responseArea', 40);
+    await choose();
+    await choose();                          // speak the first wind-down
+    await pace(900);
+    h = await moveUntil((x) => x.id === 'responseArea', 40);
+    await choose();
+    h = await hl();
+    const bye = h.text;
+    await choose();                          // speak a goodbye
+    await pace(1200);
+    h = await hl();
+    check(h.id === 'listenBtn', `after a goodbye the highlight is on Listen (${bye.slice(0, 20)})`);
+
+    // ---- End conversation: two presses, a natural pace apart, end it.
+    await page.evaluate(() => window.__mic.hear('Is anyone there?'));
+    await pace(1500);
+    await moveUntil((x) => x.id === 'listenControls', 60);
+    await choose();
+    await moveUntil((x) => x.id === 'endConversationBtn', 12);
+    await page.keyboard.press('Enter');
+    await pace(900);                         // slower than the 0.4 s touch window
+    check(/scan-held/.test((await hl()).cls), 'End conversation waits for a second press');
+    await page.keyboard.press('Enter');
+    await pace(800);
+    check(await page.evaluate(() => !document.querySelector('#transcriptLog').textContent.trim()
+        && !document.querySelector('#responseOptions .response-card:not(.response-card-empty)')
+        && !window.__mic.isOn()), 'the second press ends the conversation: transcript, options and microphone cleared');
 
     // ---- A second press too soon after the first is ignored (a bouncing switch).
     await page.evaluate(async () => {

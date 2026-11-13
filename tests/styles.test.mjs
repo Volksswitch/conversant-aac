@@ -303,6 +303,9 @@ test('no focus style takes the outline away without putting a ring back', () => 
         const sel = m[1].trim(), body = m[2];
         if (!/outline:\s*none/.test(body)) continue;
         if (/#composerInput|\.practice-card/.test(sel)) continue;
+        // Under switch access the keys are switches, so the keyboard never moves focus,
+        // and the scan highlight is the one marker of place (Ken, November 13 2026).
+        if (/^body\.switch-access-on /.test(sel)) continue;
         bad.push(sel);
     }
     assert.deepEqual(bad, []);

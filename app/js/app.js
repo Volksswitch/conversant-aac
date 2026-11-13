@@ -1252,7 +1252,7 @@ function showFirstLaunchChoice() {
     title.textContent = 'How will you use Conversant?';
     const row = document.createElement('div');
     row.className = 'first-launch-buttons';
-    for (const [n, text] of [['0', 'Touch'], ['1', 'One switch'], ['2', 'Two switches'], ['3', 'Three switches']]) {
+    for (const [n, text] of [['0', 'Direct select'], ['1', 'One switch'], ['2', 'Two switches'], ['3', 'Three switches']]) {
         const b = document.createElement('button');
         b.type = 'button';
         b.dataset.count = n;
@@ -3241,6 +3241,10 @@ async function handleResponseSelected(response, index) {
         // without waiting for the partner to reply; after a goodbye, re-offer them
         // (the partner may say bye back). Listening still resumes if armed (Ken).
         offerClosings();
+        // A goodbye ends the conversation, so a switch user's highlight goes to Listen,
+        // where listening can be turned off, rather than back to the goodbyes (Ken,
+        // November 13 2026).
+        if (wasClosing) switchAccess.focusStop('#listenBtn');
     } else {
         // What was said has been said: the cards go back to empty outlines, so a stray
         // tap cannot speak a stale answer (CR-090). Listening may redraw them anyway.

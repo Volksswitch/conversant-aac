@@ -51,6 +51,7 @@ let heldOptions = null;       // a newer set of options waiting for the highligh
 let updateQueued = false;
 let observer = null;
 let frameEl = null;           // the "Leave" outline box
+const regionEls = [];         // outlines drawn OVER a highlighted region (see drawRegion)
 let listEl = null;            // a drop-down list opened for scanning
 let listFor = null;
 let capture = null;           // { n, done } while a switch's key is being set
@@ -560,7 +561,7 @@ function choose() {
     if (effect.type === 'hold') {
         // Waiting for the second press, for as long as "Time allowed between the two
         // taps" allows; then the scan carries on.
-        holdTimer = setTimeout(() => { scanner.cancelHold(); draw(); schedule(); }, storage.loadDoubleTapMs());
+        holdTimer = setTimeout(() => { scanner.cancelHold(); draw(); schedule(); }, secondPressMs());
         clearTimeout(autoTimer);
         draw();
         return;
@@ -569,6 +570,16 @@ function choose() {
     releaseHeldOptions();
     draw();
     schedule();
+}
+
+// How long the scan waits for the second press. NOT the touch "Time allowed between the
+// two taps" alone: that defaults to 0.4 s, and a switch press within 0.3 s of the last
+// is thrown away as a bounce, so End conversation - which always asks for a second
+// press - could almost never be confirmed (Ken, November 13 2026). At least 2 s, the
+// prototype's value; longer if the user has set a longer tap window.
+const SECOND_PRESS_MIN_MS = 2000;
+function secondPressMs() {
+    return Math.max(SECOND_PRESS_MIN_MS, storage.loadDoubleTapMs(), (scan.repeatMs || 0) + 1000);
 }
 
 function schedule() {
@@ -663,13 +674,35 @@ function ensureFrame(host) {
 function clearMarks() {
     document.querySelectorAll('.scan-hl, .scan-held, .scan-in, .scan-chosen').forEach((e) => e.classList.remove('scan-hl', 'scan-held', 'scan-in'));
     if (frameEl) frameEl.hidden = true;
+    for (const r of regionEls) r.hidden = true;
+}
+// A REGION's highlight is a box drawn OVER it, not an outline on the region itself: the
+// buttons inside a region cover its own outline, so the response options' highlight was
+// mostly hidden behind the cards (Ken, November 13 2026). Paint only, like the "Leave"
+// outline: nothing moves.
+function drawRegion(target, i, strong) {
+    let el = regionEls[i];
+    if (!el) {
+        el = document.createElement('div');
+        el.className = 'scan-region';
+        el.setAttribute('aria-hidden', 'true');
+        regionEls[i] = el;
+    }
+    const host = target.closest('dialog[open]') || document.body;
+    if (el.parentNode !== host) host.appendChild(el);
+    const r = target.getBoundingClientRect();
+    Object.assign(el.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+    el.classList.toggle('scan-region-strong', !!strong);
+    el.hidden = false;
 }
 function draw() {
     clearMarks();
     if (!on || !scanner) { flush(); return; }
     const n = scanner.current();
     if (!n) { flush(); return; }
-    for (const g of scanner.path()) if (g.el) g.el.classList.add('scan-in');
+    let ri = 0;
+    for (const g of scanner.path()) if (g.el) { g.el.classList.add('scan-in'); drawRegion(g.el, ri++, false); }
+    if (n.kind === 'group' && n.el) drawRegion(n.el, ri++, true);
     if (n.kind === 'leave') {
         const target = n.frame;
         if (target) {
@@ -757,6 +790,7 @@ export function optionsArrived() {
     if (!on || !scanner) return;
     requestAnimationFrame(() => {
         if (currentScreen() !== 'conversation' || scan.pattern !== 'regions') return;
+        if (pinnedKey) { readOnOptions = true; return; }
         scanner.refresh();
         if (!scanner.path().some((g) => g.key === 'options') && scanner.focus('options')) {
             readingNext = true; draw(); schedule(); return;
@@ -809,6 +843,37 @@ function install() {
     observer.observe(document.documentElement, { subtree: true, childList: true, attributes: true,
         attributeFilter: ['class', 'hidden', 'disabled', 'open', 'inert', 'aria-disabled'] });
     window.addEventListener('resize', () => queueUpdate());
+    // The region and "Leave" outlines are placed by screen position, so a scroll (a
+    // long Settings tab) must move them with what they outline.
+    let scrollQueued = false;
+    window.addEventListener('scroll', () => {
+        if (!on || scrollQueued) return;
+        scrollQueued = true;
+        requestAnimationFrame(() => { scrollQueued = false; draw(); });
+    }, true);
+}
+
+/**
+ * Put the highlight on one stop (a key from keyFor, such as '#listenBtn'), e.g. the
+ * Listen button after a goodbye, so listening can be turned off (Ken, November 13 2026).
+ */
+// ⚠ DONE A FRAME LATER, and the arrival below stands aside meanwhile: re-offering the
+// goodbyes reports "new options", whose own frame would otherwise pull the highlight
+// back to them.
+let pinnedKey = null;
+export function focusStop(key) {
+    if (!on || !scanner) return;
+    pinnedKey = key;
+    requestAnimationFrame(() => {
+        const k = pinnedKey;
+        pinnedKey = null;
+        if (!k || !on || !scanner || currentScreen() !== 'conversation') return;
+        readingNext = false;
+        stayPending = false;
+        scanner.afterAct({ focusKey: k });
+        draw();
+        schedule();
+    });
 }
 
 /** Read the settings from storage and turn scanning on or off to match. */
@@ -850,8 +915,9 @@ export function keysFor(n) {
 
 /*
  * THE FIRST-LAUNCH QUESTION (Switch Access Design section 2.7). On the very first
- * launch the start screen asks once: touch, one switch, two or three. A touch user taps
- * "Touch". For a switch user the choices are highlighted in turn and switch 1, on one
+ * launch the start screen asks once: direct select, one switch, two or three. A direct
+ * select user taps "Direct select" (not "Touch": eye gaze is direct select too, Ken,
+ * November 13 2026). For a switch user the choices are highlighted in turn and switch 1, on one
  * of the starting keys, picks the highlighted one. Switch access is not on yet, so
  * touch works here; the keys are listened to directly.
  */

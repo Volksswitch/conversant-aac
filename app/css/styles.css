@@ -5357,6 +5357,30 @@ body.conv-bottom     .danger-dialog {
     border-radius: 6px;
 }
 #scanFrame[hidden] { display: none; }
+/* A region's highlight (the response options, the Express Panel, a row, the Command
+   Bar): drawn OVER the region, because the buttons inside a region cover any outline
+   on the region itself (Ken, November 13 2026). The region being chosen gets the heavy
+   ring; a region the highlight is inside gets a thin one. */
+.scan-region {
+    position: fixed;
+    z-index: 2147482999;
+    pointer-events: none;
+    box-sizing: border-box;
+    border: 3px solid var(--scan-hl);
+    border-radius: 6px;
+}
+.scan-region.scan-region-strong {
+    border-width: 6px;
+    box-shadow: inset 0 0 0 3px var(--scan-hl-inner), 0 0 0 3px var(--scan-hl-inner);
+}
+.scan-region[hidden] { display: none; }
+/* Under switch access the scan highlight is the only marker of where you are. The
+   browser's own focus ring (blue) otherwise lands on a button the app focused - the
+   Settings button, when Settings closes and focus returns to it - and reads as a
+   second, unexplained selection (Ken, November 13 2026). */
+body.switch-access-on :is(button, summary, select, [role="button"], .settings-tab):focus-visible:not(.scan-hl):not(.scan-held):not(.scan-in) {
+    outline: none !important;
+}
 .scan-frame-label {
     position: absolute;
     top: 0;
