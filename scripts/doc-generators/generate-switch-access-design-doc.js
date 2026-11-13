@@ -281,7 +281,7 @@ const doc = new Document({
             num("issues", "“Pause” and touch. ", "The prototypes have “Pause”, and a setting that turns any touch into a switch press, for a switch that works like a touch on the screen."),
             dec("both are left out. “Pause” waits until the therapists ask for it. Touch does nothing while switch access is on (section 2.3), so a setting about touch has nothing to act on. Revisit if a user’s only switch works by touching the screen."),
             num("issues", "A supporter’s mouse. ", "A supporter uses a mouse as switches, since touch does nothing (decided). But in the prototypes, setting a key for a switch turns the mouse buttons off as switches, because both acting at once was found to be wrong. Once the user has set a key, the supporter’s mouse would then do nothing."),
-            dec("mouse buttons stay on as switches when a key is set, with a checkbox to turn them off for a switch interface that sends both a key and a click, which would count one press twice. The prototypes still turn them off and would change to match."),
+            dec("mouse buttons stay on as switches when a key is set, with a checkbox to turn them off for a switch interface that sends both a key and a click, which would count one press twice. The three prototypes work this way too."),
         ],
     }],
 });

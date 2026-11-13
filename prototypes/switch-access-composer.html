@@ -174,7 +174,7 @@
       <div class="keyrow">Switch 3: <b id="key3"></b> <button type="button" class="keyset" data-sw="3">Set</button></div>
       <label><input type="checkbox" id="mouseSwitches"> Mouse buttons also act as switches</label>
       <button type="button" id="keyReset">Use the starting keys</button>
-      <p class="note">For a switch interface that sends key presses. Tap “Set”, then press the key (or the switch). Setting a key turns off the mouse buttons as switches; check the box to turn them back on. The mouse still works in this panel. These choices are remembered on this device.</p></div>
+      <p class="note">For a switch interface that sends key presses. Tap “Set”, then press the key (or the switch). Setting a key leaves the mouse buttons working as switches, so a supporter can still help with a mouse; uncheck the box for an interface that sends both a key and a click, which would count one press twice. The mouse still works in this panel. These choices are remembered on this device.</p></div>
     <div class="field"><span>Scan method</span>
       <label><input type="radio" name="method" value="auto"> Automatic: the highlight moves by itself</label>
       <label><input type="radio" name="method" value="inverse"> Inverse: hold the left button to move, let go to choose</label>
@@ -724,13 +724,15 @@ const START_KEYS = { Space: 1, Digit1: 1, Numpad1: 1, Enter: 2, NumpadEnter: 2, 
 let customKeys = {};   // switch number -> key code
 try { customKeys = JSON.parse(localStorage.getItem('switchKeys') || '{}') || {}; } catch (e) { customKeys = {}; }
 let SWITCH_KEY = {};
-// Mouse buttons as switches: on until a key is set (Ken: with a key-sending interface the
-// mouse acting as a switch too is wrong).
+// Mouse buttons as switches: on, including after a key is set (Ken, 2026-11-12: a supporter
+// uses a mouse as switches, since touch does nothing with switch access on). Unchecking the box
+// is for an interface that sends both a key and a click. Stored under a new name so the
+// "off" that setting a key used to store by itself is forgotten.
 let mouseSwitches = true;
-try { const m = localStorage.getItem('mouseSwitches'); mouseSwitches = m === null ? !Object.keys(customKeys).length : m === '1'; } catch (e) {}
+try { const m = localStorage.getItem('mouseSwitchesV2'); mouseSwitches = m === null ? true : m === '1'; } catch (e) {}
 function setMouseSwitches(v) {
   mouseSwitches = v; const box = document.getElementById('mouseSwitches'); if (box) box.checked = v;
-  try { localStorage.setItem('mouseSwitches', v ? '1' : '0'); } catch (e) {}
+  try { localStorage.setItem('mouseSwitchesV2', v ? '1' : '0'); } catch (e) {}
 }
 document.getElementById('mouseSwitches').checked = mouseSwitches;
 document.getElementById('mouseSwitches').addEventListener('change', (e) => setMouseSwitches(e.target.checked));
@@ -762,7 +764,6 @@ window.addEventListener('keydown', (e) => {
   if (e.code !== 'Escape') {
     Object.keys(customKeys).forEach((n) => { if (customKeys[n] === e.code) delete customKeys[n]; });
     customKeys[listeningFor] = e.code;
-    setMouseSwitches(false);
     try { localStorage.setItem('switchKeys', JSON.stringify(customKeys)); } catch (err) {}
   }
   document.querySelectorAll('.keyset').forEach((x) => { x.classList.remove('listening'); x.textContent = 'Set'; });
