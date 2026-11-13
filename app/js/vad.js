@@ -100,17 +100,29 @@ export const DEFAULTS = {
     // the last `openFloorMs`, and treats that level as the room when it is above the
     // room measured before AND one of these says it is not the speaker:
     //   - it is at least `speechOverNoise` times quieter than the loudest sound since
-    //     the gate opened - far under the voice that opened it (a fan beside a person
-    //     talking at a normal level; closes about five seconds after they stop);
+    //     the gate opened - far under the voice that opened it - AND the last
+    //     `steadyRecentMs` hardly varied (loudest within `steadyRatio` of quietest). A
+    //     fan beside a person talking at a normal level; the words are let go about two
+    //     to two and a half seconds after they stop;
     //   - or the gate has been open `steadyOpenMs` and the last `openFloorMs` hardly
-    //     varied (loudest within `steadyRatio` of quietest). A voice rises and falls
-    //     with every syllable; a fan or a heater does not. This catches the quiet setups
-    //     where a noise can be nearly as loud as the voice.
+    //     varied. A voice rises and falls with every syllable; a fan or a heater does
+    //     not. This catches the quiet setups where a noise can be nearly as loud as the
+    //     voice.
+    // ⚠ THE FIRST RULE WAITS FOR STEADY SOUND, AND THAT IS NOT OPTIONAL (Ken, November 13
+    // 2026). Without it, someone talking for several seconds with no real pause, in a
+    // room where the gaps between their words never go fully quiet, left only those gaps
+    // as the quietest moments of the window; they were taken for the room, the bar rose
+    // above the soft last words of the sentence, and up to 1.6 seconds of them were
+    // never sent. Gaps between words come and go; they are never steady for 1.5 seconds.
+    // Do not drop the rule to fix that instead: with Azure, Google Cloud and ElevenLabs
+    // the words are only sent when the gate closes, so a fan would hold them back for 5
+    // to 14 seconds.
     // Normal speech has gaps that drop to the room, so its quietest moment IS the room
     // and nothing changes. It only ever RAISES the room, and the bar keeps its 0.020
     // ceiling, so the gate can never close at a level above the old fixed gate's 0.012.
     openFloorMs: 4000,
     speechOverNoise: 8,
+    steadyRecentMs: 1500,
     steadyOpenMs: 15000,
     steadyRatio: 2,
 };
@@ -151,12 +163,19 @@ export function createGate(opts = {}) {
         if (openFor < cfg.openFloorMs) return;  // never judge the first seconds of speech
         let quietest = Infinity;
         let loudest = 0;
-        for (const [, l] of heardOpen) {
+        let recentQuietest = Infinity;
+        let recentLoudest = 0;
+        for (const [t, l] of heardOpen) {
             if (l < quietest) quietest = l;
             if (l > loudest) loudest = l;
+            if (now - t <= cfg.steadyRecentMs) {
+                if (l < recentQuietest) recentQuietest = l;
+                if (l > recentLoudest) recentLoudest = l;
+            }
         }
         if (quietest <= floor) return;          // the room still shows through: speech with gaps
-        const farUnderTheVoice = quietest * cfg.speechOverNoise <= loudestOpen;
+        const recentlySteady = recentLoudest <= recentQuietest * cfg.steadyRatio;
+        const farUnderTheVoice = recentlySteady && quietest * cfg.speechOverNoise <= loudestOpen;
         const steady = openFor >= cfg.steadyOpenMs && loudest <= quietest * cfg.steadyRatio;
         if (!farUnderTheVoice && !steady) return;
         floor = quietest;

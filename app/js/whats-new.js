@@ -52,7 +52,7 @@ const RELEASE_NOTES = {
       "note": "With a paid service hearing the other person, ending a conversation or turning Listen off while Conversant was talking could turn the iPad's microphone back on for a moment afterwards. It no longer does."
     },
     "With a paid service hearing the other person, a quiet speaker who was already talking when listening started again, for example after Conversant said something, could go unheard. Conversant now remembers how quiet the room was, so they are heard from their first word.",
-    "With a paid service hearing the other person, a fan, heater or kettle that came on while the other person was talking could keep Conversant sending sound to the service, and paying for it, until the noise stopped. It now stops within a few seconds.",
+    "With a paid service hearing the other person, a fan, heater or kettle that came on while the other person was talking could keep Conversant sending sound to the service, and paying for it, until the noise stopped. It now stops within a few seconds of them finishing, or within about 15 seconds if the noise is nearly as loud as their voice.",
     "A Deepgram key pasted with a space inside it could leave the microphone switched on. It no longer does."
   ],
   "0.15.8": [

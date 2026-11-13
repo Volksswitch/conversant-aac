@@ -292,3 +292,50 @@ test('a long quiet sentence that rises and falls is not cut off, and the room st
     assert.ok(g.isOpen());
     assert.deepEqual(g.levels(), before, 'the room and the bar did not move under the speaker');
 });
+
+// Found checking c84fb5e, the first fix for problem 8 (Ken approved the change,
+// November 13 2026). Someone talking for several seconds with no real pause, in a room
+// where the gaps between their words never go fully quiet, left only those gaps as the
+// quietest moments of the last four seconds. The quick rule took them for the room,
+// the bar rose above the soft last words of the sentence, and up to 1.6 seconds of them
+// were never sent. The quick rule now waits until the last 1.5 seconds have been steady.
+test('a long sentence with no real pause that ends softly keeps its ending', () => {
+    const lost = [];
+    for (const dip of [0.004, 0.006]) for (const peak of [0.006, 0.010])
+        for (const hangMs of [900, 450]) for (const talkMs of [6000, 8000]) {
+            const g = createGate({ hangMs });
+            let t = 0;
+            const push = (level) => { g.push(level, t); t += 85; return g.isOpen(); };
+            for (let i = 0; i * 85 < 2000; i++) push(KENNY_ROOM);
+            const talk = [0.03, 0.05, 0.035, 0.012, dip, 0.04, 0.025, 0.015, dip * 1.5];
+            for (let i = 0; i * 85 < talkMs; i++) push(talk[i % talk.length]);
+            const ending = [0.6, 1, 0.8, 0.4, 0.7, 1, 0.5];
+            let shutFrames = 0;
+            for (let i = 0; i * 85 < 2000; i++) if (!push(peak * ending[i % ending.length])) shutFrames++;
+            if (shutFrames) {
+                lost.push(`gaps ${dip}, ending ${peak}, hang ${hangMs} ms, talk ${talkMs / 1000} s: ` +
+                    `${((shutFrames * 85) / 1000).toFixed(1)} s of the ending not sent`);
+            }
+        }
+    assert.deepEqual(lost, [], lost.join('\n'));
+});
+
+// ...and the fan is still let go soon after the person stops, however long they talked.
+// Azure, Google Cloud and ElevenLabs only get the words when the gate closes, so this
+// is also how long the words, and the suggestions, wait.
+test('a fan that starts as the person stops is let go within about three seconds, after any length of talk', () => {
+    for (const hangMs of [900, 450]) for (const talkMs of [2000, 5000, 10000]) {
+        const g = createGate({ hangMs });
+        let t = 0;
+        for (; t < 2000; t += 85) g.push(KENNY_ROOM, t);
+        for (const end = t + talkMs; t < end; t += 85) g.push(0.05, t);
+        const stoppedAt = t;
+        let closedAt = null;
+        for (const end = t + 60_000; t < end && closedAt === null; t += 85) {
+            if (g.push(0.004, t) === 'close') closedAt = t;
+        }
+        assert.ok(closedAt !== null, `hang ${hangMs} ms, talk ${talkMs / 1000} s: the gate closes`);
+        const waited = (closedAt - stoppedAt) / 1000;
+        assert.ok(waited <= 3.5, `hang ${hangMs} ms, talk ${talkMs / 1000} s: the words waited ${waited.toFixed(1)} s`);
+    }
+});
