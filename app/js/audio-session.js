@@ -59,8 +59,71 @@ function session() {
     } catch { return null; }
 }
 
+/*
+ * LOUDER WHILE AN iPAD IS LISTENING (Ken, November 13 2026). With call processing off
+ * (micProcessing above) the holding phrases spoken while the microphone is open came
+ * out clear but quiet - the iPad turns playback down while it records, and the app
+ * cannot ask it not to. What the app CAN set is its own volume, so on an iPad every
+ * paid voice plays through a boost while paid listening is on, and through nothing
+ * extra the moment it stops (the iPad's own volume comes back then).
+ *
+ * The limiter is what makes boosting safe. The voices are already loud, so a plain
+ * boost would clip on every loud syllable and crackle; the limiter holds the peaks
+ * just under full scale instead. It is in the chain whenever the chain exists, but
+ * at normal volume it has almost nothing to do.
+ *
+ * Off an iPad there is no chain at all: output() returns the speakers directly, so
+ * nothing about any other device changes.
+ */
+export const LISTENING_BOOST = 2.5;      // about 8 dB; a first guess, to be tuned by ear
+let listening = false;
+const boosts = new Set();               // gain nodes of every chain made so far
+
+function boostLevel() { return listening ? LISTENING_BOOST : 1; }
+
+function applyBoost() {
+    for (const g of boosts) {
+        try {
+            const c = g.context;
+            if (!c || c.state === 'closed') { boosts.delete(g); continue; }
+            // A short ramp, so the change is not a click.
+            g.gain.setTargetAtTime(boostLevel(), c.currentTime, 0.02);
+        } catch { boosts.delete(g); }
+    }
+}
+
+const chains = new WeakMap();
+
+/** Where a paid voice should send its sound. */
+export function output(ctx, ipad = (() => { try { return platform.isIOS(); } catch { return false; } })()) {
+    if (!ipad) return ctx.destination;
+    let chain = chains.get(ctx);
+    if (!chain) {
+        try {
+            const gain = ctx.createGain();
+            gain.gain.value = boostLevel();
+            const limiter = ctx.createDynamicsCompressor();
+            limiter.threshold.value = -3;
+            limiter.knee.value = 0;
+            limiter.ratio.value = 20;
+            limiter.attack.value = 0.002;
+            limiter.release.value = 0.1;
+            gain.connect(limiter);
+            limiter.connect(ctx.destination);
+            boosts.add(gain);
+            chain = gain;
+        } catch {
+            chain = ctx.destination;      // never lose the voice over a volume tweak
+        }
+        chains.set(ctx, chain);
+    }
+    return chain;
+}
+
 /** Before the microphone opens: let Safari choose, as it always did. */
 export function forListening() {
+    listening = true;
+    applyBoost();
     const s = session();
     if (!s) return;
     try { if (s.type !== 'auto') s.type = 'auto'; } catch { /* leave it */ }
@@ -68,6 +131,8 @@ export function forListening() {
 
 /** After paid listening stops: ordinary playback, so the voice is not left quiet. */
 export function forSpeaking() {
+    listening = false;
+    applyBoost();
     const s = session();
     if (!s) return;
     try { if (s.type !== 'playback') s.type = 'playback'; } catch { /* leave it */ }

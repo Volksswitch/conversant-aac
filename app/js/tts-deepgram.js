@@ -63,6 +63,7 @@
 // as not running too. If the audio has not woken within the limit this throws, and
 // tts.js says the sentence in the device's own voice instead.
 import * as speakerWake from './speaker-wake.js';
+import * as audioSession from './audio-session.js';
 
 const WAKE_LIMIT_MS = 1500;
 async function wake(c) {
@@ -407,7 +408,7 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
             buffer.getChannelData(0).set(samples);
             const node = c.createBufferSource();
             node.buffer = buffer;
-            node.connect(c.destination);
+            node.connect(audioSession.output(c));   // louder while an iPad listens
             sources.add(node);
             speakerWake.soundStarted(c);
             node.onended = () => {
@@ -477,7 +478,7 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
             buffer.getChannelData(0).set(samples);
             const node = c.createBufferSource();
             node.buffer = buffer;
-            node.connect(c.destination);
+            node.connect(audioSession.output(c));   // louder while an iPad listens
             // Behind the clock means the audio already ran out; start from now, and
             // count it so a stutter is something the app can know about rather than
             // only the user hearing it.

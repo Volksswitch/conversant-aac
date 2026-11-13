@@ -22,6 +22,12 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.4": [
+    {
+      "for": "ipad",
+      "note": "With a paid service hearing the other person, what Conversant says while it is listening is now louder, so the other person can hear it as well as everything else it says."
+    }
+  ],
   "0.15.3": [
     {
       "for": "ipad",
