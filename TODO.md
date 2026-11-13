@@ -42,6 +42,21 @@ the one that quietly waits forever.
 - **What is wanted:** read Kenny's first report on 0.15.8 (echo cancellation off, speech level following the room, mic closed while the app speaks). Ask him to have his wife talk for half a minute at normal distance with Listen on, then send a report. If her voice still barely clears the room in the `levels:` bands, choose between (a) a boost on the input that Conversant applies itself, before the speech gate and before sending to Deepgram, and (b) turning echo cancellation back on for an iPad: its reason (the phone-call sound) no longer applies now that the microphone is closed while the app speaks, and on Ken's iPad turning it off made his voice about 50 times quieter (0.26 to 0.005), because the iPad's automatic volume goes with it.
 - **Why not now:** Ken chose to wait for Kenny's evidence rather than change listening again blind; the two options pull in different directions and his report decides between them.
 
+### iPad listening: fix the problems found in the November 13 changes
+- **Raised:** 2026-11-13 - Ken asked for a hunt for hidden bugs in 0.15.2 to 0.15.8 (the iPad listening and speaking changes), and for the findings to be written down for another session. The full write-up, with the steps for each problem, how sure and how serious it is, and notes for the fix, is `tests/pending/2026-11-13-ipad-listening/FINDINGS.md`. Each problem has a test in that folder that reproduces it.
+- **What is wanted:** fix these, most serious first:
+  1. the Listen button can stay lit with nothing listening, and tapping it does nothing (the user leaves the app while the microphone reopens after a holding phrase);
+  2. the Listen button can stay dark while the app is listening;
+  3. Azure, Google Cloud and ElevenLabs throw away what the partner said just before a holding phrase;
+  4. the x5 boost and the iPad's recording mode can be left on with no microphone, and End conversation or Listen off during a holding phrase asks for the microphone again;
+  5. a slow reopen lets the user's next phrase play with the microphone open;
+  6. leaving the app while the microphone reopens can switch listening off with a false error;
+  7. a quiet partner who is already talking is measured as "the room";
+  8. a steady noise that starts during speech holds the speech gate open, so it is sent and billed;
+
+  plus smaller report and tidy-up items. Then the seven device checks listed in the file.
+- **Why not now:** Ken asked for the findings to be documented for another session to address; nothing has been changed yet. Coordinate 7 and 8 with "Kenny's quiet iPad microphone" above, since that decision changes every input level.
+
 ### "Press again": rethink the cue for other languages and for users who do not read
 - **Raised:** 2026-11-13 - Ken, approving the "Press again" tag on a button waiting for its second tap or press (End conversation and "Don't save" always; any button with "Two taps" chosen).
 - **What is wanted:** decide whether words are still the right cue when (a) other languages arrive, where the same idea can take many more characters and the tag may not fit over a small button, and (b) the app serves users with lower literacy, who cannot read it. Alternatives to weigh: changing the button's background color while it waits, or a flashing or pulsing background. Caution on the second: the Listen button already pulses, and there it means the microphone is on, so a pulse here would give one look two meanings.
@@ -329,7 +344,8 @@ Safari uses is not published. Ken can live with it.
 ### An intermittent test failure, not yet identified
 - **Raised:** 2026-10-11 - during the 0.13.21 release. One test failed once (1,320 of 1,321 passed) and passed on the next seven runs; it did not come back long enough to be named.
 - **What is wanted:** when `npm test` fails once and then passes, keep the failing run's output so the test can be named and fixed. A test that fails at random gets ignored, and then it stops catching anything.
-- **Why not now:** it could not be reproduced.
+- **Named 2026-11-13:** one full `npm test` run failed two tests, and each then passed on five reruns: `tests/placeholders.test.mjs`, "the same holding phrase is never said twice in a row across pauses" (failed with "repeat at 1"), and `tests/storage-transcript.test.mjs`, "ending a conversation mid-write cannot overwrite its file with "null" (CR-001)" (the last write had not landed when the file was read). Both wait a fixed short time (25 ms and 60 ms) for timers to fire, which a busy machine can miss, and `npm test` runs its files side by side. Likely fix: wait for the event itself rather than a fixed time. Not known whether either is the October 11 failure.
+- **Why not now:** named during the November 13 iPad listening bug hunt, which was about other code; not fixed there.
 
 ### Let "evaluate beta" read the beta Sheet directly, and move handled rows aside
 - **Raised:** 2026-10-11 - Ken. To review at a later date.
