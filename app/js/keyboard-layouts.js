@@ -125,6 +125,15 @@ const DEFS = {
     [C('a'), C('s'), C('d'), C('f'), C('g'), C('h'), C('j'), C('k'), C('l'), SH(), EN(2)],
     [C('z'), C('x'), C('c'), C('v'), C('b'), C('n'), C('m'), PG(), SP(2), C(','), C('.')],
   ]},
+  // The most-used letters first (Ken, November 12 2026: "Just make this a keyboard layout
+  // option"). QWERTY's shape and keys, with the letters in order of how often English
+  // uses them, so the commonest letters are the first a scan reaches. Same shape as
+  // B11, so it adds no new Express Panel shape and one keyguard fits both.
+  B12: { arrangement: 'Most-used letters first', rows: [
+    [C('e'), C('t'), C('a'), C('o'), C('i'), C('n'), C('s'), C('h'), C('r'), C('d'), BK(2)],
+    [C('l'), C('c'), C('u'), C('m'), C('w'), C('f'), C('g'), C('y'), C('p'), SH(), EN(2)],
+    [C('b'), C('v'), C('k'), C('j'), C('x'), C('q'), C('z'), PG(), SP(2), C(','), C('.')],
+  ]},
   B3: { arrangement: 'Alphabet', rows: [
     r('a b c d e f g h i j k l m'), r('n o p q r s t u v w x y z'),
     [SH(), PG(), C(','), SP(7), C('.'), BK(), EN()],

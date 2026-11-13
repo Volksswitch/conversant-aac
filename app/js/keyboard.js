@@ -277,6 +277,7 @@ function handleKey(keyEl) {
         learnCurrentWord(); clearGhost();
         enter(); updateGhost(); return;
     }
+    if (action === 'suggest') { acceptSuggestion(); return; }
 
     const ch = keyEl.dataset.char;
     if (ch == null) return;
@@ -355,6 +356,52 @@ function ensureGhostEl() {
 function clearGhost() {
     ghostWord = null;
     if (ghostEl) ghostEl.style.display = 'none';
+    refreshSuggestKey();
+}
+
+/*
+ * THE SUGGESTION KEY (Switch Access Design, issue 8; Proposal section 6.1; Ken,
+ * November 12 2026: "Add it"). In "In my own words" the Enter key's place shows the
+ * suggested word instead, for tapping and switches alike: the gray ending in the box
+ * is small and outside the keyboard, so a typist looking at the keys never sees it,
+ * and a line break means nothing in spoken words. Same cell and size, so the keyguard
+ * is unchanged. Blank, and switched off, when there is no suggestion. Choosing it
+ * finishes the word and adds a space.
+ *
+ * ONLY IN THE COMPOSER: the same keyboard serves Settings and About Me, where Enter
+ * saves a one-line box, so there it stays Enter.
+ */
+function suggestKeyField(f) {
+    return !!f && f.id === 'composerInput' && !predictionOff(f);
+}
+
+function suggestionText() {
+    if (!ghostWord || !activeField) return '';
+    const m = (activeField.value || '').match(WORD_AT_END);
+    return caseMatch(ghostWord, m ? m[0] : '');
+}
+
+function refreshSuggestKey() {
+    if (!rootEl) return;
+    const word = suggestionText();
+    rootEl.querySelectorAll('.kbd-suggest').forEach((k) => {
+        k.textContent = word;
+        k.disabled = !word;
+        k.setAttribute('aria-label', word ? `Suggested word: ${word}` : 'No suggested word');
+    });
+}
+
+/** The word the suggestion key would finish with, or '' when there is none. */
+export function suggestionWord() { return suggestionText(); }
+
+/** Finish the word with the suggestion and add a space. Returns false when there was none. */
+export function acceptSuggestion() {
+    if (!ghostWord || !fieldStillThere()) return false;
+    if (!acceptGhost()) return false;
+    insert(' ');
+    consumeShift();
+    updateGhost();
+    return true;
 }
 
 // Match the predicted word's case to what the user actually typed (so a
@@ -383,6 +430,7 @@ function updateGhost() {
     if (!pred || [...pred].length <= [...prefix].length) { clearGhost(); return; }
     ghostWord = pred;
     renderGhost();
+    refreshSuggestKey();
 }
 
 // Position the mirror overlay exactly over the field and draw: the typed text
@@ -526,6 +574,9 @@ function renderRows() {
                 btn.textContent = cell.char;
                 if (/[a-z]/i.test(cell.char)) btn.classList.add('kbd-letter');
                 else btn.classList.add('kbd-char');
+            } else if (cell.action === 'enter' && suggestKeyField(activeField)) {
+                btn.dataset.action = 'suggest';
+                btn.classList.add('kbd-suggest');
             } else {
                 btn.dataset.action = cell.action;
                 btn.textContent = cell.label;
@@ -543,6 +594,7 @@ function renderRows() {
         rootEl.appendChild(rowEl);
     }
     applyShiftVisual();
+    refreshSuggestKey();
 }
 
 // --- show / hide ------------------------------------------------------------

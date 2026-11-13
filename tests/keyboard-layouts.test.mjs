@@ -22,9 +22,10 @@ test('every layout has rows and a name that describes its grid', () => {
 });
 
 // Ken, October 8 2026: the fourteen distinct shapes in the Layout Review plus Side
-// Layout 7, which differs only in letter order.
-test('fifteen layouts, all offered in one list, narrowest first', () => {
-    assert.equal(Object.keys(LAYOUTS).length, 15);
+// Layout 7, which differs only in letter order. November 12 2026: plus the most-used
+// letters first (B12), which has QWERTY's shape.
+test('sixteen layouts, all offered in one list, narrowest first', () => {
+    assert.equal(Object.keys(LAYOUTS).length, 16);
     assert.deepEqual(new Set(LAYOUT_LIST.map((l) => l.id)), new Set(Object.keys(LAYOUTS)));
     const across = LAYOUT_LIST.map((l) => layoutShape(LAYOUTS[l.id].rows).across);
     assert.deepEqual(across, [...across].sort((a, b) => a - b));
@@ -134,4 +135,14 @@ test('every number page has a decimal point', () => {
         const page = buildSymbolsPage(rows).flat().filter((c) => c.kind === 'char');
         assert.ok(page.some((c) => (c.ch ?? c.label ?? c.char) === '.'), id);
     }
+});
+
+// The most-used-letters layout is QWERTY's grid with only the letters moved, so the
+// Express Panel and a keyguard fit it unchanged (Ken, November 12 2026).
+test('the most-used-letters layout has the QWERTY shape and every letter once', () => {
+    const shape = (rows) => rows.map((row) => row.map((c) => `${c.kind}:${c.span || 1}`).join(' '));
+    assert.deepEqual(shape(LAYOUTS.B12.rows), shape(LAYOUTS.B11.rows));
+    const letters = LAYOUTS.B12.rows.flat().filter((c) => c.kind === 'char' && /[a-z]/.test(c.char)).map((c) => c.char);
+    assert.deepEqual([...letters].sort(), 'abcdefghijklmnopqrstuvwxyz'.split(''));
+    assert.equal(letters.slice(0, 5).join(''), 'etaoi');
 });

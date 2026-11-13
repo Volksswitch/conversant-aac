@@ -71,6 +71,17 @@ function sameAsArmed(el) {
     return !!armed && !armed.isConnected && !!armedKey && el.dataset.tapKey === armedKey;
 }
 
+/**
+ * Switch scanning (Switch Access Design section 2.2): the scanner counts the two switch
+ * presses itself, so it asks here whether a button needs them, and then lets its one
+ * confirmed press through. Otherwise every choice would take four presses.
+ */
+export function needsSecondTap(el) {
+    return doubleTapOn() && !!match(el);
+}
+let passOnce = false;
+export function letNextThrough(on = true) { passOnce = !!on; }
+
 export function disarm() {
     if (timer) { clearTimeout(timer); timer = null; }
     if (armed) armed.classList.remove(armedClass);
@@ -93,6 +104,7 @@ export function install() {
     if (installed) return;
     installed = true;
     document.addEventListener('click', (e) => {
+        if (passOnce) { passOnce = false; disarm(); return; }
         if (!doubleTapOn()) return;
         const m = match(e.target);
         if (!m) return;

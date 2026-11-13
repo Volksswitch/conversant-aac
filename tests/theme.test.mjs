@@ -220,6 +220,13 @@ const PAIRS = [
     ['a warning fill on a card', 'warn', 'surface-raised', 3],
     ['a confirmation fill on a card', 'ok', 'surface-raised', 3],
     ['an information fill on a card', 'info', 'surface-raised', 3],
+    // The switch-scanning highlight (Switch Access Design section 2.5): two rings, so
+    // one of them always stands out from whatever the highlighted button is filled with.
+    ['the switch highlight on the page', 'scan-hl', 'surface-page', 3],
+    ['the switch highlight on a card', 'scan-hl', 'surface-raised', 3],
+    ['the switch highlight on the dock', 'scan-hl', 'surface-sunken', 3],
+    ['the switch highlight on the settings panel', 'scan-hl', 'surface-panel', 3],
+    ['the switch highlight inner ring against the outer', 'scan-hl-inner', 'scan-hl', 3],
 ];
 
 test('a card is always tellable from the page — by fill or by outline', () => {

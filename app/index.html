@@ -204,6 +204,9 @@
                 <div class="settings-tab" data-tab="textsize">Text &amp; Color</div>
                 <div class="settings-tab" data-tab="speech">Speech</div>
                 <div class="settings-tab" data-tab="input">Screen Layout</div>
+                <!-- Labeled "in progress" while switch access is built and tried (Ken,
+                     November 12 2026): the beta accepts only touch users for now. -->
+                <div class="settings-tab" data-tab="switch">Switch Access (in progress)</div>
                 <div class="settings-tab" data-tab="conversation">Conversation</div>
                 <div class="settings-tab" data-tab="placeholders">Placeholders</div>
                 <div class="settings-tab" data-tab="practice">Practice</div>
@@ -216,6 +219,18 @@
             </nav>
             <div id="settingsContent">
                 <div class="tab-panel active" data-tab="general">
+                    <!-- Touch or switches: the most basic choice in the app, so it is first
+                         on the General tab rather than inside the Switch Access tab
+                         (Switch Access Design section 2.7, Ken, November 12 2026). -->
+                    <div class="setting-group" data-help="switchCount">
+                        <label for="switchCountInput">Number of switches</label>
+                        <select id="switchCountInput">
+                            <option value="0">None: I use touch</option>
+                            <option value="1">One switch</option>
+                            <option value="2">Two switches</option>
+                            <option value="3">Three switches</option>
+                        </select>
+                    </div>
                     <div class="setting-group" data-help="apiKey">
                         <label for="apiKeyInput">API Key</label>
                         <div id="apiKeyRow" class="key-row">
@@ -344,6 +359,10 @@
                                 <option value="600">0.6 seconds</option>
                                 <option value="800">0.8 seconds</option>
                                 <option value="1000">1 second</option>
+                                <!-- Longer choices for switch users (Switch Access Design 3.3). -->
+                                <option value="2000">2 seconds</option>
+                                <option value="3000">3 seconds</option>
+                                <option value="4000">4 seconds</option>
                             </select>
                         </div>
                     </div>
@@ -828,6 +847,185 @@
                          single-setting-per-heading shape being removed. Their ids stay —
                          updateKeyboardPositionGroups() shows only the ones the chosen
                          dock uses. -->
+                </div>
+                <!-- SWITCH ACCESS (Switch Access Design section 3, Ken, November 12 2026).
+                     "Number of switches" is on the General tab; everything else is here.
+                     A section named for a screen does nothing anywhere else. Values are
+                     written by app.js wireSwitchSettings and read by switch-access.js. -->
+                <div class="tab-panel" data-tab="switch">
+                    <p class="tab-intro">Number of switches is on the General tab. One tap or two (General), the keyboard for typing and what More shows (Express Panel and Keyboard) also apply to switches.</p>
+                    <div class="setting-group" data-help="switchKeysGroup">
+                        <label>Your switches</label>
+                        <div class="setting-item switch-key-row">
+                            <span class="switch-key-name">Switch 1: <span id="switchKeys1"></span></span>
+                            <button id="switchKeySet1" type="button">Set a key</button>
+                        </div>
+                        <div class="setting-item switch-key-row">
+                            <span class="switch-key-name">Switch 2: <span id="switchKeys2"></span></span>
+                            <button id="switchKeySet2" type="button">Set a key</button>
+                        </div>
+                        <div class="setting-item switch-key-row">
+                            <span class="switch-key-name">Switch 3: <span id="switchKeys3"></span></span>
+                            <button id="switchKeySet3" type="button">Set a key</button>
+                        </div>
+                        <button id="switchKeyReset" type="button">Put back the starting keys</button>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="mouseSwitchesInput">
+                            <span>Mouse buttons also act as switches</span>
+                        </label>
+                        <div class="switch-test" id="switchTest" aria-hidden="true">
+                            <span id="switchTest1">Switch 1</span>
+                            <span id="switchTest2">Switch 2</span>
+                            <span id="switchTest3">Switch 3</span>
+                        </div>
+                        <p class="api-key-status" id="switchKeyStatus" role="status" hidden></p>
+                    </div>
+                    <div class="setting-group" data-help="switchEveryScreen">
+                        <label>On every screen</label>
+                        <div class="setting-group" data-help="switchMethodGroup">
+                            <label>Scan method and speed</label>
+                            <div class="setting-item">
+                                <label id="switchMethodLabel">How the highlight moves</label>
+                                <div class="radio-row" role="radiogroup" aria-labelledby="switchMethodLabel">
+                                    <label class="radio-label"><input type="radio" name="switchMethod" value="auto"> Automatic: it moves by itself, press to choose</label>
+                                    <label class="radio-label"><input type="radio" name="switchMethod" value="inverse"> Inverse: hold to move, let go to choose</label>
+                                    <label class="radio-label"><input type="radio" name="switchMethod" value="hold"> Hold to move, tap to choose</label>
+                                    <label class="radio-label"><input type="radio" name="switchMethod" value="step"> Step: one switch moves, the other chooses</label>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <label for="switchSpeedInput">Seconds per stop</label>
+                                <select id="switchSpeedInput">
+                                    <option value="0.5">0.5</option><option value="0.75">0.75</option><option value="1">1</option>
+                                    <option value="1.25">1.25</option><option value="1.5">1.5</option><option value="2">2</option>
+                                    <option value="2.5">2.5</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="setting-group" data-help="switchHoldGroup">
+                            <label>Holding a switch</label>
+                            <div class="setting-item">
+                                <label for="switchTapMsInput">A press shorter than this is a tap; longer is a hold</label>
+                                <select id="switchTapMsInput">
+                                    <option value="250">0.25 seconds</option><option value="400">0.4 seconds</option>
+                                    <option value="600">0.6 seconds</option><option value="800">0.8 seconds</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label for="switchHeldSpeedInput">Top speed while held (seconds per stop)</label>
+                                <select id="switchHeldSpeedInput">
+                                    <option value="0.2">0.2</option><option value="0.3">0.3</option><option value="0.5">0.5</option>
+                                    <option value="0.75">0.75</option><option value="1">1</option><option value="1.5">1.5</option><option value="2">2</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label for="switchRampInput">Speeding up while held (stops)</label>
+                                <select id="switchRampInput">
+                                    <option value="0">0: straight to top speed</option><option value="1">1</option><option value="2">2</option>
+                                    <option value="3">3</option><option value="4">4</option><option value="6">6</option><option value="8">8</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="setting-group" data-help="switchGroupsGroup">
+                            <label>Groups</label>
+                            <div class="setting-item">
+                                <label id="switchPatternLabel">How the stops are grouped</label>
+                                <div class="radio-row" role="radiogroup" aria-labelledby="switchPatternLabel">
+                                    <label class="radio-label"><input type="radio" name="switchPattern" value="regions"> By group: a region, then a button in it</label>
+                                    <label class="radio-label"><input type="radio" name="switchPattern" value="items"> One line, no groups: every button in turn</label>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <label id="switchExitLabel">Leaving a group</label>
+                                <div class="radio-row" role="radiogroup" aria-labelledby="switchExitLabel">
+                                    <label class="radio-label"><input type="radio" name="switchExit" value="pass"> After a pass with no press</label>
+                                    <label class="radio-label"><input type="radio" name="switchExit" value="leave"> At a Leave stop at the end</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="setting-group" data-help="switchStrayGroup">
+                            <label>Stray and mistimed presses</label>
+                            <div class="setting-item">
+                                <label for="switchActOnInput">Act on</label>
+                                <select id="switchActOnInput">
+                                    <option value="press">Press</option><option value="release">Release</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label for="switchMinMsInput">Ignore presses shorter than</label>
+                                <select id="switchMinMsInput">
+                                    <option value="0">Off</option><option value="100">0.1 seconds</option><option value="200">0.2 seconds</option>
+                                    <option value="300">0.3 seconds</option><option value="500">0.5 seconds</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label for="switchRepeatMsInput">Ignore repeated presses within</label>
+                                <select id="switchRepeatMsInput">
+                                    <option value="0">Off</option><option value="300">0.3 seconds</option>
+                                    <option value="600">0.6 seconds</option><option value="1000">1 second</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label for="switchForgiveInput">Count a late press for the stop before, within</label>
+                                <select id="switchForgiveInput">
+                                    <option value="0">Off</option><option value="300">0.3 seconds</option><option value="500">0.5 seconds</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="setting-group" data-help="switchConversationGroup">
+                        <label>Conversation screen</label>
+                        <div class="setting-item">
+                            <label for="switchReadingInput">Reading time for new options</label>
+                            <select id="switchReadingInput">
+                                <option value="0">None</option><option value="2">2 seconds</option><option value="3">3 seconds</option>
+                                <option value="4">4 seconds</option><option value="6">6 seconds</option><option value="8">8 seconds</option><option value="10">10 seconds</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label id="switchNewOptsLabel">New options while you are in the options</label>
+                            <div class="radio-row" role="radiogroup" aria-labelledby="switchNewOptsLabel">
+                                <label class="radio-label"><input type="radio" name="switchNewOpts" value="hold"> Wait until the highlight leaves them</label>
+                                <label class="radio-label"><input type="radio" name="switchNewOpts" value="show"> Show them at once</label>
+                            </div>
+                        </div>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="switchFlexFirstInput">
+                            <span>The partner's and place's row first</span>
+                        </label>
+                        <div class="setting-item">
+                            <label for="switchMoreFirstInput">More is scanned</label>
+                            <select id="switchMoreFirstInput">
+                                <option value="last">Last in its row</option><option value="first">First in its row</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="setting-group" data-help="switchComposerGroup">
+                        <label>In my own words</label>
+                        <div class="setting-item">
+                            <label for="switchSuggestInput">The suggested word</label>
+                            <select id="switchSuggestInput">
+                                <option value="key">The key in the Enter key's place</option>
+                                <option value="first">A stop before the rows of keys</option>
+                                <option value="last">A stop after the rows of keys</option>
+                                <option value="off">Not a stop</option>
+                            </select>
+                        </div>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="switchStayInput">
+                            <span>After a key, stay on it for one more stop</span>
+                        </label>
+                    </div>
+                    <div class="setting-group" data-help="switchSettingsGroup">
+                        <label>Settings</label>
+                        <div class="setting-item">
+                            <label for="switchDropdownInput">Drop-down lists</label>
+                            <select id="switchDropdownInput">
+                                <option value="list">A press opens the list</option>
+                                <option value="cycle">Each press moves to the next choice</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 <div class="tab-panel" data-tab="conversation">
                     <!-- Grouped by the DECISION being made, not one heading per control

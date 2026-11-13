@@ -76,6 +76,8 @@ import { makeCollapsible } from './sections.js';
 import { whenIdle as voiceHarvestIdle } from './voice-refresh.js';
 import * as reviewUI from './review-ui.js';
 import * as tapGuard from './tap-guard.js';
+import * as switchAccess from './switch-access.js';
+import { SWITCH_APP_SETTINGS, changedFromStart, methodsFor } from './switch-settings.js';
 
 // The platform verdict on partner capture (see platform.js), or null when capture
 // is expected to work. Non-null drives the pre-start warning; it does NOT by
@@ -1029,6 +1031,10 @@ function initApp() {
         exempt: () => !reviewUI.isActive(),
     });
     tapGuard.install();
+    // Switch access (Switch Access Design, Ken, November 12 2026). Off unless "Number of
+    // switches" is one, two or three; with it off the app is exactly as before.
+    switchAccess.init();
+    if (firstLaunch) showFirstLaunchChoice();
 
     // Conversation Review: the second controller for the conversation screen. It owns
     // none of the live conversation's state and is handed only what it needs.
@@ -1062,6 +1068,212 @@ function initApp() {
 
 // Put the live conversation screen back after a review. Review is only entered with
 // no conversation under way, so "back" means the resting screen.
+// --- Switch access settings (Switch Access Design sections 2.7 and 3, Ken, November 12
+// 2026). "Number of switches" is on the General tab; the rest is on the Switch Access
+// tab. The scanner itself is switch-access.js; it reads storage when configure() runs.
+
+// The few app settings that suit switches, applied or put back through their OWN
+// controls, so each one's live effect (the keyboard mode, the panel, the cards per
+// category, listening) happens exactly as if the user had changed it by hand.
+function applySwitchAppSettingsLive(switchesOn) {
+    storage.applySwitchAppSettings(switchesOn, SWITCH_APP_SETTINGS);
+    const kb = storage.loadKeyboardMode();
+    const kbRadio = document.querySelector(`input[name="keyboardMode"][value="${kb}"]`);
+    if (kbRadio && !kbRadio.checked) { kbRadio.checked = true; kbRadio.dispatchEvent(new Event('change')); }
+    keyboard.setMode(kb);
+    const tap = storage.loadExpressTapMode();
+    const tapRadio = document.querySelector(`input[name="expressTapMode"][value="${tap}"]`);
+    if (tapRadio) tapRadio.checked = true;
+    const per = document.getElementById('responsesPerCategoryInput');
+    if (per && Number(per.value) !== storage.loadResponsesPerCategory()) {
+        per.value = String(storage.loadResponsesPerCategory());
+        per.dispatchEvent(new Event('change'));
+    }
+    const relisten = document.getElementById('autoRelistenInput');
+    if (relisten && relisten.checked !== storage.loadAutoRelisten()) {
+        relisten.checked = storage.loadAutoRelisten();
+        relisten.dispatchEvent(new Event('change'));
+    }
+    renderExpressPanel();
+}
+
+function reflectSwitchSettings() {
+    const $ = (id) => document.getElementById(id);
+    const count = storage.loadSwitchCount();
+    const scan = storage.loadSwitchScan(count);
+    if ($('switchCountInput')) $('switchCountInput').value = String(count);
+    const setRadio = (name, v) => {
+        const r = document.querySelector(`input[name="${name}"][value="${v}"]`);
+        if (r) r.checked = true;
+    };
+    setRadio('switchMethod', scan.method);
+    setRadio('switchPattern', scan.pattern);
+    setRadio('switchExit', scan.exit);
+    setRadio('switchNewOpts', scan.newOpts);
+    const setSelect = (id, v) => {
+        const el = $(id);
+        if (!el) return;
+        const val = String(v);
+        if (![...el.options].some((o) => o.value === val)) {
+            const o = document.createElement('option');
+            o.value = val; o.textContent = val;
+            el.appendChild(o);
+        }
+        el.value = val;
+    };
+    setSelect('switchSpeedInput', scan.speed);
+    setSelect('switchTapMsInput', scan.tapMs);
+    setSelect('switchHeldSpeedInput', scan.heldSpeed);
+    setSelect('switchRampInput', scan.rampStops);
+    setSelect('switchActOnInput', scan.actOn);
+    setSelect('switchMinMsInput', scan.minMs);
+    setSelect('switchRepeatMsInput', scan.repeatMs);
+    setSelect('switchForgiveInput', scan.forgiveMs);
+    setSelect('switchReadingInput', scan.reading);
+    setSelect('switchMoreFirstInput', scan.moreFirst);
+    setSelect('switchSuggestInput', scan.suggest);
+    setSelect('switchDropdownInput', scan.dropdown);
+    if ($('switchFlexFirstInput')) $('switchFlexFirstInput').checked = !!scan.flexFirst;
+    if ($('switchStayInput')) $('switchStayInput').checked = !!scan.stayKey;
+    if ($('mouseSwitchesInput')) $('mouseSwitchesInput').checked = storage.loadMouseSwitches();
+    for (const n of [1, 2, 3]) {
+        const el = $('switchKeys' + n);
+        if (el) el.textContent = switchAccess.keysFor(n).join(', ') || '(none)';
+    }
+    // With "None" the whole tab is grayed out; with switches, only the methods that do
+    // not go with this number of switches (grayed out, not hidden, as the prototypes do).
+    const panel = document.querySelector('.tab-panel[data-tab="switch"]');
+    if (panel) {
+        panel.querySelectorAll('input, select, button').forEach((el) => { el.disabled = count === 0; });
+        if (count) {
+            document.querySelectorAll('input[name="switchMethod"]').forEach((r) => {
+                r.disabled = !methodsFor(count).includes(r.value);
+            });
+        }
+    }
+}
+
+function wireSwitchSettings() {
+    const $ = (id) => document.getElementById(id);
+    const save = (patch) => {
+        storage.saveSwitchScan({ ...storage.loadSwitchScan(), ...patch });
+        switchAccess.configure();
+        reflectSwitchSettings();
+    };
+    const countInput = $('switchCountInput');
+    if (countInput) countInput.onchange = async () => {
+        const prev = storage.loadSwitchCount();
+        const next = Number(countInput.value) || 0;
+        if (next === prev) return;
+        // Each number has its own starting values, and choosing a different number puts
+        // them back. Changes may have taken a session of trial and error to find, so the
+        // red card asks first, but only when something was changed (Design issue 12).
+        if (prev > 0 && changedFromStart(storage.loadSwitchScan(prev), prev)) {
+            const ok = await confirmDanger({
+                title: 'Put back the starting values?',
+                body: 'Choosing a different number of switches puts back the starting values for it. The changes you made to the switch settings will be lost.',
+                confirmLabel: 'Put them back',
+                cancelLabel: 'Keep my changes',
+            });
+            if (!ok) { countInput.value = String(prev); return; }
+        }
+        storage.saveSwitchCount(next);
+        storage.saveSwitchScan({});
+        if ((prev === 0) !== (next === 0)) applySwitchAppSettingsLive(next > 0);
+        switchAccess.configure();
+        reflectSwitchSettings();
+    };
+    const radios = { switchMethod: 'method', switchPattern: 'pattern', switchExit: 'exit', switchNewOpts: 'newOpts' };
+    for (const [name, field] of Object.entries(radios)) {
+        document.querySelectorAll(`input[name="${name}"]`).forEach((r) => {
+            r.onchange = () => { if (r.checked) save({ [field]: r.value }); };
+        });
+    }
+    const numbers = {
+        switchSpeedInput: 'speed', switchTapMsInput: 'tapMs', switchHeldSpeedInput: 'heldSpeed',
+        switchRampInput: 'rampStops', switchMinMsInput: 'minMs', switchRepeatMsInput: 'repeatMs',
+        switchForgiveInput: 'forgiveMs', switchReadingInput: 'reading',
+    };
+    for (const [id, field] of Object.entries(numbers)) {
+        const el = $(id);
+        if (el) el.onchange = () => save({ [field]: Number(el.value) });
+    }
+    const words = { switchActOnInput: 'actOn', switchMoreFirstInput: 'moreFirst', switchSuggestInput: 'suggest', switchDropdownInput: 'dropdown' };
+    for (const [id, field] of Object.entries(words)) {
+        const el = $(id);
+        if (el) el.onchange = () => save({ [field]: el.value });
+    }
+    if ($('switchFlexFirstInput')) $('switchFlexFirstInput').onchange = () => save({ flexFirst: $('switchFlexFirstInput').checked });
+    if ($('switchStayInput')) $('switchStayInput').onchange = () => save({ stayKey: $('switchStayInput').checked });
+    if ($('mouseSwitchesInput')) $('mouseSwitchesInput').onchange = () => {
+        storage.saveMouseSwitches($('mouseSwitchesInput').checked);
+        switchAccess.configure();
+    };
+    const status = $('switchKeyStatus');
+    for (const n of [1, 2, 3]) {
+        const btn = $('switchKeySet' + n);
+        if (!btn) continue;
+        btn.onclick = () => {
+            if (status) { status.hidden = false; status.textContent = `Press the key switch ${n} sends. Escape cancels.`; }
+            switchAccess.captureKey((code) => {
+                if (code) {
+                    const keys = storage.loadSwitchKeys();
+                    for (const k of Object.keys(keys)) if (keys[k] === code) delete keys[k];
+                    keys[n] = code;
+                    storage.saveSwitchKeys(keys);
+                }
+                if (status) status.hidden = true;
+                switchAccess.configure();
+                reflectSwitchSettings();
+            });
+        };
+    }
+    if ($('switchKeyReset')) $('switchKeyReset').onclick = () => {
+        storage.saveSwitchKeys({});
+        switchAccess.configure();
+        reflectSwitchSettings();
+    };
+}
+
+/*
+ * THE FIRST-LAUNCH QUESTION (Switch Access Design section 2.7, Ken, November 12 2026).
+ * Asked once, on the start screen, on the very first launch: touch, or one, two or three
+ * switches. A switch user answers with switch 1 while the choices are highlighted in
+ * turn (switch-access.js runChooser). After this the choice is only on the General tab.
+ */
+function showFirstLaunchChoice() {
+    const block = document.getElementById('startBlock');
+    const startBtn = document.getElementById('startBtn');
+    if (!block || !startBtn) return;
+    const wrap = document.createElement('div');
+    wrap.id = 'firstLaunchChoice';
+    const title = document.createElement('p');
+    title.className = 'apikey-prompt-title';
+    title.textContent = 'How will you use Conversant?';
+    const row = document.createElement('div');
+    row.className = 'first-launch-buttons';
+    for (const [n, text] of [['0', 'Touch'], ['1', 'One switch'], ['2', 'Two switches'], ['3', 'Three switches']]) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.dataset.count = n;
+        b.textContent = text;
+        row.appendChild(b);
+    }
+    wrap.append(title, row);
+    block.insertBefore(wrap, startBtn);
+    startBtn.hidden = true;
+    switchAccess.runChooser([...row.querySelectorAll('button')], (n) => {
+        wrap.remove();
+        startBtn.hidden = false;
+        if (n > 0) {
+            storage.saveSwitchCount(n);
+            storage.saveSwitchScan({});
+            applySwitchAppSettingsLive(true);
+        }
+        switchAccess.configure();
+    });
+}
+
 function restoreConversationScreen() {
     resetExpressPaging();   // the live panel never resumes on a page review left it on (CR-234)
     ui.renderConversation(conversationHistory);
@@ -2626,6 +2838,14 @@ async function generateOptions(partnerText) {
             currentStatic = { kind: null, full: [] };
             heldForComposer = { palette: snap.palette, at: Date.now() };
             metrics.event(metrics.EV.PALETTE_HELD, { kind: 'ai' });
+        } else if (switchAccess.holdOptions(() => {
+            currentStatic = { kind: null, full: [] };
+            showPalette(snap.palette);
+        })) {
+            // A switch user is choosing among the options on screen: the newer set waits
+            // until the highlight leaves them, so the cards do not change under a press
+            // (Switch Access Proposal section 3.4). The engine is already current.
+            metrics.event(metrics.EV.PALETTE_HELD, { kind: 'switch' });
         } else {
             currentStatic = { kind: null, full: [] };  // AI responses — New N regenerates, not pages
             showPalette(snap.palette);
@@ -4083,6 +4303,8 @@ function clearPalette() {
     // No static set is on screen any more, so New N must not page one back (CR-029).
     // The per-kind offsets stay: paging continues where it left off within a conversation.
     currentStatic = { kind: null, full: [] };
+    // A newer set held for a switch user belongs to a turn that is now over.
+    switchAccess.dropHeldOptions();
     refreshLayoutMode();   // whether the drag handles belong on screen may have changed (CR-238)
 }
 
@@ -4126,6 +4348,7 @@ function showPalette(cards, kind = 'ai') {
     const cls = kind === 'ai' ? engine.getSnapshot().lastClassification : null;
     storage.logOffer({ kind, options: cards, partnerAction: (cls && cls.partner_action) || null });
     noteCardsShown(cards, kind);
+    switchAccess.optionsArrived();
 }
 
 // How long the set now going away had been on screen. Null when the clock was never
@@ -8831,6 +9054,7 @@ function openSettings() {
     const tapRadio = document.querySelector(`input[name="expressTapMode"][value="${tapMode}"]`);
     if (tapRadio) tapRadio.checked = true;
     doubleTapMsSelect.value = storage.loadDoubleTapMs();
+    reflectSwitchSettings();
     reflectBandSizes();
     // Button sizing sliders (unitless 0–100).
     const buttonGapSlider = document.getElementById('buttonGapSlider');
@@ -10329,6 +10553,7 @@ function openSettings() {
         storage.saveDoubleTapMs(Number(doubleTapMsSelect.value));
         renderExpressPanel();
     };
+    wireSwitchSettings();
 
     // --- Express Panel bands. The user sets Context and Flex; Always takes the
     // remainder, which is what makes an untouched panel almost exactly the panel that

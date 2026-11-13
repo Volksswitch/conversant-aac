@@ -3,6 +3,7 @@ import * as tlog from './transcript-log.js';
 import * as platform from './platform.js';
 // keyboard-layouts.js imports nothing either.
 import { resolveLayoutId } from './keyboard-layouts.js';
+import { normalizeCount, normalizeScan } from './switch-settings.js';
 
 const STORAGE_KEY = 'aac_settings';
 const IDB_NAME = 'aac-db';
@@ -554,7 +555,12 @@ export const SECRET_KEYS = ['apiKey', 'deepgramKey', 'azureKey',
 const PROFILE_EXCLUDE = [...SECRET_KEYS, 'usageInputTokens', 'usageOutputTokens', 'usageCacheWriteTokens', 'usageCacheReadTokens', 'usageSttSeconds', 'usageTtsCharacters', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile', 'installId', 'testerName', 'weeklySendLastAt', 'weeklyInfoHash', 'weeklyEndpoint', 'weeklyErrorMark',
     // This device's user's consent to automatic reports (CR-075). A profile or a backup
     // must never turn it back on.
-    'weeklySendEnabled'];
+    'weeklySendEnabled',
+    // The switch keys and whether the mouse buttons act as switches describe the switch
+    // interface plugged into THIS device (Switch Access Design, issue 9): how the user
+    // likes scanning to behave travels, the keys stay. The touch settings remembered
+    // while switches are on stay too, since they are put back on this device.
+    'switchKeys', 'mouseSwitches', 'switchTouchSettings'];
 
 // --- Settings that arrive in a FILE (security review, October 25 2026) ---
 //
@@ -615,6 +621,8 @@ const SETTING_RULES = {
     fullscreen:          { label: 'Use the whole screen', check: isBoolean },
     layoutUnlocked:      { label: 'Layout borders unlocked', check: isBoolean },
     showNoveltyVoices:   { label: "Show this device's joke voices", check: isBoolean },
+    switchCount:         { label: 'Number of switches', check: wholeIn(0, 3) },
+    switchScan:          { label: 'Switch access settings', check: (v) => !!v && typeof v === 'object' && !Array.isArray(v) },
     convLayout:          { label: 'Screen layout', check: (v) => !!v && typeof v === 'object' && !Array.isArray(v) },
     spokenWords:         { label: 'Words the voice gets wrong', check: (v) => Array.isArray(v)
         && v.length <= MAX_SPOKEN_WORDS
@@ -2162,6 +2170,67 @@ export function loadDoubleTapMs() {
 export function saveDoubleTapMs(ms) {
     const settings = loadSettings();
     settings.doubleTapMs = Number(ms) || 400;
+    saveSettings(settings);
+}
+
+// --- Switch access (Switch Access Design, Ken, November 12 2026) ---
+// Number of switches: 0 is touch (the default), 1-3 is switches. On the General tab.
+export function loadSwitchCount() {
+    return normalizeCount(loadSettings().switchCount);
+}
+export function saveSwitchCount(n) {
+    const settings = loadSettings();
+    settings.switchCount = normalizeCount(n);
+    saveSettings(settings);
+}
+// The rest of the scan settings, completed from the starting values for this number.
+export function loadSwitchScan(count = loadSwitchCount()) {
+    return normalizeScan(loadSettings().switchScan, count);
+}
+export function saveSwitchScan(scan) {
+    const settings = loadSettings();
+    settings.switchScan = normalizeScan(scan, settings.switchCount);
+    saveSettings(settings);
+}
+// The keys set for each switch: { 1: 'KeyF', ... }. Stays on this device.
+export function loadSwitchKeys() {
+    const v = loadSettings().switchKeys;
+    const out = {};
+    if (v && typeof v === 'object') for (const n of [1, 2, 3]) if (typeof v[n] === 'string' && v[n]) out[n] = v[n];
+    return out;
+}
+export function saveSwitchKeys(keys) {
+    const settings = loadSettings();
+    settings.switchKeys = keys && typeof keys === 'object' ? keys : {};
+    saveSettings(settings);
+}
+// Mouse buttons act as switches unless turned off (Ken, November 12 2026: a supporter
+// helps with a mouse used as switches). Stays on this device.
+export function loadMouseSwitches() {
+    return loadSettings().mouseSwitches !== false;
+}
+export function saveMouseSwitches(on) {
+    const settings = loadSettings();
+    settings.mouseSwitches = !!on;
+    saveSettings(settings);
+}
+// Choosing switches changes a few app settings that suit them (Design section 2.7);
+// what the user had before is kept here and put back when they choose "None".
+export function applySwitchAppSettings(on, appSettings) {
+    const settings = loadSettings();
+    if (on) {
+        if (!settings.switchTouchSettings) {
+            const keep = {};
+            for (const k of Object.keys(appSettings)) keep[k] = settings[k] === undefined ? null : settings[k];
+            settings.switchTouchSettings = keep;
+        }
+        Object.assign(settings, appSettings);
+    } else if (settings.switchTouchSettings && typeof settings.switchTouchSettings === 'object') {
+        for (const [k, v] of Object.entries(settings.switchTouchSettings)) {
+            if (v === null) delete settings[k]; else settings[k] = v;
+        }
+        delete settings.switchTouchSettings;
+    }
     saveSettings(settings);
 }
 

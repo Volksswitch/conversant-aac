@@ -173,6 +173,8 @@
     --indigo-tint: #e8eaf6;
     --indigo-ink: #283593;
     --link: #0066cc;
+    --scan-hl: #D84315;         /* the switch-scanning highlight (outer ring) */
+    --scan-hl-inner: #ffffff;   /* its inner ring, so it shows on any fill */
 
     /* The two speakers in the transcript. */
     --speaker-partner-bg: #e9eef2;
@@ -389,6 +391,8 @@
     --indigo-tint: #e8eaf6;
     --indigo-ink: #283593;
     --link: #0066cc;
+    --scan-hl: #D84315;         /* the switch-scanning highlight (outer ring) */
+    --scan-hl-inner: #ffffff;   /* its inner ring, so it shows on any fill */
     --speaker-partner-bg: #dbe3ea;
     --speaker-partner-ink: #243240;
     --speaker-partner-edge: #3f4a52;
@@ -495,6 +499,8 @@
     --indigo-tint: #ffffff;
     --indigo-ink: #2a2a8a;
     --link: #0000cc;
+    --scan-hl: #C62828;         /* the switch-scanning highlight (outer ring) */
+    --scan-hl-inner: #ffffff;   /* its inner ring, so it shows on any fill */
     --speaker-partner-bg: #ffffff;
     --speaker-partner-ink: #000000;
     --speaker-partner-edge: #000000;
@@ -599,6 +605,8 @@
     --indigo-tint: #21243a;
     --indigo-ink: #b8bff0;
     --link: #7db4f0;
+    --scan-hl: #FFB300;         /* the switch-scanning highlight (outer ring) */
+    --scan-hl-inner: #000000;   /* its inner ring, so it shows on any fill */
     --speaker-partner-bg: #272d32;
     --speaker-partner-ink: #dfe5ea;
     --speaker-partner-edge: #7d8994;
@@ -704,6 +712,8 @@
     --indigo-tint: #000000;
     --indigo-ink: #b0b8ff;
     --link: #82b1ff;
+    --scan-hl: #FFB300;         /* the switch-scanning highlight (outer ring) */
+    --scan-hl-inner: #000000;   /* its inner ring, so it shows on any fill */
     --speaker-partner-bg: #000000;
     --speaker-partner-ink: #ffffff;
     --speaker-partner-edge: #ffffff;
@@ -812,6 +822,8 @@
     --indigo-tint: #000000;
     --indigo-ink: #c8b8ff;
     --link: #ffe14d;
+    --scan-hl: #00E5FF;         /* the switch-scanning highlight (outer ring) */
+    --scan-hl-inner: #000000;   /* its inner ring, so it shows on any fill */
     --speaker-partner-bg: #000000;
     --speaker-partner-ink: #ffd400;
     --speaker-partner-edge: #ffd400;
@@ -928,6 +940,8 @@
     --indigo-tint: #e8eaf6;
     --indigo-ink: #283593;
     --link: #0066cc;
+    --scan-hl: #000000;         /* the switch-scanning highlight (outer ring) */
+    --scan-hl-inner: #FFD600;   /* its inner ring, so it shows on any fill */
     --speaker-partner-bg: #e9eef2;
     --speaker-partner-ink: #243240;
     --speaker-partner-edge: #6f7b85;
@@ -5305,6 +5319,110 @@ body.conv-bottom     .danger-dialog {
    non-speaking user drives a live conversation from, and a stuck tint there is
    cosmetic. Revisit if it proves distracting on the device.
    --------------------------------------------------------------------------- */
+/* ---------------------------------------------------------------- switch access
+   Switch Access Design section 2.5 (Ken, November 12 2026). PAINT ONLY: the highlight is
+   an outline drawn INSIDE the button plus an inner ring, so it changes nothing about any
+   button's size or place and a keyguard still fits. Two rings in two colors, so one of
+   them always stands out from whatever the button is filled with; each scheme sets both
+   (--scan-hl, --scan-hl-inner) and tests/theme.test.mjs checks their contrast. */
+.scan-hl {
+    outline: 5px solid var(--scan-hl) !important;
+    outline-offset: -5px !important;
+    box-shadow: inset 0 0 0 9px var(--scan-hl-inner) !important;
+}
+/* Waiting for the second press: the same rings, dashed. */
+.scan-held {
+    outline: 5px dashed var(--scan-hl) !important;
+    outline-offset: -5px !important;
+    box-shadow: inset 0 0 0 9px var(--scan-hl-inner) !important;
+}
+/* The region or row the highlight is inside. */
+.scan-in {
+    outline: 2px solid var(--scan-hl) !important;
+    outline-offset: -2px !important;
+}
+/* A brief wash on whatever was just chosen, so every press that did something shows. */
+.scan-chosen {
+    box-shadow: inset 0 0 0 999px var(--hover-wash) !important;
+}
+/* The "Leave" outline: a box drawn OVER the region, never a button, so no row is used
+   and the layout stays the touch layout. */
+#scanFrame {
+    position: fixed;
+    z-index: 2147483000;
+    pointer-events: none;
+    box-sizing: border-box;
+    border: 5px dashed var(--scan-hl);
+    box-shadow: inset 0 0 0 3px var(--scan-hl-inner);
+    border-radius: 6px;
+}
+#scanFrame[hidden] { display: none; }
+.scan-frame-label {
+    position: absolute;
+    top: 0;
+    left: 0.75rem;
+    transform: translateY(-60%);
+    padding: 0.05rem 0.5rem;
+    border-radius: 4px;
+    background: var(--scan-hl);
+    color: var(--scan-hl-inner);
+    font-weight: bold;
+    font-size: 1rem;
+    white-space: nowrap;
+}
+/* A drop-down list opened for scanning ("a press opens the list"). */
+#scanList {
+    position: fixed;
+    z-index: 2147482000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.4rem;
+    max-height: 60vh;
+    overflow: auto;
+    background: var(--surface-panel);
+    color: var(--ink);
+    border: 2px solid var(--edge-strong);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px var(--shadow-strong);
+}
+.scan-list-item {
+    min-height: 2.75rem;
+    padding: 0.3rem 0.8rem;
+    text-align: left;
+    font-size: 1.1rem;
+}
+.scan-list-current { font-weight: bold; }
+.scan-list-cancel { font-style: italic; }
+/* The suggestion key in the Enter key's place: the suggested word, blank when none. */
+.kbd-suggest {
+    background: var(--info-tint);
+    font-size: 1.1rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 0.3rem;
+}
+.kbd-suggest:disabled { cursor: default; }
+/* The line on the Switch Access tab that lights up when a switch is pressed. */
+.switch-test { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.switch-test span {
+    padding: 0.3rem 0.8rem;
+    border: 2px solid var(--edge);
+    border-radius: 6px;
+}
+.switch-test .switch-test-lit {
+    background: var(--scan-hl);
+    color: var(--scan-hl-inner);
+    border-color: var(--scan-hl);
+}
+.switch-key-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.switch-key-row .switch-key-name { min-width: 8rem; }
+/* The first-launch question: touch, or one, two or three switches. */
+#firstLaunchChoice { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; }
+#firstLaunchChoice .first-launch-buttons { display: flex; gap: 0.6rem; flex-wrap: wrap; justify-content: center; }
+#firstLaunchChoice button { min-width: 9rem; min-height: 3.5rem; font-size: 1.2rem; }
+
 @media (hover: hover) {
     /* The Command Bar and the persistent overrides take the same shadow as the
        response cards (Ken, August 20 2026) — no fill, so a filled button on this

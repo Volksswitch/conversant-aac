@@ -15,6 +15,7 @@
 // @@SETTINGS_HELP_START@@
 const HELP = {
   "tabs": {
+    "switch": "For using switches instead of touch: your switch keys, how the highlight moves, and what each screen does. Still being built and tried.",
     "general": "Your AI key, where your information is kept, saved copies of your settings, and backing up or moving everything.",
     "aboutme": "The getting-to-know-you questions. Anything you answer here helps the AI suggest responses that fit you.",
     "textsize": "How the app looks: which color scheme it uses, and how big the writing is in each part. Every area is set on its own.",
@@ -31,6 +32,26 @@ const HELP = {
     "placeholders": "What the app says to hold your place while you choose a response, how long it waits, and the wording itself."
   },
   "controls": {
+    "switchCountInput": "Touch, or how many switches you use. Choosing switches turns on scanning. Choosing a different number puts back its starting values.",
+    "switchKeySet1": "Press this, then press your first switch. The app learns the key it sends.",
+    "switchKeySet2": "Press this, then press your second switch. The app learns the key it sends.",
+    "switchKeySet3": "Press this, then press your third switch. The app learns the key it sends.",
+    "switchKeyReset": "Forgets the keys you set and goes back to the starting keys: Space or 1, Enter or 2, and 3.",
+    "mouseSwitchesInput": "Lets the left, right and middle mouse buttons act as switches one, two and three. Turn it off if one press counts twice.",
+    "switchSpeedInput": "On every screen, how many seconds the highlight waits on each stop before it moves on.",
+    "switchTapMsInput": "On every screen, how long you hold a switch before the press counts as a hold rather than a tap.",
+    "switchHeldSpeedInput": "On every screen, how fast the highlight moves at most while you hold a switch down.",
+    "switchRampInput": "On every screen, over how many stops the highlight speeds up while you hold a switch. Zero goes straight to top speed.",
+    "switchActOnInput": "On every screen, whether a switch acts when you press it or when you let it go.",
+    "switchMinMsInput": "On every screen, presses shorter than this are ignored, so a brief bump does nothing.",
+    "switchRepeatMsInput": "On every screen, a second press this soon after the first is ignored, so a bouncing switch counts once.",
+    "switchForgiveInput": "On every screen, a press just after the highlight moves counts for the stop it just left.",
+    "switchReadingInput": "On the conversation screen only, how long the highlight waits on new options so you can read them.",
+    "switchFlexFirstInput": "On the conversation screen only, the Express Panel row for this person and place is scanned before the others.",
+    "switchMoreFirstInput": "On the conversation screen only, whether a row’s More button is reached first or last.",
+    "switchSuggestInput": "In In my own words only, how you reach the suggested word: the key where Enter was, a stop of its own, or not at all.",
+    "switchStayInput": "In In my own words only, after you type a letter the highlight stays on it for one stop, so you can type it again.",
+    "switchDropdownInput": "In Settings only, whether a press opens a drop-down list to choose from, or each press moves to the next choice.",
     "apiKeyInput": "Paste your Anthropic key here. It stays on this device. Once saved, only part of it shows; to change it, tap Clear first.",
     "pasteApiKeyBtn": "Pastes a key you have already copied, so you do not have to type it out.",
     "clearApiKeyBtn": "Empties the AI key box, so you can paste in a new key. It asks first.",
@@ -153,6 +174,10 @@ const HELP = {
     "suggestedLayoutBtn": "Changes the keyboard position, layout, response options and screen areas to the ones suggested for this screen. Asks first."
   },
   "radioGroups": {
+    "switchMethod": "On every screen, how the highlight moves. With one switch it can move by itself or while you hold. With two or three, a switch moves it.",
+    "switchPattern": "On every screen, whether you choose a region first and then a button in it, or every button comes in turn, one after another.",
+    "switchExit": "On every screen, how the highlight leaves a group: by itself after one pass with no press, or at a Leave outline at the end.",
+    "switchNewOpts": "On the conversation screen only, what happens when new options arrive while you are choosing among the old ones.",
     "sttProvider": "Who turns the other person's speech into words. Your browser does it free. The paid services work where the browser cannot. Azure is the one we recommend.",
     "ttsProvider": "Which voice speaks for you. This device's own voices are free. A paid voice usually sounds far better. Azure is the one we recommend.",
     "keyboardMode": "Whether you type on a keyboard you plug in, or on the app's own keyboard on the screen.",
@@ -164,6 +189,16 @@ const HELP = {
     "screenOrientation": "Choose whether the screen turns with the device, stays upright, or stays sideways."
   },
   "sections": {
+    "switchCount": "Whether you use touch or switches, and how many switches. Choosing switches turns on scanning and sets a few settings that suit it.",
+    "switchKeysGroup": "The keys your switches send, whether mouse buttons count as switches, and a line that lights up so you can test them.",
+    "switchEveryScreen": "On every screen: how the highlight moves, what holding a switch does, how stops are grouped, and how stray presses are handled.",
+    "switchMethodGroup": "On every screen, how the highlight moves from stop to stop, and how long it waits on each one.",
+    "switchHoldGroup": "On every screen, what holding a switch down does: how long a press must be to count as a hold, and how fast it moves.",
+    "switchGroupsGroup": "On every screen, whether stops are grouped into regions and rows, and how the highlight leaves a group.",
+    "switchStrayGroup": "On every screen, ways to keep a stray, short, repeated or late press from choosing the wrong thing.",
+    "switchConversationGroup": "On the conversation screen only: how new response options are shown, and the order of the Express Panel rows.",
+    "switchComposerGroup": "In In my own words only: how you reach the suggested word, and what happens after you type a letter.",
+    "switchSettingsGroup": "In Settings only: how a drop-down list works with a switch.",
     "spokenWords": "Words the voice says wrong. Type the word, then spell it the way it sounds. The app says it that way everywhere.",
     "typingSuggestions": "The words the keyboard suggests first because you use them. Names from About Me and My Places are suggested too.",
     "apiKey": "Your key from Anthropic. It is what lets the app suggest responses. Everything else still works without one.",
