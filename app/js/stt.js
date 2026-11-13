@@ -21,6 +21,19 @@ let speechCfg = { continuous: true, restartDelayMs: 0, guardVisibility: false };
 // listeningIntent must stay true so we resume on return, but onend must not
 // restart while we are deliberately suspended, or it fights the guard.
 let suspendedForHidden = false;
+// ⚠ ON AN iPAD THE MICROPHONE IS CLOSED WHILE THE APP SPEAKS (Ken, November 13 2026).
+// With it open, an iPad either plays the app's voice like a phone call (call
+// processing on) or at about half volume (off), and no boost recovered it; the
+// holding phrases are what the partner hears while the user chooses, so they have to
+// be heard. Closing the microphone for the length of a phrase plays it at full volume
+// and full quality, and the microphone cannot hear the app's own voice at all.
+// What it costs, accepted by Ken: anything the partner says while a phrase plays is
+// not heard, and reopening takes a moment.
+// ⚠ IT IS INVISIBLE (Ken): the Listen button stays lit and no "listen off/on" is
+// reported, so the statuses the source sends while it is closed for this are not
+// passed on. The user's intent to listen is untouched throughout.
+let pausedForSpeech = false;     // closed for the app's own speech; reopen when it ends
+let resumingForSpeech = false;   // reopening after it; its 'listening' is not news
 /*
  * The options init() was called with, kept so the hearing service can be changed
  * without the caller re-supplying every callback — see setSource().
@@ -186,11 +199,41 @@ function normalizeForEcho(text) {
     return text.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
+// Which devices close the microphone while the app speaks. Replaceable for tests only:
+// platform.js reads the device once, when it loads.
+let ipadCheck = () => platform.isIOS();
+export function _setIpadCheckForTest(fn) { ipadCheck = fn; }
+
+function canPauseForSpeech() {
+    if (!externalSource || !listeningIntent || suspendedForHidden || pausedForSpeech) return false;
+    try { if (!ipadCheck()) return false; } catch { return false; }
+    try { return externalSource.isRunning ? !!externalSource.isRunning() : true; } catch { return false; }
+}
+
+function pauseForSpeech() {
+    if (!canPauseForSpeech()) return;
+    pausedForSpeech = true;
+    resumingForSpeech = false;
+    commitPendingInterim();          // keep what was on screen, as any stop does
+    try { externalSource.stop(); } catch { /* not running */ }
+    audioSession.forSpeaking();      // full volume while the app talks
+}
+
+function resumeAfterSpeech() {
+    if (!pausedForSpeech) return;
+    pausedForSpeech = false;
+    if (!externalSource || !listeningIntent || suspendedForHidden) return;
+    resumingForSpeech = true;
+    audioSession.forListening();
+    try { externalSource.start(); } catch { resumingForSpeech = false; }
+}
+
 // Wired to tts speaking-state in app.js. noteSpokenStart(text) registers a
 // phrase the app is now speaking; noteSpokenEnd() lets the active phrases
 // expire after a tail window (they stay matchable until then).
 export function noteSpokenStart(text) {
     appSpeaking = true;
+    pauseForSpeech();
     deferredUsedThisUtterance = false;
     const norm = normalizeForEcho(text || '');
     if (!norm) return;
@@ -201,6 +244,7 @@ export function noteSpokenStart(text) {
 
 export function noteSpokenEnd() {
     appSpeaking = false;
+    resumeAfterSpeech();
     speechSettleUntil = Date.now() + ECHO_TAIL_MS;      // checkpoint gate — short
     const deadline = Date.now() + ECHO_MATCH_MS;        // matchable window — longer
     for (const p of activePhrases) {
@@ -498,8 +542,12 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
         const wiring = {
             onText: (text, isFinal) => { afterIngest(ingest(text, isFinal), !!isFinal); },
             onStatus: (status, detail) => {
-                if (status === 'error') handleSourceError(detail);
-                else if (onStatusChange) onStatusChange(status, detail);
+                if (status === 'error') { pausedForSpeech = resumingForSpeech = false; handleSourceError(detail); return; }
+                // Closed and reopened around the app's own speech on an iPad: not news
+                // to the app, and the Listen button must not flicker (see pausedForSpeech).
+                if (pausedForSpeech && (status === 'stopped' || status === 'idle')) return;
+                if (resumingForSpeech && status === 'listening') { resumingForSpeech = false; return; }
+                if (onStatusChange) onStatusChange(status, detail);
             },
             onBilled,
         };
@@ -779,6 +827,7 @@ function commitPendingInterim() {
 }
 
 function suspendSource() {
+    pausedForSpeech = resumingForSpeech = false;   // the background guard owns reopening now
     if (externalSource) {
         commitPendingInterim();
         try { externalSource.stop(); } catch { /* not running */ }
@@ -871,7 +920,12 @@ export function stopListening() {
     clearSilenceTimer();
     if (externalSource) {
         commitPendingInterim();
+        // Stopped while closed for the app's own speech: the source is not running, so
+        // it will not say 'stopped' itself - and the button has to go dark.
+        const wasPaused = pausedForSpeech || resumingForSpeech;
+        pausedForSpeech = resumingForSpeech = false;
         const r = externalSource.stop();
+        if (wasPaused && onStatusChange) onStatusChange('stopped');
         // An iPad left the voice very quiet once the microphone closed (Ken, November
         // 13 2026); say it is ordinary playback now. Nothing happens off an iPad.
         audioSession.forSpeaking();

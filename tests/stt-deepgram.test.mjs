@@ -215,3 +215,54 @@ test('quiet speech in a quiet room is sent, and the report says what bar was use
         Date.now = realNow;
     }
 });
+
+// Ken, November 13 2026: on an iPad the microphone is closed while the app speaks, so
+// a holding phrase plays at full volume, and reopened when it ends - without the
+// Listen button going dark or "listen off/on" being reported. Through the real stt.js.
+test('on an iPad the microphone closes for the app’s own speech, invisibly', async () => {
+    const stt = await import('../app/js/stt.js?pause=' + Date.now());
+    const statuses = [];
+    stt.init({ onResult() {}, onSilence() {}, onStatus: (s) => statuses.push(s), onPartnerSpeech() {},
+        source: 'deepgram', getDeepgramKey: () => 'k' });
+    stt._setIpadCheckForTest(() => true);
+    try {
+        stt.startListening();
+        await new Promise((r) => setTimeout(r, 10));
+        const first = FakeWS.last;
+        first.readyState = FakeWS.OPEN; first.onopen();
+        assert.deepEqual(statuses, ['listening']);
+
+        stt.noteSpokenStart('I am working out my answer.');
+        assert.equal(first.readyState, FakeWS.CLOSED, 'the microphone is closed while the app speaks');
+        stt.noteSpokenEnd();
+        await new Promise((r) => setTimeout(r, 10));
+        const second = FakeWS.last;
+        assert.notEqual(second, first, 'and opened again when it finishes');
+        second.readyState = FakeWS.OPEN; second.onopen();
+        assert.deepEqual(statuses, ['listening'], 'no stopped/listening reached the app');
+
+        // Turning Listen off while closed for speech still turns the button off.
+        stt.noteSpokenStart('Still thinking.');
+        stt.stopListening();
+        assert.equal(statuses.at(-1), 'stopped');
+        stt.noteSpokenEnd();
+        await new Promise((r) => setTimeout(r, 10));
+        assert.equal(FakeWS.last.readyState, FakeWS.CLOSED, 'and it does not reopen afterwards');
+    } finally { stt._setIpadCheckForTest(() => false); stt.stopListening(); }
+});
+
+test('off an iPad the microphone stays open while the app speaks, as before', async () => {
+    const stt = await import('../app/js/stt.js?nopause=' + Date.now());
+    stt.init({ onResult() {}, onSilence() {}, onStatus() {}, onPartnerSpeech() {},
+        source: 'deepgram', getDeepgramKey: () => 'k' });
+    stt._setIpadCheckForTest(() => false);
+    try {
+        stt.startListening();
+        await new Promise((r) => setTimeout(r, 10));
+        const ws = FakeWS.last;
+        ws.readyState = FakeWS.OPEN; ws.onopen();
+        stt.noteSpokenStart('I am working out my answer.');
+        assert.equal(ws.readyState, FakeWS.OPEN);
+        stt.noteSpokenEnd();
+    } finally { stt.stopListening(); }
+});
