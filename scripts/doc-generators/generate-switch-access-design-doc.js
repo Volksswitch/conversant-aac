@@ -156,7 +156,7 @@ const doc = new Document({
             para("There is no separate “two presses” setting for switches. “One tap or two” already asks for a second tap on anything that speaks or changes the screen, and it covers switch presses too. When it’s set to two, the scanner counts the two switch presses itself and then gives the button one touch that the app treats as already confirmed. Otherwise the app would ask again after the scanner’s two presses, and every choice would take four. Choosing switches sets it to one tap to start with (section 2.7)."),
             h2("2.3 Where switch presses come from"),
             bullet("Keys. ", "A switch interface usually sends a key press. Each switch has starting keys (Space or 1, Enter or 2, and 3), and the user can set another key for each switch. The User Manuals will list the starting keys, because the user sets up the switch interface before launching Conversant (issue 17)."),
-            bullet("Mouse buttons. ", "Left, right and middle act as switches 1, 2 and 3. This is also how a supporter helps: they use a mouse as two or three switches. What happens when a key is set is issue 19."),
+            bullet("Mouse buttons. ", "Left, right and middle act as switches 1, 2 and 3. This is also how a supporter helps: they use a mouse as two or three switches. Setting a key for a switch leaves the mouse buttons working, and a checkbox turns them off for an interface that sends both a key and a click (issue 19)."),
             bullet("Touch does nothing. ", "While switch access is on, touching the screen has no effect. The user chose switches, so the app commits to that choice. Better support for a supporter working alongside the user waits until the app is used by younger users (issue 18)."),
             para("While switch access is on, a switch key goes only to the scanner. It never types into a text box or presses a focused button, or one press would do two things."),
             h2("2.4 Sound on an iPad"),
@@ -281,7 +281,7 @@ const doc = new Document({
             num("issues", "“Pause” and touch. ", "The prototypes have “Pause”, and a setting that turns any touch into a switch press, for a switch that works like a touch on the screen."),
             dec("both are left out. “Pause” waits until the therapists ask for it. Touch does nothing while switch access is on (section 2.3), so a setting about touch has nothing to act on. Revisit if a user’s only switch works by touching the screen."),
             num("issues", "A supporter’s mouse. ", "A supporter uses a mouse as switches, since touch does nothing (decided). But in the prototypes, setting a key for a switch turns the mouse buttons off as switches, because both acting at once was found to be wrong. Once the user has set a key, the supporter’s mouse would then do nothing."),
-            rec("mouse buttons stay on as switches when a key is set, with a checkbox to turn them off for a switch interface that sends both a key and a click, which would count one press twice."),
+            dec("mouse buttons stay on as switches when a key is set, with a checkbox to turn them off for a switch interface that sends both a key and a click, which would count one press twice. The prototypes still turn them off and would change to match."),
         ],
     }],
 });
