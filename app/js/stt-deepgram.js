@@ -241,7 +241,7 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
         const frame = toLinear16(floats);
         const level = vad.rms(floats);
         const edge = gate.push(level, now);
-        micCheck.noteFrame(level);
+        micCheck.noteFrame(level, gate.levels());
 
         if (edge === 'open') {
             openedAt = now;

@@ -58,6 +58,29 @@ export const DEFAULTS = {
     // hour - against losing the first word of every sentence, which is the thing the
     // whole product exists to avoid.
     preRollMs: 1200,     // audio kept before the gate opened, flushed on open
+
+    // THE SPEECH LEVEL FOLLOWS THE ROOM (Ken, November 13 2026, from a beta tester's
+    // iPad). His microphone reached the app about ten times quieter than Voice Memos
+    // records it: the loudest moment of a conversation was 0.008, so a fixed 0.020
+    // never opened and nothing was ever sent. The gate now watches how loud the room
+    // is while nobody is speaking (`floor`, a low percentile of recent quiet frames)
+    // and treats sound `floorRatio` times louder than that as speech.
+    //   - openLevel above is the CEILING, not replaced: a noisy room keeps today's
+    //     bar. Raising it there could cut off a partner who speaks over the noise,
+    //     which is the worse failure.
+    //   - minOpenLevel is the floor of the bar, so a dead-silent input (a test, or a
+    //     noise-gated microphone reading zero) cannot open on the faintest click.
+    //   - The room is only measured while the gate is SHUT. Measuring during speech
+    //     would raise the bar under a speaker until the gate closed in mid-sentence.
+    //   - Until a second of quiet has been heard, the fixed openLevel applies.
+    // What it costs: in a quiet room with an ordinary microphone the bar is lower than
+    // before, so a cough or a door is more likely to open the gate and be billed.
+    adaptive: true,
+    floorRatio: 4,
+    minOpenLevel: 0.004,
+    floorPercentile: 0.2,
+    floorWindowMs: 6000,
+    floorMinMs: 1000,
 };
 
 export function createGate(opts = {}) {
@@ -65,6 +88,22 @@ export function createGate(opts = {}) {
     let open = false;
     let quietSince = null;      // when the level first dropped below closeLevel
     let openedAt = null;
+    const quiet = [];           // [time, level] of recent frames heard while shut
+    let floor = null;           // how loud the room is between speech; null = not yet known
+    const closeShare = cfg.closeLevel / cfg.openLevel;
+
+    function openLevel() {
+        if (!cfg.adaptive || floor === null) return cfg.openLevel;
+        return Math.min(cfg.openLevel, Math.max(cfg.minOpenLevel, floor * cfg.floorRatio));
+    }
+
+    function noteQuiet(level, now) {
+        quiet.push([now, level]);
+        while (quiet.length && now - quiet[0][0] > cfg.floorWindowMs) quiet.shift();
+        if (quiet.length < 5 || now - quiet[0][0] < cfg.floorMinMs) return;
+        const sorted = quiet.map((q) => q[1]).sort((a, b) => a - b);
+        floor = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * cfg.floorPercentile))];
+    }
 
     return {
         /*
@@ -76,18 +115,19 @@ export function createGate(opts = {}) {
          */
         push(level, now) {
             if (!open) {
-                if (level >= cfg.openLevel) {
+                if (level >= openLevel()) {
                     open = true;
                     openedAt = now;
                     quietSince = null;
                     return 'open';
                 }
+                noteQuiet(level, now);
                 return null;
             }
             // Open: only the quieter threshold can start the closing clock, and it
             // is reset by any frame back above it, so a gap between words does not
             // accumulate toward a close.
-            if (level > cfg.closeLevel) {
+            if (level > openLevel() * closeShare) {
                 quietSince = null;
                 return null;
             }
@@ -105,6 +145,8 @@ export function createGate(opts = {}) {
         openedAt() { return openedAt; },
         preRollMs() { return cfg.preRollMs; },
         config() { return { ...cfg }; },
+        /** What the gate is using right now: the room's quiet level and the bar for speech. */
+        levels() { return { floor, open: openLevel() }; },
 
         // Force shut — used when listening stops, so a gate left open cannot keep
         // an upstream alive (and billing) after the user has finished.

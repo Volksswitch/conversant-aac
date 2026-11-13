@@ -402,7 +402,7 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
     function handleFrame(floats, now) {
         const level = vad.rms(floats);
         const edge = gate.push(level, now);
-        micCheck.noteFrame(level);
+        micCheck.noteFrame(level, gate.levels());
         if (edge === 'open') micCheck.noteSpeech();
         // Copy: the buffer the browser hands over is REUSED for the next frame, so
         // keeping a reference would leave every buffered frame holding whatever the

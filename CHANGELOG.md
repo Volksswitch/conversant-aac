@@ -27,6 +27,7 @@ forgetting to tag one is only ever noise, never silence.
 ## Unreleased (next release)
 
 - Settings → About now names the app's license correctly: Apache License 2.0. It said MIT.
+- If you pay for a service to hear the other person, Conversant now adjusts to how quiet your room is, so a microphone that reaches it quietly can still be heard. Before, quiet speech could go unheard with nothing on screen to say why.
 
 ## Version 0.15.1
 

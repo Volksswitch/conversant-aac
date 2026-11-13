@@ -183,3 +183,35 @@ test('the problem report can tell no sound from quiet sound', async () => {
     assert.match(s, /startsWithNoSound=1 frames=1 loudest=0\.005/);
     assert.match(s, /speechDetected=0/);
 });
+
+// Cross-layer (November 13 2026): the real capture code, the real gate and the real
+// report together. A quiet room and quiet speech, the shape of a beta tester's iPad
+// whose loudest moment was 0.008, must now reach the service.
+test('quiet speech in a quiet room is sent, and the report says what bar was used', async () => {
+    const mic = await import('../app/js/mic-check.js');
+    mic._reset();
+    const realNow = Date.now;
+    let now = 1_000_000;
+    Date.now = () => now;
+    const statuses = [];
+    try {
+        source = createSource({ getKey: () => 'k', onText() {}, onStatus: (s) => statuses.push(s), onBilled() {} });
+        await source.start();
+        const ws = FakeWS.last;
+        ws.readyState = FakeWS.OPEN;
+        ws.onopen();
+        const frame = (level) => {
+            processor.onaudioprocess({ inputBuffer: { getChannelData: () => new Float32Array(4096).fill(level) } });
+            now += 85;
+        };
+        for (let i = 0; i < 25; i++) frame(0.0015);          // about two seconds of room
+        assert.equal(ws.sent.filter((b) => typeof b !== 'string').length, 0, 'the room alone is not sent');
+        for (let i = 0; i < 10; i++) frame(0.008);           // quiet speech
+        assert.ok(statuses.includes('capturing'), 'the speech was recognised as speech');
+        assert.ok(ws.sent.filter((b) => typeof b !== 'string').length >= 10, 'and sent to the service');
+        assert.match(mic.summary(), /speechDetected=1/);
+        assert.match(mic.summary(), /quietRoom=0\.0015/);
+    } finally {
+        Date.now = realNow;
+    }
+});

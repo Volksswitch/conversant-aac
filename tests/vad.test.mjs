@@ -121,3 +121,79 @@ test('the point of the gate: a mostly-silent session bills a fraction of its len
     assert.ok(billed < 60, `billed ${billed.toFixed(1)}s — must be a small fraction of ${wallClock}s`);
     assert.ok(billed > 30, `billed ${billed.toFixed(1)}s — must still contain all the speech`);
 });
+
+// ---- The speech level follows the room (November 13 2026) -------------------------
+// A beta tester's iPad delivered speech at about 0.008: below the fixed 0.020, so the
+// gate never opened and nothing was ever heard. These are the shapes that decide it.
+
+function feed(g, level, ms, t) {
+    let edge = null;
+    for (let end = t + ms; t < end; t += 85) edge = g.push(level, t) || edge;
+    return { t, edge };
+}
+
+test('the tester case: quiet speech in a quiet room now opens the gate', () => {
+    const g = createGate();
+    let { t } = feed(g, 0.0015, 2000, 0);               // two seconds of a quiet room
+    assert.ok(Math.abs(g.levels().floor - 0.0015) < 1e-9, 'the room was measured');
+    assert.ok(g.levels().open < 0.008, `bar ${g.levels().open} is now under his speech`);
+    assert.equal(g.push(0.008, t), 'open');
+});
+
+test('without following the room, the same speech is never heard (the old failure)', () => {
+    const g = createGate({ adaptive: false });
+    let { t } = feed(g, 0.0015, 2000, 0);
+    assert.equal(feed(g, 0.008, 3000, t).edge, null);
+});
+
+test('a noisy room keeps the old bar: it is never raised above it', () => {
+    const g = createGate();
+    let { t } = feed(g, 0.015, 3000, 0);               // loud background
+    assert.equal(g.levels().open, DEFAULTS.openLevel);
+    assert.equal(g.push(DEFAULTS.openLevel + 0.005, t), 'open');
+});
+
+test('until a second of quiet has been heard, the fixed bar applies', () => {
+    const g = createGate();
+    let { t } = feed(g, 0.0015, 300, 0);
+    assert.equal(g.levels().floor, null);
+    assert.equal(g.push(0.008, t), null, 'too early to trust a measurement of the room');
+});
+
+test('a dead-silent input cannot drop the bar to nothing', () => {
+    const g = createGate();
+    let { t } = feed(g, 0, 2000, 0);
+    assert.equal(g.levels().open, DEFAULTS.minOpenLevel);
+    assert.equal(g.push(DEFAULTS.minOpenLevel / 2, t), null, 'a faint click does not open it');
+});
+
+test('the room is not measured during speech, so a long sentence is not cut off', () => {
+    const g = createGate();
+    let { t } = feed(g, 0.0015, 2000, 0);
+    assert.equal(g.push(0.008, t), 'open');
+    const before = g.levels();
+    // Twelve seconds of quiet speech, longer than the measuring window.
+    const r = feed(g, 0.008, 12000, t + 85);
+    assert.equal(r.edge, null, 'the gate stayed open through it');
+    assert.deepEqual(g.levels(), before, 'the bar did not rise under the speaker');
+});
+
+test('following the room still bills a fraction of a mostly-quiet session', () => {
+    // Ten minutes, a quiet room with a little variation, 30 seconds of speech.
+    const g = createGate();
+    const spans = [];
+    let t = 0, openedAt = 0;
+    const frame = (level) => {
+        const edge = g.push(level, t);
+        if (edge === 'open') openedAt = t;
+        if (edge === 'close') spans.push({ start: openedAt, end: t });
+        t += 50;
+    };
+    for (let burst = 0; burst < 6; burst++) {
+        for (let i = 0; i < 100; i++) frame(0.03);
+        for (let i = 0; i < 1900; i++) frame(0.0015 + (i % 7) * 0.0002);
+    }
+    if (g.isOpen()) spans.push({ start: openedAt, end: t });
+    const billed = billableSeconds(spans);
+    assert.ok(billed < 60 && billed > 30, `billed ${billed.toFixed(1)}s`);
+});
