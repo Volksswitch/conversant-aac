@@ -89,50 +89,21 @@ test('every paid service opens the microphone through the one shared request', (
     }
 });
 
-// Louder while an iPad listens (Ken, November 13 2026): holding phrases were clear but
-// quiet with the microphone open. The voice plays through a boost and a limiter.
-function fakeContext() {
-    const param = (v) => ({ value: v, setTargetAtTime(x) { this.value = x; } });
-    const made = [];
-    const ctx = {
-        state: 'running', currentTime: 0, destination: { name: 'speakers' },
-        createGain() { const g = { gain: param(1), context: ctx, connect: (n) => { g.to = n; return n; } }; made.push(g); return g; },
-        createDynamicsCompressor() {
-            const l = { threshold: param(0), knee: param(0), ratio: param(0), attack: param(0), release: param(0),
-                connect: (n) => { l.to = n; return n; } };
-            made.push(l); return l;
-        },
-    };
-    return ctx;
-}
-
-test('off an iPad the voice goes straight to the speakers, untouched', () => {
-    const c = fakeContext();
-    assert.equal(audioSession.output(c, false), c.destination);
-});
-
-test('on an iPad the voice is boosted while listening, through a limiter, and not after', () => {
-    const c = fakeContext();
-    audioSession.forSpeaking();
-    const out = audioSession.output(c, true);
-    assert.notEqual(out, c.destination);
-    assert.equal(out.gain.value, 1, 'no boost when not listening');
-    assert.equal(out.to.to, c.destination, 'gain -> limiter -> speakers');
-    assert.ok(out.to.ratio.value >= 10, 'the limiter actually limits');
-    audioSession.forListening();
-    assert.equal(out.gain.value, audioSession.LISTENING_BOOST);
-    assert.equal(audioSession.output(c, true), out, 'one chain per context, reused');
-    audioSession.forSpeaking();
-    assert.equal(out.gain.value, 1, 'back to normal the moment listening stops');
-});
-
-test('every paid voice plays through the shared output', () => {
+// THE x5 "LOUDER WHILE LISTENING" BOOST IS GONE (Ken, November 13 2026). It was sized
+// for call processing off; with processing on again, a phrase played with the
+// microphone open is at normal volume, so the boost only made those phrases too loud,
+// and it could be left on with no microphone open (the November 13 findings, problem 4).
+// Every paid voice plays straight to the speakers, at the volume the user set, on every
+// device.
+test('every paid voice plays straight to the speakers, with no boost', () => {
     for (const f of ['tts-deepgram.js', 'tts-azure.js', 'tts-rest.js']) {
         const src = readFileSync(new URL(`../app/js/${f}`, import.meta.url), 'utf8')
             .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-        assert.doesNotMatch(src, /node\.connect\(c\.destination\)/, `${f} bypasses the boost`);
-        assert.match(src, /node\.connect\(audioSession\.output\(c\)\)/, f);
+        assert.match(src, /node\.connect\(c\.destination\)/, f);
+        assert.doesNotMatch(src, /createDynamicsCompressor|audioSession\.output/, `${f} must not boost the voice`);
     }
+    assert.equal(audioSession.output, undefined, 'audio-session.js offers no boosted output');
+    assert.equal(audioSession.LISTENING_BOOST, undefined);
 });
 
 // A failure to open the microphone is named, not lumped in with "permission refused"

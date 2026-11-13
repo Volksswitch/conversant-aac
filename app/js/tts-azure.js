@@ -42,7 +42,6 @@
 // as not running too. If the audio has not woken within the limit this throws, and
 // tts.js says the sentence in the device's own voice instead.
 import * as speakerWake from './speaker-wake.js';
-import * as audioSession from './audio-session.js';
 
 const WAKE_LIMIT_MS = 1500;
 async function wake(c) {
@@ -452,7 +451,7 @@ export function createVoice({ getKey, getRegion, onBilled, onAudio } = {}) {
         return new Promise((resolve) => {
             const node = c.createBufferSource();
             node.buffer = buffer;
-            node.connect(audioSession.output(c));   // louder while an iPad listens
+            node.connect(c.destination);
             sources.add(node);
             speakerWake.soundStarted(c);
             node.onended = () => { sources.delete(node); speakerWake.soundEnded(c); resolve(); };

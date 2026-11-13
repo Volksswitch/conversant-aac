@@ -24,8 +24,6 @@
  *   - Never throws: a diagnostic or a volume fix must not break listening.
  */
 
-import * as platform from './platform.js';
-
 /*
  * What to ask for when a paid service opens the microphone: the device's own call
  * processing (echo cancellation, noise suppression, automatic volume) ON, on every
@@ -78,73 +76,15 @@ function session() {
 }
 
 /*
- * LOUDER WHILE AN iPAD IS LISTENING (Ken, November 13 2026). With call processing off
- * (micProcessing above) the holding phrases spoken while the microphone is open came
- * out clear but quiet - the iPad turns playback down while it records, and the app
- * cannot ask it not to. What the app CAN set is its own volume, so on an iPad every
- * paid voice plays through a boost while paid listening is on, and through nothing
- * extra the moment it stops (the iPad's own volume comes back then).
- *
- * The limiter is what makes boosting safe. The voices are already loud, so a plain
- * boost would clip on every loud syllable and crackle; the limiter holds the peaks
- * just under full scale instead. It is in the chain whenever the chain exists, but
- * at normal volume it has almost nothing to do.
- *
- * Off an iPad there is no chain at all: output() returns the speakers directly, so
- * nothing about any other device changes.
- *
- * ⚠ THE BOOST WAS SIZED FOR CALL PROCESSING OFF, which ended with 0.15.9 (see
- * micProcessing). With processing on, a phrase played while the microphone is open was
- * at normal volume (Ken, 0.15.2), so x5 would make it loud. Since 0.15.6 that rarely
- * happens on an iPad, because the microphone closes while the app speaks. Whether to
- * keep the boost is Ken's call (TODO.md, "Kenny's quiet iPad microphone").
+ * ⚠ NO "LOUDER WHILE LISTENING" BOOST ANY MORE (removed by Ken, November 13 2026).
+ * From 0.15.4 to 0.15.8 every paid voice on an iPad played five times louder, through
+ * a limiter, while paid listening was on. It was sized for call processing OFF, when a
+ * phrase played with the microphone open came out clear but quiet. Call processing is
+ * on again (see micProcessing), and with it on such a phrase is at normal volume, so
+ * the boost only made the rare ones too loud. Since 0.15.6 the microphone is closed
+ * while the app speaks, so a phrase almost never plays with it open anyway. The voices
+ * play straight to the speakers again, as they do on every other device.
  */
-// 5, about 14 dB. Ken heard 2.5 on his iPad in 0.15.4 and asked for twice as much
-// (November 13 2026). At this level the limiter does real work on loud syllables.
-export const LISTENING_BOOST = 5;
-let listening = false;
-const boosts = new Set();               // gain nodes of every chain made so far
-
-function boostLevel() { return listening ? LISTENING_BOOST : 1; }
-
-function applyBoost() {
-    for (const g of boosts) {
-        try {
-            const c = g.context;
-            if (!c || c.state === 'closed') { boosts.delete(g); continue; }
-            // A short ramp, so the change is not a click.
-            g.gain.setTargetAtTime(boostLevel(), c.currentTime, 0.02);
-        } catch { boosts.delete(g); }
-    }
-}
-
-const chains = new WeakMap();
-
-/** Where a paid voice should send its sound. */
-export function output(ctx, ipad = (() => { try { return platform.isIOS(); } catch { return false; } })()) {
-    if (!ipad) return ctx.destination;
-    let chain = chains.get(ctx);
-    if (!chain) {
-        try {
-            const gain = ctx.createGain();
-            gain.gain.value = boostLevel();
-            const limiter = ctx.createDynamicsCompressor();
-            limiter.threshold.value = -3;
-            limiter.knee.value = 0;
-            limiter.ratio.value = 20;
-            limiter.attack.value = 0.002;
-            limiter.release.value = 0.1;
-            gain.connect(limiter);
-            limiter.connect(ctx.destination);
-            boosts.add(gain);
-            chain = gain;
-        } catch {
-            chain = ctx.destination;      // never lose the voice over a volume tweak
-        }
-        chains.set(ctx, chain);
-    }
-    return chain;
-}
 
 /*
  * Before the microphone opens: say "play and record".
@@ -156,8 +96,6 @@ export function output(ctx, ipad = (() => { try { return platform.isIOS(); } cat
  * refused the microphone in it. Recording needs "play-and-record", so the app says so.
  */
 export function forListening() {
-    listening = true;
-    applyBoost();
     const s = session();
     if (!s) return;
     try { if (s.type !== 'play-and-record') s.type = 'play-and-record'; } catch { /* leave it */ }
@@ -237,8 +175,6 @@ export async function openMic(getUserMedia = (c) => navigator.mediaDevices.getUs
 
 /** After paid listening stops: ordinary playback, so the voice is not left quiet. */
 export function forSpeaking() {
-    listening = false;
-    applyBoost();
     const s = session();
     if (!s) return;
     try { if (s.type !== 'playback') s.type = 'playback'; } catch { /* leave it */ }

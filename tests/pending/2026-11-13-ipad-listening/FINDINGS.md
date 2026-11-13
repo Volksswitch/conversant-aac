@@ -57,8 +57,9 @@ From CLAUDE.md, iPad section, November 13 2026. A fix must keep all of these:
 - The **room-following speech bar**, with its accepted cost that a cough or a door in a
   quiet room is more likely to be sent and billed.
 - **Call processing is ON on an iPad again** (turned back on for 0.15.9 after Kenny's
-  0.15.8 report; it was off from 0.15.3 to 0.15.8). Whether to keep the **x5 boost**,
-  which was sized for processing off, is open in the Kenny TODO entry.
+  0.15.8 report; it was off from 0.15.3 to 0.15.8). The **x5 boost**, which was sized for
+  processing off, is **removed** (Ken, November 13 2026, "Yes, remove it"); the paid
+  voices play straight to the speakers again. The audio-mode switching stays.
 - **A holding phrase always finishes** (October 9 2026): stopping listening must not cut
   it off.
 
@@ -168,26 +169,28 @@ added later, would change every level again.
     shown. Sending `Finalize` and waiting briefly before closing would recover it;
     optional.
 
-## 4. The x5 boost and the iPad's recording mode are left on with no microphone
+## 4. The iPad's recording mode is left on with no microphone
 
-- **What goes wrong:** paid voices play five times louder through the limiter with no
-  microphone open to make the iPad turn them down: loud and squashed.
+- **The loud half of this problem is gone:** Ken removed the x5 boost on November 13
+  2026, so the paid voices can no longer be left five times louder. What remains is the
+  iPad's recording mode ("play-and-record") left on with no microphone, and the
+  microphone asked for after the user asked to stop.
+- **What went wrong before the boost was removed:** paid voices played five times louder
+  through the limiter with no microphone open to make the iPad turn them down.
 - **Steps, either of these:**
-  - **4a:** a microphone reopen fails as in problem 2. The boost stays on until listening
-    next stops; choosing a reply or an Express phrase puts it right. Holding phrases,
-    Hold on and Say again in between are loud.
+  - **4a:** a microphone reopen fails as in problem 2. Recording mode stays on until
+    listening next stops; choosing a reply or an Express phrase puts it right.
   - **4b and 4c:** End conversation, or turning Listen off, while a holding phrase plays.
     Both make the app ask the iPad for the microphone again the moment the phrase ends,
     then let it go (4b). That part happens every time, and the iPad's microphone
     indicator may come on after the user asked for listening to stop. If the iPad refuses
     that request because of its audio mode (likely, since the app has just set playback),
-    the automatic retry switches back to recording and turns the boost on, and nothing
-    switches them off (4c). The next Settings voice Test or spoken help then plays at five
-    times volume.
+    the automatic retry switches back to recording mode, and nothing switches it off
+    (4c).
 - **How sure:** proved, `4-boost-and-record-mode.proof.mjs`. Whether the iPad refuses
   that request is device check 3.
-- **How serious:** medium: jarring volume, and a microphone that comes on after the user
-  turned it off.
+- **How serious:** medium-low now the boost is gone: a microphone that comes on after
+  the user turned it off, and recording mode left on.
 - **For the fix:**
   - 4a: `forListening()` runs before `externalSource.start()` (`reallyOpen()`,
     `resumeAfterSpeech()`); when `start()` fails at `wake()` it sends "stopped"/"idle" and
@@ -211,8 +214,8 @@ added later, would change every level again.
 - **Steps:** tap Hold on, Say again or Ask them to repeat while a holding phrase plays.
   The user's phrase waits for the holding phrase, then half a second more. If the iPad
   takes longer than that to hand the microphone back, the microphone opens partway
-  through the user's phrase, with the boost on, so that phrase gets the quiet or
-  phone-call sound the November changes removed.
+  through the user's phrase, so that phrase gets the quiet or phone-call sound the
+  November changes removed.
 - **How sure:** proved, `5-mic-open-during-phrase.proof.mjs`, with a 0.7-second handover.
   The real handover time is device check 1.
 - **How serious:** medium-low: the sound of one phrase.
@@ -327,8 +330,8 @@ added later, would change every level again.
 - Computers, Chromebooks and Android: no closing for speech, no boost, the same
   microphone request as before; the audio-mode setting does nothing where the browser
   lacks it (every Chromium browser).
-- The iPad's own recognition in a Safari tab: closing for speech, the audio mode and the
-  boost apply only to paid hearing.
+- The iPad's own recognition in a Safari tab: closing for speech and the audio mode
+  apply only to paid hearing.
 - Noisy rooms: the bar never rises above the old 0.020, so billing there is unchanged.
 - The weekly report's change detection ignores the new audio-mode line, as it should.
 

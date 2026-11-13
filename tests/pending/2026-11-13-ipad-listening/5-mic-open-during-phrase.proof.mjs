@@ -3,11 +3,10 @@
 // PROBLEM 5: when a second phrase starts before the reopen after the first has
 // finished (Hold on / Say again / Ask them to repeat tapped during a holding phrase:
 // the user's words wait for the phrase, then half a second), the second phrase is NOT
-// paused for - the microphone opens part-way through it, with the x5 boost on.
+// paused for - the microphone opens part-way through it.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { url, makeAudioContextClass, freshStt, tick, FakeWS, audioCtl, mic } from './harness.mjs';
-const audioSession = await import(url('app/js/audio-session.js'));
+import { makeAudioContextClass, freshStt, tick, FakeWS, audioCtl, mic } from './harness.mjs';
 
 test('5 a reopen slower than the half-second gap leaves the microphone open during the next phrase', async () => {
     globalThis.window.AudioContext = makeAudioContextClass();
@@ -27,7 +26,7 @@ test('5 a reopen slower than the half-second gap leaves the microphone open duri
         stt.noteSpokenStart('Could you hold on a moment?');   // the user's own phrase
         await tick(300);                              // the reopen finishes mid-phrase
         const ws = FakeWS.last;
-        console.log('5 during the second phrase: microphones open', mic.open, ' socket', ws.readyState, ' boost', audioSession.output({ state: 'running', currentTime: 0, destination: {}, createGain: () => ({ gain: { value: 1, setTargetAtTime(x) { this.value = x; } }, context: { state: 'running', currentTime: 0 }, connect: (n) => n }), createDynamicsCompressor: () => ({ threshold: {}, knee: {}, ratio: {}, attack: {}, release: {}, connect: (n) => n }) }, true).gain.value);
+        console.log('5 during the second phrase: microphones open', mic.open, ' socket', ws.readyState);
         assert.equal(mic.open, 1, 'BUG: the microphone is open while the app is speaking');
         stt.noteSpokenEnd();
     } finally { stt._setIpadCheckForTest(() => false); stt.stopListening(); }
