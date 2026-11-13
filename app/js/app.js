@@ -1628,6 +1628,10 @@ function sttInitOptions(source) {
         getRestModel: (id) => storage.loadServiceSttModel(id)
             || (STT_PROVIDERS[id] && STT_PROVIDERS[id].defaultModel) || '',
         onBilled: handleSttBilled,
+        // The microphone closing and reopening around the app's own speech (iPad,
+        // paid hearing). The screen does not show it (Ken), so the saved conversation
+        // is the only place it can be seen afterwards.
+        onMicEvent: (kind) => { storage.logEvent(kind).catch(() => {}); },
     };
 }
 
@@ -2143,7 +2147,7 @@ async function handleStart() {
     // Same reason, for the paid voice: iOS refuses to start audio outside a user
     // gesture, and placeholders fire on TIMERS — so without this the app would go
     // silent exactly when it is trying to hold the floor.
-    audioSession.unlockCapture();   // wake the listening audio inside this tap
+    wakeListeningAudio();   // wake the listening audio inside this tap
     tts.unlockAudio();
     // Same reason again, and it must stay ABOVE the first await below: a fullscreen
     // request is only granted while user activation lasts, and the first await in an
@@ -2366,9 +2370,22 @@ function finishStart() {
     if (focusInStart) keepStartFocus(document.getElementById('listenControls'));
 }
 
+/*
+ * Wake the paid hearing services' shared listening audio, inside a real tap (see
+ * audio-session.js). ONLY when a paid service is listening: the device's own
+ * recognizer never uses it, and making it on every device kept an unused audio channel
+ * running all session on computers, Android and the iPad's Safari tab (November 13 2026
+ * findings, item 9). Called from Start, Listen, and the taps that reply - a reply's tap
+ * is what lets automatic listening restart afterwards if something (a phone call, Siri)
+ * stopped the audio, where before only a Listen tap could.
+ */
+function wakeListeningAudio() {
+    if (stt.currentSource() !== 'browser') audioSession.unlockCapture();
+}
+
 function toggleListening() {
     chime.unlock();   // a genuine tap — see handleStart
-    audioSession.unlockCapture();   // and wakes the listening audio (audio-session.js)
+    wakeListeningAudio();   // and wakes the listening audio (audio-session.js)
     // Practice Mode: "Start Listening" does NOT open the mic — it cues the AI
     // partner to speak, reinforcing the same step (and honoring the same
     // manualListenArmed / auto-resume gate) as a real conversation.
@@ -2394,7 +2411,11 @@ function toggleListening() {
         // nothing more is heard (micClosePending gates the hearing callbacks), but the
         // microphone itself closes when the phrase ends. Capped, so a phrase that never
         // reports its end cannot hold the microphone open.
-        if (placeholders.isPlaying()) {
+        // ⚠ NOT WHEN THE MICROPHONE IS ALREADY CLOSED FOR THE PHRASE (iPad, paid hearing;
+        // problem 4b of the November 13 2026 findings). Then stopping changes no sound
+        // setup and cuts nothing off, and waiting meant the phrase's end reopened the
+        // microphone first - the iPad asked for it again after the user had said stop.
+        if (placeholders.isPlaying() && !stt.isClosedForSpeech()) {
             const pending = {};
             micClosePending = pending;
             ui.setListenButtonState(false);
@@ -3084,6 +3105,7 @@ async function playAnswer() {
 }
 
 async function handleResponseSelected(response, index) {
+    wakeListeningAudio();   // inside the tap, before anything waits
     if (qs.isAnswerSlot(response.slot)) return handleAnswerCard(response, index);
     await preemptSound();   // a playing clip stops, and is recorded, first (CR-064)
     if (response.op) return handleRepairOfSelf(response, index);
@@ -5110,6 +5132,7 @@ function clearInfluencers() {
 // auto-resume is armed. `historyText` is what's logged/displayed; `spokenText`
 // is what TTS says (an Express Panel phrase may carry a distinct pronunciation form).
 async function speakAsUserTurn(historyText, spokenText = historyText, source = 'composed') {
+    wakeListeningAudio();   // inside the tap, before anything waits
     await preemptSound();   // a playing clip stops, and is recorded, first (CR-064)
     // Saying it their own way ends the deliberation just as a card tap does, and this
     // is the case worth catching: cards were on offer and the user went elsewhere.

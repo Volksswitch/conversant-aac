@@ -197,3 +197,98 @@ test('following the room still bills a fraction of a mostly-quiet session', () =
     const billed = billableSeconds(spans);
     assert.ok(billed < 60 && billed > 30, `billed ${billed.toFixed(1)}s`);
 });
+
+// ---- November 13 2026 findings, problems 7 and 8 --------------------------------
+
+// Kenny's room (0.0004) and a quiet partner beside him whose loudest moments reach
+// 0.008, as in his 0.15.2 report. Frames are 85 ms.
+const KENNY_ROOM = 0.0004;
+const QUIET_VOICE = [0.005, 0.007, 0.008, 0.006, 0.004, 0.002, 0.006, 0.008, 0.007, 0.004, 0.003, 0.0015];
+function firstOpenMs(g, levels) {
+    let t = 0;
+    for (const l of levels) { if (g.push(l, t) === 'open') return t; t += 85; }
+    return null;
+}
+const quietSpeech = (seconds) =>
+    Array.from({ length: Math.round((seconds * 1000) / 85) }, (_, i) => QUIET_VOICE[i % QUIET_VOICE.length]);
+
+// Problem 7. A new gate is made every time the microphone opens - on an iPad after
+// every holding phrase. One that starts knowing nothing measures whatever it hears
+// first as the room, so a quiet partner already talking had their own voice taken for
+// the room and was never heard. The room the last gate measured is carried over.
+test('a gate given the last room hears a quiet partner who is already talking, at once', () => {
+    const carried = createGate({ initialFloor: KENNY_ROOM });
+    assert.equal(carried.levels().open, DEFAULTS.minOpenLevel, 'the bar is set before any frame');
+    assert.equal(firstOpenMs(carried, quietSpeech(10)), 0, 'opens on the first syllable');
+});
+
+// What the carried room cannot cover, recorded so it is not mistaken for fixed: the
+// FIRST listening of a session has no earlier room. A voice like this one, quiet and
+// talking from the very first moment, is still taken for the room there - the old
+// fixed bar applies until a second has been heard. Real voices vary more than this one
+// and the November 13 findings measured them getting through after 1.2 to 1.7 seconds.
+test('the first listening of a session still needs a moment of room or a voice that varies', () => {
+    assert.equal(firstOpenMs(createGate(), quietSpeech(10)), null, 'unchanged for a voice this steady');
+    const roomFirst = firstOpenMs(createGate(), [...Array(14).fill(KENNY_ROOM), ...quietSpeech(10)]);
+    assert.ok(roomFirst !== null && roomFirst < 1300, 'a quiet room first: heard at once');
+});
+
+test('a carried room of zero is still a room (a dead-silent input), and none means none', () => {
+    assert.equal(createGate({ initialFloor: 0 }).levels().floor, 0);
+    assert.equal(createGate({ initialFloor: null }).levels().floor, null);
+    assert.equal(createGate().levels().floor, null);
+});
+
+// Problem 8. The room is measured only while the gate is shut, so a fan, heater or
+// kettle that started while the partner talked held the gate open - sent and billed -
+// for as long as it ran.
+function openSeconds({ room = 0.0004, voice = 0.05, voiceMs = 2000, noise, noiseMs, opts = {} }) {
+    const g = createGate(opts);
+    let t = 0, open = 0, closedAt = null;
+    const run = (level, ms) => {
+        for (const end = t + ms; t < end; t += 85) {
+            const e = g.push(level, t);
+            if (e === 'close' && closedAt === null) closedAt = t;
+            if (g.isOpen()) open++;
+        }
+    };
+    run(room, 2000);
+    run(voice, voiceMs);
+    run(noise, noiseMs);
+    return { closedAt, openSeconds: (open * 85) / 1000, levels: g.levels() };
+}
+
+test('a fan that starts as the partner speaks no longer holds the gate open', () => {
+    const r = openSeconds({ noise: 0.004, noiseMs: 5 * 60 * 1000 });
+    assert.ok(r.closedAt !== null, 'the gate closes');
+    assert.ok(r.openSeconds < 8, `open ${r.openSeconds.toFixed(1)} s of a five-minute fan`);
+    assert.ok(r.levels.open > 0.004, 'and the fan is now part of the room, so it does not reopen');
+});
+
+test('a quiet partner and a fan nearly as loud as them: closed within about fifteen seconds', () => {
+    // Kenny's setup: the voice is only twice the fan, so the voice cannot show the fan
+    // up; that it never varies does.
+    const r = openSeconds({ voice: 0.008, noise: 0.003, noiseMs: 60 * 1000 });
+    assert.ok(r.closedAt !== null, 'the gate closes');
+    assert.ok(r.openSeconds < 20, `open ${r.openSeconds.toFixed(1)} s of a one-minute fan`);
+});
+
+test('the gate never closes at a level above the old fixed gate', () => {
+    // A loud steady sound, louder than the old 0.012 closing level: the old gate stayed
+    // open through it too, and so does this one. Raising the room never makes the gate
+    // close earlier than the old one would have.
+    const r = openSeconds({ noise: 0.03, noiseMs: 30 * 1000 });
+    assert.equal(r.closedAt, null);
+    assert.ok(r.levels.open <= DEFAULTS.openLevel, 'the bar keeps its 0.020 ceiling');
+});
+
+test('a long quiet sentence that rises and falls is not cut off, and the room stays put', () => {
+    const g = createGate();
+    let { t } = feed(g, KENNY_ROOM, 2000, 0);
+    const before = g.levels();
+    let edge = null;
+    for (const l of quietSpeech(20)) { edge = g.push(l, t) || edge; t += 85; }
+    assert.equal(edge, 'open', 'opened, and never closed in twenty seconds');
+    assert.ok(g.isOpen());
+    assert.deepEqual(g.levels(), before, 'the room and the bar did not move under the speaker');
+});

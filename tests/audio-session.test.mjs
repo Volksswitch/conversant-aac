@@ -11,13 +11,17 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as audioSession from '../app/js/audio-session.js';
 
-function withSession(session, fn) {
+// The setting is used on an iPhone or iPad only. This run is not one, so the tests
+// that are about an iPad say so.
+function withSession(session, fn, { ios = true } = {}) {
     const real = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
     Object.defineProperty(globalThis, 'navigator', {
         value: { ...(globalThis.navigator || {}), audioSession: session },
         configurable: true, writable: true,
     });
+    audioSession._setIosCheckForTest(() => ios);
     try { fn(); } finally {
+        audioSession._setIosCheckForTest(() => false);
         if (real) Object.defineProperty(globalThis, 'navigator', real);
     }
 }
@@ -31,6 +35,18 @@ test('an iPad is told "playback" when listening stops and "play-and-record" befo
         audioSession.forListening();
         assert.equal(s.type, 'play-and-record');
     });
+});
+
+// November 13 2026 findings, item 9: Safari on a Mac may offer the same setting, and
+// nothing was ever measured there, so it is left alone like every other computer.
+test('a Mac (any device that is not an iPhone or iPad) is left alone even when Safari offers the setting', () => {
+    const s = { type: 'auto', state: 'active' };
+    withSession(s, () => {
+        audioSession.forListening();
+        audioSession.forSpeaking();
+        assert.equal(s.type, 'auto');
+        assert.equal(audioSession.describe(), 'not available here');
+    }, { ios: false });
 });
 
 test('a browser without the setting is left alone and nothing throws', () => {
@@ -47,19 +63,46 @@ test('a browser without the setting is left alone and nothing throws', () => {
     });
 });
 
+// The body of one function in a source file, found by its name, braces matched.
+function functionBody(src, name) {
+    const at = src.search(new RegExp(`function ${name}\\s*\\(`));
+    assert.ok(at >= 0, `${name} is defined`);
+    let i = src.indexOf('{', at);
+    const from = i;
+    let depth = 0;
+    for (; i < src.length; i++) {
+        if (src[i] === '{') depth++;
+        else if (src[i] === '}' && --depth === 0) break;
+    }
+    return src.slice(from, i + 1);
+}
+
 // stt.js cannot be driven here with a real microphone, so its wiring is checked in
-// the source: every place a paid source is stopped must also say "playback", and the
-// place it is opened must say "auto" first. A stop with no switch is the bug coming
-// back, silently, on one path.
+// the source: every place a paid source is closed must also say "playback", and every
+// place it is opened must say "play-and-record" first. A close with no switch is the
+// bug coming back, silently, on one path.
 test('the shared listening code switches the audio type at every paid stop and start', () => {
     const src = readFileSync(new URL('../app/js/stt.js', import.meta.url), 'utf8')
         .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-    const stops = src.match(/externalSource\.stop\(\)/g).length;
-    const switches = src.match(/audioSession\.forSpeaking\(\)/g).length;
-    // setSource() also stops a source while swapping providers; it is not a stop
-    // between listening and speaking, so it is the one allowed exception.
-    assert.equal(switches, stops - 1, `${stops} stops, ${switches} switches to playback`);
-    assert.match(src, /audioSession\.forListening\(\);\s*externalSource\.start\(\)/);
+    // Every function that closes a paid source, except setSource(), which swaps one
+    // service for another and stops through stopListening() first.
+    const closers = ['pauseForSpeech', 'suspendSource', 'handleSourceError', 'stopListening'];
+    for (const name of closers) {
+        const body = functionBody(src, name);
+        assert.match(body, /externalSource\.(stop|pause)/, `${name} closes the source`);
+        assert.match(body, /audioSession\.forSpeaking\(\)/, `${name} says "playback"`);
+    }
+    // Nothing else closes one (setSource aside).
+    const allCloses = src.match(/externalSource\.(stop|pause)\b/g).length;
+    const setSourceCloses = functionBody(src, 'setSource').match(/externalSource\.(stop|pause)\b/g).length;
+    assert.equal(allCloses - setSourceCloses, closers.length + 1, 'pauseForSpeech names both stop and pause');
+    // A source that stops by itself (its audio would not start) switches too (problem
+    // 4a of the November 13 2026 findings).
+    assert.match(src, /status === 'stopped' \|\| status === 'idle'\) \{[^}]*audioSession\.forSpeaking\(\)/);
+    // Both ways in say "play-and-record" first.
+    for (const name of ['reallyOpen', 'reopenAfterSpeech']) {
+        assert.match(functionBody(src, name), /audioSession\.forListening\(\);\s*(try \{ )?externalSource\.start\(\)/, name);
+    }
 });
 
 // Call processing ON for every device, the iPad included (Ken, November 13 2026). It was
@@ -83,7 +126,7 @@ test('every paid service opens the microphone through the one shared request', (
     for (const f of ['stt-deepgram.js', 'stt-azure.js', 'stt-rest.js']) {
         const src = readFileSync(new URL(`../app/js/${f}`, import.meta.url), 'utf8')
             .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-        assert.match(src, /stream = await audioSession\.openMic\(\)/, f);
+        assert.match(src, /stream = await audioSession\.openMic\(\{ stillWanted: \(\) => wanted \}\)/, f);
         assert.doesNotMatch(src, /getUserMedia/, `${f} must not open the microphone itself`);
         assert.doesNotMatch(src, /echoCancellation/, `${f} must not set its own`);
     }
@@ -126,15 +169,51 @@ test('a microphone refused for the audio mode is tried once more', async () => {
         if (calls.length === 1) { const e = new Error('AudioSession category is not compatible'); e.name = 'InvalidStateError'; throw e; }
         return stream;
     };
-    assert.equal(await audioSession.openMic(gum, async () => {}), stream);
+    assert.equal(await audioSession.openMic({ getUserMedia: gum, wait: async () => {} }), stream);
     assert.equal(calls.length, 2);
 });
 
 test('a refused permission is not retried', async () => {
     let calls = 0;
     const gum = async () => { calls++; const e = new Error('denied'); e.name = 'NotAllowedError'; throw e; };
-    await assert.rejects(audioSession.openMic(gum, async () => {}), { name: 'NotAllowedError' });
+    await assert.rejects(audioSession.openMic({ getUserMedia: gum, wait: async () => {} }), { name: 'NotAllowedError' });
     assert.equal(calls, 1, 'asking again would only show the permission prompt again');
+});
+
+// Problem 4c of the November 13 2026 findings: End conversation or Listen off while
+// the request was out, and the iPad refused it for its audio mode. The retry switched
+// the iPad back to recording mode after the app had set playback, with nothing left
+// to switch it off.
+test('a start cancelled while its request was out neither retries nor switches the iPad back to recording', async () => {
+    const s = { type: 'playback', state: 'active' };
+    const invalid = () => { const e = new Error('AudioSession category is not compatible'); e.name = 'InvalidStateError'; return e; };
+    let calls = 0;
+    const real = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+    Object.defineProperty(globalThis, 'navigator', {
+        value: { ...(globalThis.navigator || {}), audioSession: s }, configurable: true, writable: true,
+    });
+    audioSession._setIosCheckForTest(() => true);
+    try {
+        // Cancelled before the refusal arrived.
+        await assert.rejects(audioSession.openMic({
+            getUserMedia: async () => { calls++; throw invalid(); },
+            wait: async () => {}, stillWanted: () => false,
+        }), { name: 'InvalidStateError' });
+        assert.equal(calls, 1, 'not retried');
+        assert.equal(s.type, 'playback', 'left in playback');
+
+        // Cancelled during the pause before the retry.
+        let wanted = true;
+        calls = 0;
+        await assert.rejects(audioSession.openMic({
+            getUserMedia: async () => { calls++; throw invalid(); },
+            wait: async () => { wanted = false; }, stillWanted: () => wanted,
+        }), { name: 'InvalidStateError' });
+        assert.equal(calls, 1, 'not retried');
+    } finally {
+        audioSession._setIosCheckForTest(() => false);
+        if (real) Object.defineProperty(globalThis, 'navigator', real);
+    }
 });
 
 // Ken's iPad, 0.15.7: the microphone icon showed, the Listen button stayed dark and
@@ -175,5 +254,21 @@ test('no paid service makes its own listening context or closes the shared one',
         assert.doesNotMatch(src, /audioCtx\.close\(\)/, `${f} must not close the shared context`);
     }
     const app = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
-    assert.match(app, /function toggleListening\(\) \{[^}]*audioSession\.unlockCapture\(\)/, 'the Listen tap wakes it');
+    assert.match(app, /function toggleListening\(\) \{[^}]*wakeListeningAudio\(\)/, 'the Listen tap wakes it');
+});
+
+// November 13 2026 findings, item 9. The listening audio is the paid services' alone:
+// made on every device, it ran all session where nothing ever used it. And a reply's
+// tap wakes it too, so automatic listening after the reply can start if a phone call
+// or Siri stopped the audio - before, only a Listen tap could.
+test('the listening audio is woken only for a paid service, by Start, Listen and the taps that reply', () => {
+    const app = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    assert.match(app, /function wakeListeningAudio\(\) \{\s*if \(stt\.currentSource\(\) !== 'browser'\) audioSession\.unlockCapture\(\);\s*\}/);
+    assert.equal(app.match(/audioSession\.unlockCapture\(\)/g).length, 1, 'nothing else wakes it unconditionally');
+    for (const fn of ['handleResponseSelected', 'speakAsUserTurn']) {
+        // The first thing the handler does, before anything waits and the tap is over.
+        assert.match(app, new RegExp(`async function ${fn}\\([^)]*\\) \\{\\s*wakeListeningAudio\\(\\);`), fn);
+    }
+    assert.match(functionBody(app, 'handleStart'), /wakeListeningAudio\(\)/, 'Start wakes it');
 });

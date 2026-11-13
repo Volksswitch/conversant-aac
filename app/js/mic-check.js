@@ -30,6 +30,10 @@ import { DEFAULTS as GATE } from './vad.js';
 
 const stats = {
     starts: 0,
+    // Of those, how many reopened the microphone after the app spoke (on an iPad it
+    // closes for every holding phrase). Counted apart so a report can tell a session
+    // the user restarted many times from one with many holding phrases.
+    reopensAfterSpeech: 0,
     notRunning: {},        // audio system state at start, when it was not "running"
     runsWithNoSound: 0,    // finished runs in which not one frame of audio arrived
     frames: 0,
@@ -119,6 +123,8 @@ function levelBands() {
 }
 
 export function noteSpeech() { stats.speechSpans++; }
+/** The microphone is reopening after the app spoke (stt.js, iPad with paid hearing). */
+export function noteReopenAfterSpeech() { stats.reopensAfterSpeech++; }
 /** A start that could not finish (Ken's iPad, 0.15.7: the audio never woke). */
 export function noteStuck(where) { stats.stuck[where] = (stats.stuck[where] || 0) + 1; }
 export function noteConnected() { stats.connected++; }
@@ -134,7 +140,8 @@ export function summary() {
     const bar = stats.gate ? stats.gate.open : GATE.openLevel;
     const room = stats.gate && stats.gate.floor !== null && stats.gate.floor !== undefined
         ? stats.gate.floor.toFixed(4) : 'not measured';
-    return `starts=${stats.starts} audioNotRunningAtStart=${notRunning} ` +
+    return `starts=${stats.starts} reopensAfterSpeech=${stats.reopensAfterSpeech} ` +
+           `audioNotRunningAtStart=${notRunning} ` +
            `startsWithNoSound=${noSound} frames=${stats.frames} ` +
            `loudest=${stats.loudest.toFixed(3)} (speech starts at ${bar.toFixed(3)}) ` +
            `quietRoom=${room} ` +
@@ -149,7 +156,7 @@ export function summary() {
 
 /** For tests only. */
 export function _reset() {
-    Object.assign(stats, { starts: 0, notRunning: {}, runsWithNoSound: 0, frames: 0, loudest: 0,
+    Object.assign(stats, { starts: 0, reopensAfterSpeech: 0, notRunning: {}, runsWithNoSound: 0, frames: 0, loudest: 0,
         speechSpans: 0, connected: 0, mutedAtStart: 0, inputs: {}, stuck: {},
         levels: new Array(8).fill(0), gate: null, settings: null });
     runFrames = null;

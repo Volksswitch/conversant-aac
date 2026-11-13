@@ -81,6 +81,38 @@ export const DEFAULTS = {
     floorPercentile: 0.2,
     floorWindowMs: 6000,
     floorMinMs: 1000,
+
+    // ⚠ THE ROOM IS CARRIED FROM ONE LISTENING RUN TO THE NEXT (problem 7, November 13
+    // 2026 findings). A new gate is made every time the microphone opens, and on an
+    // iPad that is after every holding phrase. A gate that starts knowing nothing uses
+    // the old fixed bar for its first second and measures whatever it hears as the
+    // room - so a quiet partner who was already talking when it opened had their own
+    // voice taken for the room, and the bar was set above them. The caller passes the
+    // last gate's measured room here (same microphone, same room, seconds later), and
+    // the new gate starts with it. null = nothing known, as before.
+    initialFloor: null,
+
+    // ⚠ A LASTING NOISE THAT STARTS DURING SPEECH MUST NOT HOLD THE GATE OPEN (problem
+    // 8). The room is measured only while the gate is shut, so in a quiet room the
+    // closing level stays low (about 0.0024) for as long as the gate is open, and a fan
+    // or a kettle that comes on while the partner talks kept it open - sent and billed -
+    // until the noise stopped. So while the gate is open it keeps the quietest level of
+    // the last `openFloorMs`, and treats that level as the room when it is above the
+    // room measured before AND one of these says it is not the speaker:
+    //   - it is at least `speechOverNoise` times quieter than the loudest sound since
+    //     the gate opened - far under the voice that opened it (a fan beside a person
+    //     talking at a normal level; closes about five seconds after they stop);
+    //   - or the gate has been open `steadyOpenMs` and the last `openFloorMs` hardly
+    //     varied (loudest within `steadyRatio` of quietest). A voice rises and falls
+    //     with every syllable; a fan or a heater does not. This catches the quiet setups
+    //     where a noise can be nearly as loud as the voice.
+    // Normal speech has gaps that drop to the room, so its quietest moment IS the room
+    // and nothing changes. It only ever RAISES the room, and the bar keeps its 0.020
+    // ceiling, so the gate can never close at a level above the old fixed gate's 0.012.
+    openFloorMs: 4000,
+    speechOverNoise: 8,
+    steadyOpenMs: 15000,
+    steadyRatio: 2,
 };
 
 export function createGate(opts = {}) {
@@ -89,7 +121,11 @@ export function createGate(opts = {}) {
     let quietSince = null;      // when the level first dropped below closeLevel
     let openedAt = null;
     const quiet = [];           // [time, level] of recent frames heard while shut
-    let floor = null;           // how loud the room is between speech; null = not yet known
+    const heardOpen = [];       // [time, level] of recent frames heard while open
+    let loudestOpen = 0;        // the loudest frame since the gate last opened
+    // How loud the room is between speech; null = not yet known. Starts with the
+    // caller's last measurement when there is one (see initialFloor).
+    let floor = (typeof cfg.initialFloor === 'number' && cfg.initialFloor >= 0) ? cfg.initialFloor : null;
     const closeShare = cfg.closeLevel / cfg.openLevel;
 
     function openLevel() {
@@ -103,6 +139,31 @@ export function createGate(opts = {}) {
         if (quiet.length < 5 || now - quiet[0][0] < cfg.floorMinMs) return;
         const sorted = quiet.map((q) => q[1]).sort((a, b) => a - b);
         floor = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * cfg.floorPercentile))];
+    }
+
+    // While open: see openFloorMs above.
+    function followRoomWhileOpen(level, now) {
+        if (!cfg.adaptive || floor === null) return;   // the fixed bar already closes like the old gate
+        heardOpen.push([now, level]);
+        if (level > loudestOpen) loudestOpen = level;
+        while (heardOpen.length && now - heardOpen[0][0] > cfg.openFloorMs) heardOpen.shift();
+        const openFor = now - openedAt;
+        if (openFor < cfg.openFloorMs) return;  // never judge the first seconds of speech
+        let quietest = Infinity;
+        let loudest = 0;
+        for (const [, l] of heardOpen) {
+            if (l < quietest) quietest = l;
+            if (l > loudest) loudest = l;
+        }
+        if (quietest <= floor) return;          // the room still shows through: speech with gaps
+        const farUnderTheVoice = quietest * cfg.speechOverNoise <= loudestOpen;
+        const steady = openFor >= cfg.steadyOpenMs && loudest <= quietest * cfg.steadyRatio;
+        if (!farUnderTheVoice && !steady) return;
+        floor = quietest;
+        // What the room sounded like before the noise started is out of date; left in
+        // the window it would pull the room straight back down once the gate closed,
+        // and the noise would open it again.
+        quiet.length = 0;
     }
 
     return {
@@ -119,11 +180,15 @@ export function createGate(opts = {}) {
                     open = true;
                     openedAt = now;
                     quietSince = null;
+                    heardOpen.length = 0;
+                    heardOpen.push([now, level]);
+                    loudestOpen = level;
                     return 'open';
                 }
                 noteQuiet(level, now);
                 return null;
             }
+            followRoomWhileOpen(level, now);
             // Open: only the quieter threshold can start the closing clock, and it
             // is reset by any frame back above it, so a gap between words does not
             // accumulate toward a close.
@@ -143,6 +208,13 @@ export function createGate(opts = {}) {
 
         isOpen() { return open; },
         openedAt() { return openedAt; },
+        /*
+         * While open: when the speech stopped - the moment the level last dropped below
+         * the closing level - or `now` if it has not. Lets a caller that has to cut a
+         * span short (the microphone closing for the app's own speech) measure how much
+         * speech is in it, as the hang does for a span the gate closed itself.
+         */
+        speechEnd(now) { return quietSince === null ? now : quietSince; },
         preRollMs() { return cfg.preRollMs; },
         config() { return { ...cfg }; },
         /** What the gate is using right now: the room's quiet level and the bar for speech. */

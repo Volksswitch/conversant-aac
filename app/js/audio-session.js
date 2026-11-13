@@ -19,10 +19,19 @@
  *   - Paid hearing only (stt.js calls this around an external source). The iPad's own
  *     recognizer in a Safari tab was never reported quiet, and it restarts itself
  *     constantly; changing the audio type under it is a risk with no evidence behind it.
- *   - A browser without navigator.audioSession (every Chromium browser) does nothing,
- *     so Windows, Chromebook, Mac and Android are unchanged.
+ *   - iPhone and iPad only. Every Chromium browser lacks navigator.audioSession, so
+ *     Windows, Chromebook and Android were never affected, but Safari on a Mac may
+ *     offer it; nothing was ever measured there, so the Mac is left alone too
+ *     (November 13 2026 findings, item 9).
  *   - Never throws: a diagnostic or a volume fix must not break listening.
  */
+
+import * as platform from './platform.js';
+
+// Which devices this applies to. Replaceable for tests only: platform.js reads the
+// device once, when it loads.
+let iosCheck = () => platform.isIOS();
+export function _setIosCheckForTest(fn) { iosCheck = fn; }
 
 /*
  * What to ask for when a paid service opens the microphone: the device's own call
@@ -70,6 +79,7 @@ export function micFailure(err) {
 
 function session() {
     try {
+        if (!iosCheck()) return null;
         const s = typeof navigator !== 'undefined' ? navigator.audioSession : null;
         return s && 'type' in s ? s : null;
     } catch { return null; }
@@ -159,16 +169,26 @@ export async function wake(ctx, ms = 1500) {
  * If an iPad still says its audio mode cannot record, set the mode again, give it a
  * moment and try once more: the refusal is about timing, and a second Listen a few
  * seconds later has always worked. Any other failure is passed straight back.
+ *
+ * ⚠ NOT FOR A START THAT HAS BEEN CANCELLED (problem 4c of the November 13 2026
+ * findings). `stillWanted` is the caller's "is this still wanted?". Without it, a start
+ * cancelled by End conversation or Listen off retried anyway and switched the iPad back
+ * to recording mode after the app had set playback, with nothing left to switch it off.
  */
-export async function openMic(getUserMedia = (c) => navigator.mediaDevices.getUserMedia(c),
-    wait = (ms) => new Promise((r) => setTimeout(r, ms))) {
+export async function openMic({
+    getUserMedia = (c) => navigator.mediaDevices.getUserMedia(c),
+    wait = (ms) => new Promise((r) => setTimeout(r, ms)),
+    stillWanted = () => true,
+} = {}) {
     const constraints = { audio: micProcessing() };
     try {
         return await getUserMedia(constraints);
     } catch (err) {
         if (!err || err.name !== 'InvalidStateError') throw err;
+        if (!stillWanted()) throw err;
         forListening();
         await wait(300);
+        if (!stillWanted()) throw err;
         return getUserMedia(constraints);
     }
 }

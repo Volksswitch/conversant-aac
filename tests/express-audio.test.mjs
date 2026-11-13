@@ -154,8 +154,15 @@ test('every floor-taking path stops a playing sound first', async () => {
         const at = app.indexOf(fn);
         assert.match(app.slice(at, at + 300), /await preemptSound\(\)/, fn);
     }
+    // The whole function, braces matched, rather than a fixed number of characters: a
+    // comment added near its top pushed the line out of a 2500-character window.
     const tl = app.indexOf('function toggleListening(');
-    assert.match(app.slice(tl, tl + 2500), /if \(audioPlayer\) \{ preemptSound\(\)/);
+    let end = app.indexOf('{', tl);
+    for (let depth = 0; end < app.length; end++) {
+        if (app[end] === '{') depth++;
+        else if (app[end] === '}' && --depth === 0) break;
+    }
+    assert.match(app.slice(tl, end + 1), /if \(audioPlayer\) \{ preemptSound\(\)/);
     const pa = app.indexOf('async function playAudioTurn(');
     assert.match(app.slice(pa, pa + 3500), /if \(result\.preempted\) return;/);
 });

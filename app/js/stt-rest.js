@@ -132,7 +132,8 @@ export function withoutSoundLabels(text) {
 
 /**
  * A capture source for one provider. The contract matches stt-deepgram.js and
- * stt-azure.js — { start, stop, isRunning } — so stt.js routes to any of them.
+ * stt-azure.js — { start, stop, pause, isRunning, isStarting } — so stt.js routes to
+ * any of them.
  */
 export function createSource({ provider, getKey, getModel, onText, onStatus, onBilled }) {
     let audioCtx = null;
@@ -146,6 +147,10 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
     // stop() during it be honored once the microphone arrives.
     let starting = false;
     let wanted = false;
+    // A stop() arrived while this start was still waiting for the microphone; see the
+    // Deepgram source (problem 6 of the November 13 2026 findings).
+    let interrupted = false;
+    let muteNode = null;
     function releaseHalfOpen() {
         try { if (stream) stream.getTracks().forEach((t) => t.stop()); } catch { /* gone */ }
         stream = null;
@@ -162,7 +167,8 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
     let preRollFrames = 0;
 
     // Bumped by stop(), so a submission still in flight when listening ends cannot
-    // deliver text into the next conversation.
+    // deliver text into the next conversation. NOT by pause() or start(): see the
+    // Azure source (problem 3 of the November 13 2026 findings).
     let generation = 0;
     /*
      * Consecutive failed phrases. Reset by any success and by every start(), so the
@@ -245,12 +251,16 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
         }
     }
 
-    function closeSpan(now, mine) {
+    function closeSpan(now, mine, { pausing = false } = {}) {
         if (!span.length) return;
         const frames = span;
         const openMs = Math.max(0, now - openedAt);
         span = [];
         spanSamples = 0;
+        // A span cut short because the microphone is closing for the app's own speech
+        // has no hang yet: its speech ends where the quiet began, or now (see the Azure
+        // source).
+        const speechMs = pausing ? Math.max(0, gate.speechEnd(now) - openedAt) : openMs - HANG_MS;
         /*
          * ⚠ A CLICK IS NOT A WORD, AND THESE SERVICES WILL INVENT ONE FROM IT.
          *
@@ -272,7 +282,7 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
          * subtract, but that means 25 seconds of continuous speech and clears any
          * threshold regardless.
          */
-        if (openMs - HANG_MS < MIN_SPEECH_MS) { reset(); return; }
+        if (speechMs < MIN_SPEECH_MS) { reset(); return; }
         // Billed for the audio SENT, pre-roll included, and only when it is sent - a
         // discarded click costs nothing (CR-158).
         billedMs += (frames.reduce((n, f) => n + f.length, 0) / rate) * 1000;
@@ -312,89 +322,121 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
         if (edge === 'close') closeSpan(now, generation);
     }
 
-    return {
-        async start() {
-            if (running) {
-                // Already capturing. RE-REPORT rather than returning silently: if the
-                // app's view of the state has drifted out of step with ours, a silent
-                // return leaves it drifted forever, because this is the only path that
-                // could put it right.
-                if (onStatus) onStatus('listening');
-                return;
-            }
-            const key = ((getKey && getKey()) || '').trim();
-            if (!key) {
-                if (onStatus) onStatus('error', `No ${provider.label} key is set.`);
-                return;
-            }
-            if (starting) return;
-            starting = true;
-            wanted = true;
-            try {
-                // The same cleanup as the other paid recognizers (CR-276): the app speaks
-                // through the device it listens with.
-                stream = await audioSession.openMic();   // see audio-session.js
-            } catch (err) {
-                starting = false;
-                if (onStatus) onStatus('error', `The microphone could not be opened: ${audioSession.micFailure(err)}`);
-                return;
-            }
-            if (!wanted) { starting = false; releaseHalfOpen(); return false; }
-            // The shared listening context, woken by a tap; see audio-session.js.
-            audioCtx = audioSession.captureContext();
-            if (!(await audioSession.wake(audioCtx))) {
-                starting = false;
-                releaseHalfOpen();
-                micCheck.noteStuck('audio would not start');
-                if (onStatus) onStatus('idle');   // button dark: the next Listen tap wakes it
-                return false;
-            }
-            if (!wanted) { starting = false; releaseHalfOpen(); return false; }
-            rate = audioCtx.sampleRate || 48000;
-            micCheck.noteStart({ stream, audioCtx });
-            sourceNode = audioCtx.createMediaStreamSource(stream);
-            processor = audioCtx.createScriptProcessor(4096, 1, 1);
-            gate = vad.createGate({ hangMs: HANG_MS });
-            preRollFrames = Math.max(1, Math.ceil((gate.preRollMs() / 1000) * rate / 4096));
-            reset();
-            billedMs = 0;
-            // Tell the app the running total restarted, or its next report reads as a
-            // decrease and that whole first burst is never counted (CR-019).
-            if (onBilled) onBilled(0);
-            failures = 0;
-            generation++;
-            starting = false;
-            running = true;
-            processor.onaudioprocess = (e) => {
-                if (!running) return;
-                handleFrame(e.inputBuffer.getChannelData(0), Date.now());
-            };
-            sourceNode.connect(processor);
-            // Through a silent gain, never straight to the speakers: the microphone wired
-            // toward them would howl wherever the engine plays the output (CR-276).
-            const mute = audioCtx.createGain();
-            mute.gain.value = 0;
-            processor.connect(mute).connect(audioCtx.destination);
+    async function start() {
+        if (running) {
+            // Already capturing. RE-REPORT rather than returning silently: if the
+            // app's view of the state has drifted out of step with ours, a silent
+            // return leaves it drifted forever, because this is the only path that
+            // could put it right.
             if (onStatus) onStatus('listening');
-        },
-
-        stop() {
-            wanted = false;
+            return true;
+        }
+        const key = ((getKey && getKey()) || '').trim();
+        if (!key) {
+            if (onStatus) onStatus('error', `No ${provider.label} key is set.`);
+            return false;
+        }
+        // A start while one is already waiting wants it again (problem 1 of the
+        // November 13 2026 findings; see the Deepgram source).
+        if (starting) { wanted = true; return true; }
+        starting = true;
+        wanted = true;
+        interrupted = false;
+        try {
+            // The same cleanup as the other paid recognizers (CR-276): the app speaks
+            // through the device it listens with. One retry if an iPad's audio mode was
+            // not ready to record, unless this start was cancelled meanwhile.
+            stream = await audioSession.openMic({ stillWanted: () => wanted });   // see audio-session.js
+        } catch (err) {
+            starting = false;
+            stream = null;
+            // Cancelled while waiting: not a microphone failure (problem 6).
+            if (!wanted) return false;
+            if (interrupted) return start();
+            if (onStatus) onStatus('error', `The microphone could not be opened: ${audioSession.micFailure(err)}`);
+            return false;
+        }
+        if (!wanted) { starting = false; releaseHalfOpen(); return false; }
+        // The shared listening context, woken by a tap; see audio-session.js.
+        audioCtx = audioSession.captureContext();
+        if (!(await audioSession.wake(audioCtx))) {
+            starting = false;
+            releaseHalfOpen();
+            if (!wanted) return false;   // cancelled: not "stuck", and not news
+            micCheck.noteStuck('audio would not start');
+            if (onStatus) onStatus('idle');   // button dark: the next Listen tap wakes it
+            return false;
+        }
+        if (!wanted) { starting = false; releaseHalfOpen(); return false; }
+        rate = audioCtx.sampleRate || 48000;
+        micCheck.noteStart({ stream, audioCtx });
+        sourceNode = audioCtx.createMediaStreamSource(stream);
+        processor = audioCtx.createScriptProcessor(4096, 1, 1);
+        // Starts knowing the room the last run measured (problem 7): see vad.js.
+        gate = vad.createGate({ hangMs: HANG_MS, initialFloor: gate ? gate.levels().floor : null });
+        preRollFrames = Math.max(1, Math.ceil((gate.preRollMs() / 1000) * rate / 4096));
+        reset();
+        billedMs = 0;
+        // Tell the app the running total restarted, or its next report reads as a
+        // decrease and that whole first burst is never counted (CR-019).
+        if (onBilled) onBilled(0);
+        failures = 0;
+        starting = false;
+        running = true;
+        processor.onaudioprocess = (e) => {
             if (!running) return;
-            running = false;
-            micCheck.noteStop();
-            generation++;                    // abandon anything still in flight
-            try { if (processor) processor.disconnect(); } catch { /* already gone */ }
-            try { if (sourceNode) sourceNode.disconnect(); } catch { /* already gone */ }
-            try { if (stream) stream.getTracks().forEach((t) => t.stop()); } catch { /* already gone */ }
-            /* the shared listening context is kept (audio-session.js) */
-            processor = sourceNode = stream = audioCtx = null;
-            reset();
-            if (onStatus) onStatus('idle');
-        },
+            handleFrame(e.inputBuffer.getChannelData(0), Date.now());
+        };
+        sourceNode.connect(processor);
+        // Through a silent gain, never straight to the speakers: the microphone wired
+        // toward them would howl wherever the engine plays the output (CR-276). Kept,
+        // so it can be disconnected again: the shared context lives for the whole page.
+        muteNode = audioCtx.createGain();
+        muteNode.gain.value = 0;
+        processor.connect(muteNode).connect(audioCtx.destination);
+        if (onStatus) onStatus('listening');
+        return true;
+    }
 
-        isRunning() {
-            return running;
-        },
+    // Close the microphone and its audio pieces. Shared by stop() and pause().
+    function closeCapture() {
+        running = false;
+        micCheck.noteStop();
+        if (gate) gate.reset();
+        try { if (processor) processor.disconnect(); } catch { /* already gone */ }
+        try { if (muteNode) muteNode.disconnect(); } catch { /* already gone */ }
+        try { if (sourceNode) sourceNode.disconnect(); } catch { /* already gone */ }
+        try { if (stream) stream.getTracks().forEach((t) => t.stop()); } catch { /* already gone */ }
+        /* the shared listening context is kept (audio-session.js) */
+        processor = sourceNode = stream = audioCtx = muteNode = null;
+        reset();
+        if (onStatus) onStatus('idle');
+    }
+
+    function stop() {
+        if (starting) interrupted = true;
+        wanted = false;
+        generation++;                    // abandon anything still in flight
+        if (!running) return;
+        closeCapture();
+    }
+
+    // Closing for the app's own speech on an iPad is not a stop: the sentence in
+    // progress is sent and anything on its way back still arrives. See the Azure
+    // source (problem 3 of the November 13 2026 findings).
+    function pause() {
+        if (starting) interrupted = true;
+        wanted = false;
+        if (!running) return;
+        if (gate && gate.isOpen()) closeSpan(Date.now(), generation, { pausing: true });
+        closeCapture();
+    }
+
+    return {
+        start,
+        stop,
+        pause,
+        isRunning() { return running; },
+        isStarting() { return starting; },
     };
 }

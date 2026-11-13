@@ -4,6 +4,7 @@ import * as azure from './stt-azure.js';
 import * as sttRest from './stt-rest.js';
 import { STT_PROVIDERS } from './speech-catalog.js';
 import * as audioSession from './audio-session.js';
+import * as micCheck from './mic-check.js';
 
 let recognition = null;
 // A non-browser capture backend (Deepgram or Azure), or null when using the built-in
@@ -34,6 +35,17 @@ let suspendedForHidden = false;
 // passed on. The user's intent to listen is untouched throughout.
 let pausedForSpeech = false;     // closed for the app's own speech; reopen when it ends
 let resumingForSpeech = false;   // reopening after it; its 'listening' is not news
+// The reopen waits one turn of the event loop after the speech ends, so a stop in the
+// same moment - End conversation cancels the speech and then stops listening - cancels
+// it before the microphone is asked for (problem 4b of the November 13 2026 findings).
+let reopenTimer = null;
+// What this module last told the app: 'listening' passed on, and no stop since. The
+// reopen's 'listening' is only hidden when the app already shows listening (problem 2),
+// and a stop always leaves the app showing it off (problem 1).
+let appShowsListening = false;
+// Records the microphone closing and reopening for speech in the saved conversation,
+// which the screen deliberately never shows (set by init; see recordMicEvent).
+let onMicEvent = null;
 /*
  * The options init() was called with, kept so the hearing service can be changed
  * without the caller re-supplying every callback — see setSource().
@@ -204,28 +216,80 @@ function normalizeForEcho(text) {
 let ipadCheck = () => platform.isIOS();
 export function _setIpadCheckForTest(fn) { ipadCheck = fn; }
 
+// Every status this module passes to the app goes through here, so appShowsListening
+// always matches what the app was told.
+function report(status, detail) {
+    if (status === 'listening') appShowsListening = true;
+    else if (status === 'stopped' || status === 'idle' || status === 'error') appShowsListening = false;
+    if (onStatusChange) onStatusChange(status, detail);
+}
+
+// A quiet entry in the saved conversation (November 13 2026 findings, item 9): the
+// screen does not show the microphone closing for speech (Ken's decision), so without
+// this the file could not say when the partner could and could not be heard.
+function recordMicEvent(kind) {
+    try { if (onMicEvent) onMicEvent(kind); } catch { /* a record must never break listening */ }
+}
+
+function cancelReopen() {
+    if (reopenTimer) { clearTimeout(reopenTimer); reopenTimer = null; }
+}
+
+// The source has the microphone, or is waiting for it.
+function sourceBusy() {
+    try {
+        if (!externalSource.isRunning || externalSource.isRunning()) return true;
+        return !!(externalSource.isStarting && externalSource.isStarting());
+    } catch { return false; }
+}
+
 function canPauseForSpeech() {
     if (!externalSource || !listeningIntent || suspendedForHidden || pausedForSpeech) return false;
     try { if (!ipadCheck()) return false; } catch { return false; }
-    try { return externalSource.isRunning ? !!externalSource.isRunning() : true; } catch { return false; }
+    // ⚠ A START STILL WAITING FOR THE MICROPHONE COUNTS (problem 5 of the November 13
+    // 2026 findings). Hold on, Say again or Ask them to repeat tapped during a holding
+    // phrase speaks half a second after it ends, and the reopen is often still waiting
+    // then. Only a RUNNING source used to be closed, so the reopen finished part-way
+    // through the user's phrase and the phrase played with the microphone open.
+    return sourceBusy();
 }
 
 function pauseForSpeech() {
     if (!canPauseForSpeech()) return;
+    const wasRunning = (() => {
+        try { return !externalSource.isRunning || externalSource.isRunning(); } catch { return false; }
+    })();
     pausedForSpeech = true;
     resumingForSpeech = false;
     commitPendingInterim();          // keep what was on screen, as any stop does
-    try { externalSource.stop(); } catch { /* not running */ }
+    // pause(), not stop(): the phrase-at-a-time services keep the sentence the partner
+    // was saying and anything still on its way back (problem 3).
+    try { (externalSource.pause || externalSource.stop).call(externalSource); } catch { /* not running */ }
     audioSession.forSpeaking();      // full volume while the app talks
+    if (wasRunning && appShowsListening) recordMicEvent('mic closed for speech');
 }
 
 function resumeAfterSpeech() {
-    if (!pausedForSpeech) return;
+    if (!pausedForSpeech || reopenTimer) return;
+    reopenTimer = setTimeout(reopenAfterSpeech, 0);
+}
+
+function reopenAfterSpeech() {
+    reopenTimer = null;
+    // Stopped, or sent to the background, in the meantime: nothing to reopen. Another
+    // phrase began: stay closed, and its end reopens.
+    if (!pausedForSpeech || appSpeaking) return;
     pausedForSpeech = false;
     if (!externalSource || !listeningIntent || suspendedForHidden) return;
     resumingForSpeech = true;
+    micCheck.noteReopenAfterSpeech();
     audioSession.forListening();
     try { externalSource.start(); } catch { resumingForSpeech = false; }
+}
+
+/** Is the microphone closed right now for the app's own speech (iPad, paid hearing)? */
+export function isClosedForSpeech() {
+    return pausedForSpeech;
 }
 
 // Wired to tts speaking-state in app.js. noteSpokenStart(text) registers a
@@ -233,6 +297,7 @@ function resumeAfterSpeech() {
 // expire after a tail window (they stay matchable until then).
 export function noteSpokenStart(text) {
     appSpeaking = true;
+    cancelReopen();                  // closed already, and staying closed for this one
     pauseForSpeech();
     deferredUsedThisUtterance = false;
     const norm = normalizeForEcho(text || '');
@@ -519,12 +584,12 @@ function registerVisibilityGuard() {
 
 export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
                        getDeepgramKey, getAzureKey, getAzureRegion, getRestKey,
-                       getRestModel, onBilled }) {
+                       getRestModel, onBilled, onMicEvent: micEventHook }) {
     speechCfg = platform.speechConfig();
     registerVisibilityGuard();
     initOpts = { onResult, onSilence, onStatus, onPartnerSpeech, source,
                  getDeepgramKey, getAzureKey, getAzureRegion, getRestKey,
-                 getRestModel, onBilled };
+                 getRestModel, onBilled, onMicEvent: micEventHook };
     // 'browser' is anything not recognized, so an unknown source degrades to the free
     // recognizer rather than to silence.
     const isPaidSource = source === 'deepgram' || source === 'azure' || !!STT_PROVIDERS[source];
@@ -533,6 +598,7 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
     onSilencePeriod = onSilence;
     onStatusChange = onStatus;
     onPartnerActivity = onPartnerSpeech;
+    onMicEvent = micEventHook || null;
 
     // The two paid backends differ only in what they are handed; everything they call
     // back into is identical, so it is written once. Routing them separately is what
@@ -542,12 +608,32 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
         const wiring = {
             onText: (text, isFinal) => { afterIngest(ingest(text, isFinal), !!isFinal); },
             onStatus: (status, detail) => {
-                if (status === 'error') { pausedForSpeech = resumingForSpeech = false; handleSourceError(detail); return; }
+                if (status === 'error') {
+                    pausedForSpeech = resumingForSpeech = false;
+                    cancelReopen();
+                    handleSourceError(detail);
+                    return;
+                }
                 // Closed and reopened around the app's own speech on an iPad: not news
                 // to the app, and the Listen button must not flicker (see pausedForSpeech).
                 if (pausedForSpeech && (status === 'stopped' || status === 'idle')) return;
-                if (resumingForSpeech && status === 'listening') { resumingForSpeech = false; return; }
-                if (onStatusChange) onStatusChange(status, detail);
+                if (status === 'listening' && resumingForSpeech) {
+                    resumingForSpeech = false;
+                    // ⚠ ONLY HIDDEN IF THE APP ALREADY SHOWS LISTENING (problem 2). When
+                    // the close for speech came before the app was ever told - a phrase
+                    // straight after the Listen tap, before Deepgram had connected -
+                    // this is the 'listening' the app is still waiting for, and hiding it
+                    // left the button dark while every word was sent and billed.
+                    if (appShowsListening) { recordMicEvent('mic reopened after speech'); return; }
+                }
+                if (status === 'stopped' || status === 'idle') {
+                    // A reopen that did not happen (the audio would not start): the next
+                    // 'listening' is news, not the reopen's (problem 2). And nothing is
+                    // recording now, so an iPad goes back to playback (problem 4a).
+                    resumingForSpeech = false;
+                    audioSession.forSpeaking();
+                }
+                report(status, detail);
             },
             onBilled,
         };
@@ -655,7 +741,7 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
             return;
         }
         clearSilenceTimer();
-        if (onStatusChange) onStatusChange('stopped');
+        report('stopped');
     };
 
     // iOS stops recognition when the page is backgrounded WITHOUT telling the app,
@@ -795,6 +881,8 @@ function clearSilenceTimer() {
 // offline, since both backends are network services). The user re-taps to try again.
 function handleSourceError(detail) {
     listeningIntent = false;
+    pausedForSpeech = resumingForSpeech = false;
+    cancelReopen();
     clearSilenceTimer();
     // ⚠ A PAID SOURCE IS TORN DOWN HERE (CR-007). None of them stop themselves on a
     // fatal error, so the microphone stayed open, a Deepgram socket stayed closed, and
@@ -806,7 +894,7 @@ function handleSourceError(detail) {
         try { externalSource.stop(); } catch { /* already stopped */ }
         audioSession.forSpeaking();
     }
-    if (onStatusChange) onStatusChange('error', detail);
+    report('error', detail);
 }
 
 // Open the microphone. Shared by startListening (a NEW partner turn) and
@@ -828,6 +916,7 @@ function commitPendingInterim() {
 
 function suspendSource() {
     pausedForSpeech = resumingForSpeech = false;   // the background guard owns reopening now
+    cancelReopen();
     if (externalSource) {
         commitPendingInterim();
         try { externalSource.stop(); } catch { /* not running */ }
@@ -852,7 +941,7 @@ function openSource(delayMs = 0) {
     // recognizer reports 'listening' now too, exactly as it did when it opened at once;
     // a paid source still reports it itself once it is really up.
     if (delayMs > 0) {
-        if (!externalSource && onStatusChange) onStatusChange('listening');
+        if (!externalSource) report('listening');
         setTimeout(() => {
             if (mine !== openToken || !listeningIntent || suspendedForHidden) return;
             reallyOpen(true);
@@ -880,7 +969,7 @@ function reallyOpen(alreadyReported) {
         return;
     }
     try { recognition.start(); } catch { /* already started */ }
-    if (!alreadyReported && onStatusChange) onStatusChange('listening');
+    if (!alreadyReported) report('listening');
 }
 
 // Begin a NEW partner turn: whatever was captured before is gone. `delayMs` holds the
@@ -920,12 +1009,17 @@ export function stopListening() {
     clearSilenceTimer();
     if (externalSource) {
         commitPendingInterim();
-        // Stopped while closed for the app's own speech: the source is not running, so
-        // it will not say 'stopped' itself - and the button has to go dark.
-        const wasPaused = pausedForSpeech || resumingForSpeech;
         pausedForSpeech = resumingForSpeech = false;
+        cancelReopen();
         const r = externalSource.stop();
-        if (wasPaused && onStatusChange) onStatusChange('stopped');
+        // ⚠ A STOP ALWAYS LEAVES THE APP SHOWING LISTENING OFF (problem 1 of the November
+        // 13 2026 findings). A source that is not running - closed for the app's own
+        // speech, or still waiting for the microphone - says nothing when it is stopped.
+        // Only the closed-for-speech case used to be covered, so a reopen caught by a
+        // trip to the home screen left the button lit with nothing listening, and every
+        // tap on it stopped nothing and reported nothing. A running source says
+        // 'stopped' itself, and then there is nothing left to say here.
+        if (appShowsListening) report('stopped');
         // An iPad left the voice very quiet once the microphone closed (Ken, November
         // 13 2026); say it is ordinary playback now. Nothing happens off an iPad.
         audioSession.forSpeaking();
@@ -940,7 +1034,7 @@ export function stopListening() {
     // lands in that pause finds nothing running, and the browser sends no 'end' - so the
     // Listen button stayed lit after End conversation. Reporting it twice is harmless:
     // handleSttStatus only acts when the state actually changes.
-    if (onStatusChange) onStatusChange('stopped');
+    report('stopped');
 }
 
 // The partner's speech heard so far this listening session — the finalized

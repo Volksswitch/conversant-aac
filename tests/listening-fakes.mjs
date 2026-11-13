@@ -1,12 +1,18 @@
-// Shared fakes for the proofs in this folder (bug hunt of the November 13 2026 iPad
-// listening changes, 0.15.2 to 0.15.8). Drives the REAL app modules (stt.js, the three
-// paid hearing sources, audio-session.js, vad.js, mic-check.js) with a fake microphone,
-// fake audio and a fake service connection. See FINDINGS.md.
+/* Shared fakes for tests that drive the REAL listening code (stt.js, the three paid
+ * hearing sources, audio-session.js, vad.js, mic-check.js) with a fake microphone,
+ * fake audio and a fake service connection.
+ *
+ * Moved here from tests/pending/2026-11-13-ipad-listening/harness.mjs, where it was
+ * written to prove the problems found in the November 13 2026 iPad listening changes.
+ * Not a test file itself (no .test.mjs), so `npm test` only loads it through the tests
+ * that import it.
+ *
+ * Import it FIRST in a test file: it installs the browser globals the app modules
+ * expect, as tests/env.mjs does.
+ */
+import * as env from './env.mjs';
 
-const ROOT = new URL('../../../', import.meta.url);   // the project folder, wherever it is
-export const url = (rel) => new URL(rel, ROOT).href;
-
-export const env = await import(url('tests/env.mjs'));
+export { env };
 
 // ---- fake socket (Deepgram) ----------------------------------------------------
 export class FakeWS {
@@ -22,8 +28,10 @@ globalThis.WebSocket = FakeWS;
 
 // ---- fake audio contexts -------------------------------------------------------
 // `audioCtl.hangResume` makes resume() never finish and keeps the context asleep,
-// which is what an iPad does when it will not wake audio outside a tap.
-export const audioCtl = { hangResume: false, made: 0 };
+// which is what an iPad does when it will not wake audio outside a tap. `gains`
+// collects every silent gain a source makes, so a test can see whether it was
+// disconnected again.
+export const audioCtl = { hangResume: false, made: 0, gains: [] };
 export let processor = null;
 export function makeAudioContextClass() {
     return class FakeAudioContext {
@@ -35,7 +43,11 @@ export function makeAudioContextClass() {
         }
         createMediaStreamSource() { return { connect() {}, disconnect() {} }; }
         createScriptProcessor() { processor = { connect: (n) => n, disconnect() {} }; return processor; }
-        createGain() { return { gain: { value: 1 }, connect: (n) => n, disconnect() {} }; }
+        createGain() {
+            const g = { gain: { value: 1 }, connected: false, connect(n) { this.connected = true; return n; }, disconnect() { this.connected = false; } };
+            audioCtl.gains.push(g);
+            return g;
+        }
         close() { this.state = 'closed'; }
     };
 }
@@ -45,7 +57,7 @@ globalThis.window.AudioContext = makeAudioContextClass();
 // ---- fake navigator: microphone and the iPad audio-session setting -------------
 export const mic = {
     calls: [],                 // one entry per getUserMedia call: { type: audioSession type at the call }
-    plan: [],                  // queued behaviours for the next calls: 'ok' | 'invalid-state' | 'not-allowed' | {delayMs}
+    plan: [],                  // queued behaviours for the next calls: 'ok' | 'invalid-state' | 'not-allowed' | {kind, delayMs}
     open: 0,                   // streams handed out and not yet stopped
 };
 export const audioSessionFake = { type: 'auto', state: 'active' };
@@ -85,8 +97,25 @@ export function appButton() {
 }
 
 let n = 0;
+/** A fresh copy of stt.js, so no test inherits another's listening state. */
 export async function freshStt() {
-    return import(url('app/js/stt.js') + `?hunt=${++n}`);
+    return import(`../app/js/stt.js?listening=${++n}`);
+}
+
+/*
+ * The listening code as it runs on an iPad: closes the microphone for the app's own
+ * speech (stt.js) and sets the iPad's audio mode (audio-session.js). Both read the
+ * device once, when platform.js loads, so tests say it here. Undo with offIpad().
+ */
+export async function onIpad(stt) {
+    const audioSession = await import('../app/js/audio-session.js');
+    stt._setIpadCheckForTest(() => true);
+    audioSession._setIosCheckForTest(() => true);
+}
+export async function offIpad(stt) {
+    const audioSession = await import('../app/js/audio-session.js');
+    stt._setIpadCheckForTest(() => false);
+    audioSession._setIosCheckForTest(() => false);
 }
 
 // One frame of microphone audio at a given loudness, through whichever source is live.

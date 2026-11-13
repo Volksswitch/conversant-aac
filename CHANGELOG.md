@@ -29,6 +29,18 @@ forgetting to tag one is only ever noise, never silence.
 ### On an iPad
 
 - With a paid service hearing the other person, Conversant could hear nothing at all, because since version 0.15.3 the iPad passed on the other person's voice far too quietly. Their voice now comes through at its normal level again.
+- With Azure, Google Cloud or ElevenLabs hearing the other person, a sentence they finished just before Conversant said something, such as "I'm working out my answer", could be lost. It is now kept, and the suggestions answer it.
+- With a paid service hearing the other person, leaving Conversant and coming right back just after it had said something could leave the Listen button lit while nothing was being heard, and tapping it did nothing. Listening now keeps going, and Listen always turns it off.
+- With a paid service hearing the other person, leaving Conversant just after it had said something could switch listening off and turn the screen pink for an error that wasn't real. Listening now comes back when you return.
+- With a paid service hearing the other person, the Listen button could stay dark while Conversant was listening, for example after tapping "Ask them to repeat" right after Listen. The button now shows when Conversant is listening.
+- With a paid service hearing the other person, something you said right after one of Conversant's holding phrases could play quietly or sound like a phone call. It now plays clearly.
+- With a paid service hearing the other person, ending a conversation or turning Listen off while Conversant was talking could turn the iPad's microphone back on for a moment afterwards. It no longer does.
+
+### Everyone
+
+- With a paid service hearing the other person, a quiet speaker who was already talking when listening started again, for example after Conversant said something, could go unheard. Conversant now remembers how quiet the room was, so they are heard from their first word.
+- With a paid service hearing the other person, a fan, heater or kettle that came on while the other person was talking could keep Conversant sending sound to the service, and paying for it, until the noise stopped. It now stops within a few seconds.
+- A Deepgram key pasted with a space inside it could leave the microphone switched on. It no longer does.
 
 ## Version 0.15.8
 
