@@ -3645,6 +3645,14 @@ from the thing that was actually lost.
 
 ---
 
+## Measuring a tester's microphone outside the app — trigger phrase "measure recording" (Ken, November 14 2026), BUILT
+
+When the app hears almost nothing on a tester's device, its own numbers cannot say whether the cause is the microphone (or its case), the device's call processing, or the browser. A recording made with the device's own recorder (Voice Memos on an iPad) takes Conversant out of the picture.
+
+- **"measure recording"** → `node scripts/mic-check/measure-recording.mjs [file ...]` (no file: the newest recording in Downloads). It reports the same level figures and bands as the `levels:` line of a problem report, a second-by-second strip, and each channel separately (one silent channel means one blocked microphone). Needs ffmpeg.
+- **Always measure a reference too**: the same script recorded on a device that works. A recording has its own volume scale, so the finding is the comparison between the two files, never one file against a problem report.
+- **The script for the tester:** five seconds of quiet, the partner counting to ten beside the device, then counting to ten from where they usually sit, with the device in its usual place and case.
+
 ## Reading tester reports — trigger phrase "evaluate reports" (Ken, August 21 2026), BUILT
 
 `scripts/evaluate-reports.mjs` reads the problem reports testers send and says what
