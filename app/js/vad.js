@@ -135,6 +135,7 @@ export function createGate(opts = {}) {
     const quiet = [];           // [time, level] of recent frames heard while shut
     const heardOpen = [];       // [time, level] of recent frames heard while open
     let loudestOpen = 0;        // the loudest frame since the gate last opened
+    let lastSoundAt = null;     // the last frame above the closing level, open or shut (see quietForMs)
     // How loud the room is between speech; null = not yet known. Starts with the
     // caller's last measurement when there is one (see initialFloor).
     let floor = (typeof cfg.initialFloor === 'number' && cfg.initialFloor >= 0) ? cfg.initialFloor : null;
@@ -194,6 +195,7 @@ export function createGate(opts = {}) {
          *   null     — no change
          */
         push(level, now) {
+            if (level > openLevel() * closeShare) lastSoundAt = now;
             if (!open) {
                 if (level >= openLevel()) {
                     open = true;
@@ -234,6 +236,15 @@ export function createGate(opts = {}) {
          * speech is in it, as the hang does for a span the gate closed itself.
          */
         speechEnd(now) { return quietSince === null ? now : quietSince; },
+        /*
+         * How long the microphone has heard nothing louder than the closing level -
+         * the level that, while open, counts as the speaker having stopped. Infinity
+         * before any sound at all. Used by stt.js so that a pause is only counted once
+         * the room has actually gone quiet, not merely once the service has stopped
+         * sending words (Ken, November 13 2026). A lasting noise the gate has taken
+         * for the room sits under the closing level, so it counts as quiet.
+         */
+        quietForMs(now) { return lastSoundAt === null ? Infinity : Math.max(0, now - lastSoundAt); },
         preRollMs() { return cfg.preRollMs; },
         config() { return { ...cfg }; },
         /** What the gate is using right now: the room's quiet level and the bar for speech. */

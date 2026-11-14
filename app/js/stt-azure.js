@@ -587,5 +587,7 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
         isRunning() { return running; },
         isStarting() { return starting; },
         billedSeconds() { return billedMs / 1000; },
+        // How long the microphone has been quiet (vad.js); see stt-deepgram.js.
+        quietForMs() { return gate ? gate.quietForMs(Date.now()) : Infinity; },
     };
 }

@@ -339,3 +339,18 @@ test('a fan that starts as the person stops is let go within about three seconds
         assert.ok(waited <= 3.5, `hang ${hangMs} ms, talk ${talkMs / 1000} s: the words waited ${waited.toFixed(1)} s`);
     }
 });
+
+// With a paid service, stt.js counts a pause only once the microphone has been quiet
+// (Ken, November 13 2026: options came partway through his count). The gate is what
+// knows: anything above the closing level counts as sound, the gate open or shut.
+test('the gate says how long the microphone has been quiet', () => {
+    const g = createGate({ initialFloor: 0.0004 });     // bar 0.004, closing level 0.0024
+    assert.equal(g.quietForMs(0), Infinity, 'nothing heard yet');
+    g.push(0.05, 0);
+    g.push(0.0005, 100);                                 // the room
+    assert.equal(g.quietForMs(1000), 1000);
+    g.push(0.003, 1100);                                 // soft: under the bar, over the closing level
+    assert.equal(g.quietForMs(1200), 100, 'a soft sound still counts as sound');
+    g.reset();
+    assert.equal(g.quietForMs(1300), 200, 'stopping does not forget when it last heard sound');
+});

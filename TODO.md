@@ -66,12 +66,6 @@ the one that quietly waits forever.
   - **A trip to the home screen** still throws away an Azure, Google Cloud or ElevenLabs sentence that is being transcribed at that moment: the same cause as problem 3, at a different moment, and not part of the findings. The fix would be to use the new "pause" for that trip as well.
 - **Why not now:** needs the device; nothing here can be checked on a computer. The three items left alone each need Ken's go-ahead before they are worth building.
 
-### A pause can be counted while the other person is still talking (paid hearing)
-- **Raised:** 2026-11-13 - Ken's 0.15.10 problem report from his iPad (Deepgram): *"I was surprised that the response options came after I was only partway through the count"*, and he does not think he paused for 1.5 seconds (his silence period) at any point. The app counted four pauses during a count of about 14 seconds.
-- **Why:** the silence countdown starts when the hearing service last sent words back (`resetSilenceTimer`, called from `afterIngest`), not when the other person went quiet. Deepgram sends words back in bursts, so the gap between two bursts can be longer than any real pause. The limit has been recorded since August 21 2026 ("Every timer starts from the app's idea of the pause").
-- **Recommendation:** with a paid service the app hears the sound itself (the speech gate decides what to send), so count a pause only once the microphone has also been quiet for the silence period. Hold the countdown at most about 2 seconds, so in a noisy room the options come at most that much later than now. The device's own hearing gives the app no sound, so it would stay as it is.
-- **Why not now:** waiting for Ken's decision.
-
 ### "Press again": rethink the cue for other languages and for users who do not read
 - **Raised:** 2026-11-13 - Ken, approving the "Press again" tag on a button waiting for its second tap or press (End conversation and "Don't save" always; any button with "Two taps" chosen).
 - **What is wanted:** decide whether words are still the right cue when (a) other languages arrive, where the same idea can take many more characters and the tag may not fit over a small button, and (b) the app serves users with lower literacy, who cannot read it. Alternatives to weigh: changing the button's background color while it waits, or a flashing or pulsing background. Caution on the second: the Listen button already pulses, and there it means the microphone is on, so a pulse here would give one look two meanings.

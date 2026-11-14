@@ -855,6 +855,42 @@ function resetSilenceTimer(sawFinal) {
     silenceTimer = setTimeout(fireSilenceCheckpoint, silenceThreshold);
 }
 
+/*
+ * ⚠ WITH A PAID SERVICE, A PAUSE ALSO NEEDS A QUIET MICROPHONE (Ken, November 13 2026).
+ *
+ * The countdown above restarts with every result the service sends back, so on its own
+ * it measures the gaps between DELIVERIES, not the other person's pauses. Deepgram sends
+ * words in bursts, so a gap between two bursts could reach the silence period while they
+ * were still talking. Ken's 0.15.10 report: three pauses counted inside a count with no
+ * 1.5-second pause in it, each asking for new options mid-sentence.
+ *
+ * A paid service hears through the app's own microphone code, so its source can say how
+ * long the microphone has been quiet (quietForMs, from vad.js). When the countdown runs
+ * out first, the pause waits until the microphone has been quiet for the silence period
+ * too - but never more than quietHoldMaxMs, so a room that is never quiet (people
+ * talking nearby) delays the options by at most that and can never block them. It only
+ * ever makes a pause LATER than before, never earlier. The device's own recognizer
+ * passes the app words but no sound (no quietForMs), so it is unchanged, as is the
+ * 0-second setting, which follows the service's own end-of-speech instead of a clock.
+ */
+let quietHoldMaxMs = 2000;
+let quietHoldStartedAt = 0;      // when this pause started waiting for the microphone
+export function _setQuietHoldMaxForTest(ms) { quietHoldMaxMs = ms; }
+
+// How much longer to wait for the microphone to go quiet; 0 = count the pause now.
+function quietWaitMs() {
+    if (!externalSource || typeof externalSource.quietForMs !== 'function') return 0;
+    if (silenceThreshold <= 0) return 0;
+    let quiet;
+    try { quiet = Number(externalSource.quietForMs()); } catch { return 0; }
+    if (!(quiet < silenceThreshold)) return 0;   // quiet long enough, or nothing heard yet
+    const now = Date.now();
+    if (!quietHoldStartedAt) quietHoldStartedAt = now;
+    const held = now - quietHoldStartedAt;
+    if (held >= quietHoldMaxMs) return 0;        // never quiet: count it anyway, this late at most
+    return Math.max(20, Math.min(silenceThreshold - quiet, quietHoldMaxMs - held));
+}
+
 function fireSilenceCheckpoint() {
     // The partner has gone quiet for the silence period. Hand the speech
     // collected so far to the app for response generation, but keep recording —
@@ -865,6 +901,14 @@ function fireSilenceCheckpoint() {
         silenceTimer = setTimeout(fireSilenceCheckpoint, 200);
         return;
     }
+    // With a paid service: and not while the microphone still hears them (see above).
+    const wait = quietWaitMs();
+    if (wait > 0) {
+        silenceTimer = setTimeout(fireSilenceCheckpoint, wait);
+        return;
+    }
+    silenceTimer = null;
+    quietHoldStartedAt = 0;
     const text = currentText();
     if (text && onSilencePeriod) onSilencePeriod(text);
 }
@@ -874,6 +918,7 @@ function clearSilenceTimer() {
         clearTimeout(silenceTimer);
         silenceTimer = null;
     }
+    quietHoldStartedAt = 0;
 }
 
 // A surfaced error is fatal for this listening session whichever backend produced

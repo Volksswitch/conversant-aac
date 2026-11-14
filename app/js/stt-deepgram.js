@@ -488,5 +488,8 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
         isRunning() { return running; },
         isStarting() { return starting; },
         billedSeconds() { return billedMs / 1000; },
+        // How long the microphone has been quiet (vad.js), so stt.js counts a pause
+        // only once the room is actually quiet, not merely once words stop arriving.
+        quietForMs() { return gate ? gate.quietForMs(Date.now()) : Infinity; },
     };
 }

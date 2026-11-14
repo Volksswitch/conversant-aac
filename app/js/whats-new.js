@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.11": [
+    "With a paid service hearing the other person, Conversant now waits until the microphone has actually gone quiet before it treats a gap as a pause. It could decide they had paused while they were still talking, because the service sends their words back in bursts, so new response options appeared partway through what they were saying. In a noisy room, where it never hears quiet, it waits at most 2 seconds longer than before."
+  ],
   "0.15.10": [
     "Holding phrases such as \"I'm working on that\" no longer come back after every pause while the other person is still talking. After the first one, the next waits for a longer silence (\"Subsequent delay\", 10 seconds unless you change it), and there are never more than your \"Maximum per turn\" until you reply. On an iPad with a paid service hearing the other person, each holding phrase closes the microphone for a moment, so this also leaves them room to finish what they are saying."
   ],

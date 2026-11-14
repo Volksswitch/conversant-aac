@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+### Everyone
+
+- With a paid service hearing the other person, Conversant now waits until the microphone has actually gone quiet before it treats a gap as a pause. It could decide they had paused while they were still talking, because the service sends their words back in bursts, so new response options appeared partway through what they were saying. In a noisy room, where it never hears quiet, it waits at most 2 seconds longer than before.
+
 ## Version 0.15.10
 
 ### Everyone

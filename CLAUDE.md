@@ -3178,6 +3178,20 @@ silence period **overstates** how trigger-happy it is — the effective acoustic
 longer than the number. (b) A complaint that the holding phrases are late has two
 adjustable terms (silence period, initial delay) and one that is not.
 
+**⚠ THE SAME CHAIN CAN ALSO COUNT A PAUSE THAT NEVER HAPPENED, AND WITH A PAID SERVICE A
+PAUSE NOW ALSO WAITS FOR A QUIET MICROPHONE (Ken, November 13 2026).** Because the
+countdown restarts at every delivery, it measures the gaps between DELIVERIES, and
+Deepgram sends words in bursts: a delivery gap could reach the silence period while the
+other person was still talking. Ken's 0.15.10 report counted three pauses inside a count
+with no 1.5-second pause in it, and new options appeared mid-sentence each time. A paid
+source now reports how long the microphone has been quiet (`quietForMs`, from the speech
+gate: anything above the closing level is sound, open or shut), and
+`fireSilenceCheckpoint` waits for that as well, **at most 2 seconds more**
+(`quietHoldMaxMs`), so a room that is never quiet delays the options by at most that
+and can never block them. **It only ever makes a pause later, never earlier.** The
+device's own recognizer gives the app no sound, so it is unchanged, as is the 0-second
+setting, which follows the service's own end of speech.
+
 **WHAT THE TRACE RECORDS, so it is not misread:** a checkpoint carries a wall-clock
 time and `sinceMs`, which is **the gap since the PREVIOUS checkpoint in that turn —
 not the length of the pause.** Nothing in the app measures pause length. `stt_gap`
@@ -3743,7 +3757,7 @@ Durations feed all three: conversation length, time-to-first-response after a pa
 - **Deepgram: direct and precise.** It returns **word-level timestamps** (`start`/`end`, relative to stream start) and the app owns the audio pipeline, so `L = arrival wall-clock − (stream-start wall-clock + word end)`. `vad.js` additionally gives the acoustic speech-offset boundary for free, since it is already gating the upstream.
 - **Browser STT: no.** The Web Speech API exposes **no audio timing whatsoever** — no word offsets, no result timestamps — and the browser owns the capture, so there is nothing to correlate against. The only route is a **parallel `getUserMedia` + `vad.js` rig** running alongside the recognizer, which is real machinery and rests on an unverified assumption (that a concurrent capture alongside `webkitSpeechRecognition` works). **Do not build it speculatively.**
 - **The cheaper measure that is free on BOTH backends, and is the more useful one for this question: the DELIVERY-GAP distribution** — the interval between successive `onresult` events *while speech is ongoing*. Spurious firings come from a delivery gap exceeding the threshold during continuous speech, and that is measured directly, with no VAD and no timestamps. `L` explains the mechanism; delivery gaps are the thing that actually fires.
-- **Recommendation:** take `L` on Deepgram because it costs nothing, take delivery gaps on both, and treat checkpoint-firings-per-turn as the outcome measure. Only build the browser-STT VAD rig if the checkpoint data says something is wrong and the delivery gaps do not explain it.
+- **Recommendation:** take `L` on Deepgram because it costs nothing, take delivery gaps on both, and treat checkpoint-firings-per-turn as the outcome measure. Only build the browser-STT VAD rig if the checkpoint data says something is wrong and the delivery gaps do not explain it. **With a paid service the spurious firings are now stopped at the source (November 13 2026): a pause also waits for a quiet microphone, at most 2 s more; see "Every timer starts from the app's idea of the pause".**
 
 **ERROR REPORTING — what exists, and the four gaps.** Already working: a 200-entry localStorage ring buffer, `errors.log` in the data folder, errors interleaved into the conversation JSON, the red-wash transcript indicator, and a Settings → About viewer with a Copy that bundles per-conversation transcripts (`buildErrorReport`) — with partner speech already redacted for a private conversation (SEC-2). The gaps:
 1. **No capture for "it behaved wrong but didn't throw."** This is most of what testers will hit — a silent stall, wrong cards, a dead button — and nothing is logged, so there is nothing to report. **Fix: a "Report a problem" button that captures a snapshot on demand, with a short free-text "what happened?" box, stamped to the current conversation.** The user-initiated report is the *only* sensor for this class.
