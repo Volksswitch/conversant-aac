@@ -394,6 +394,62 @@ try {
     await pace(400);
     check(await page.evaluate(() => window.__mic.isOn() && document.getElementById('pressAgainTag').hidden),
         'Listen still takes one tap');
+
+    // ---- A device question the switches cannot answer (Ken, November 15 2026). The
+    // microphone has not been allowed yet, so Listen warns first and asks for a helper.
+    await page.evaluate(async () => {
+        const s = await import('/js/storage.js');
+        s.saveSwitchCount(2);
+        s.saveSwitchScan({ ...s.loadSwitchScan(), repeatMs: 0 });
+    });
+    await page.close();   // the app refuses a second open copy (SEC-9)
+    const p2 = await browser.newPage();
+    await p2.setViewport({ width: 1280, height: 800 });
+    await p2.evaluateOnNewDocument(stubs);
+    await p2.evaluateOnNewDocument(() => {
+        navigator.permissions.query = async (d) => (d && d.name === 'microphone'
+            ? { state: 'prompt', onchange: null } : { state: 'granted', onchange: null });
+    });
+    p2.on('pageerror', (e) => { console.log('PAGE ERROR', e.message); failures++; });
+    await p2.goto(URL, { waitUntil: 'load' });
+    await pace(600);
+    const hl2 = () => p2.evaluate(() => {
+        const el = document.querySelector('.scan-held') || document.querySelector('.scan-hl');
+        return { id: el ? el.id : null, text: el ? (el.getAttribute('aria-label') || el.textContent || '').trim() : '' };
+    });
+    const move2 = async () => { await p2.keyboard.press('Space'); await pace(80); };
+    const choose2 = async () => { await p2.keyboard.press('Enter'); await pace(300); };
+    async function until2(pred, max = 60) {
+        for (let i = 0; i < max; i++) { const x = await hl2(); if (pred(x)) return x; await move2(); }
+        return null;
+    }
+    check(await p2.$eval('#helperNote', (n) => n.hidden), 'with no data folder, the start screen has no folder warning');
+    await until2((x) => x.id === 'startBtn', 6);
+    await choose2();
+    await pace(1200);
+    await until2((x) => x.id === 'listenControls', 40);
+    await choose2();
+    await until2((x) => x.id === 'listenBtn', 12);
+    await choose2();
+    await pace(300);
+    const card = await p2.evaluate(() => {
+        const d = [...document.querySelectorAll('dialog[open]')].find((x) => /microphone question/.test(x.textContent));
+        return d ? d.textContent : '';
+    });
+    check(/helper/.test(card) && !(await p2.evaluate(() => window.__mic.isOn())),
+        'Listen first warns that a helper must answer the microphone question');
+    const onCard = await until2((x) => x.text === 'Start listening', 10);
+    check(!!onCard, 'the switch scan reaches the warning');
+    await choose2();
+    await pace(500);
+    check(await p2.evaluate(() => window.__mic.isOn()), 'choosing Start listening opens the microphone');
+    await until2((x) => x.id === 'listenBtn', 40);
+    await choose2();   // off
+    await pace(300);
+    await choose2();   // on again: warned once a session, so no second warning
+    await pace(500);
+    check(await p2.evaluate(() => window.__mic.isOn() && !document.querySelector('dialog[open]')),
+        'the warning is given once a session');
 } finally {
     await browser.close();
     server.kill();

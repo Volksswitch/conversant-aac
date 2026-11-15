@@ -210,7 +210,7 @@ export function confirmNeutral({
  * therefore given every time a folder is chosen - which is rare - at the one moment it
  * can change the choice. Skipped where there is no folder picker (an iPad keeps its
  * data inside the browser, so there is nothing to choose). Resolves true to go on. */
-export function confirmFolderChoice() {
+export function confirmFolderChoice({ switchUser = false } = {}) {
     if (typeof window === 'undefined' || !('showDirectoryPicker' in window)) return Promise.resolve(true);
     return confirmNeutral({
         title: 'Before you choose a folder',
@@ -219,7 +219,11 @@ export function confirmFolderChoice() {
             + 'folder backed up online, all of that is copied to that company’s servers. To keep '
             + 'conversations only on this device, choose a folder that is not backed up online. On '
             + 'Windows, the Documents and Desktop folders are often kept in OneDrive, so check '
-            + 'before you choose a folder inside them.',
+            + 'before you choose a folder inside them.'
+            // The folder window is the device's own, outside the page, so the switch
+            // scan cannot reach it (Ken, November 15 2026).
+            + (switchUser ? ' The folder window that opens next belongs to this device, and your '
+                + 'switches cannot use it. Ask a helper to choose the folder for you.' : ''),
         confirmLabel: 'Choose a folder',
         cancelLabel: 'Cancel',
     });

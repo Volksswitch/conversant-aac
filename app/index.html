@@ -96,6 +96,10 @@
                             <button id="apiKeyPromptBtn" type="button">Add API key to Settings</button>
                         </div>
                     </div>
+                    <!-- For a switch user only: warns that pressing Start makes the device ask to let
+                         Conversant back into the data folder (Android, every launch). That question
+                         is the device's own and the switch scan cannot reach it. -->
+                    <p id="helperNote" class="helper-note" hidden></p>
                     <button id="startBtn">Start</button>
                     <!-- Version, back on the opening screen (Ken, August 9 2026).
                          The support instructions tell testers to quote their

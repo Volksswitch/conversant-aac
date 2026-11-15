@@ -1043,6 +1043,8 @@ function initApp() {
     // switches" is one, two or three; with it off the app is exactly as before.
     switchAccess.init();
     if (firstLaunch) showFirstLaunchChoice();
+    refreshHelperNote();
+    watchMicPermission();
 
     // Conversation Review: the second controller for the conversation screen. It owns
     // none of the live conversation's state and is handed only what it needs.
@@ -1279,7 +1281,51 @@ function showFirstLaunchChoice() {
             applySwitchAppSettingsLive(true);
         }
         switchAccess.configure();
+        refreshHelperNote();
     });
+}
+
+/*
+ * QUESTIONS THE SWITCHES CANNOT ANSWER (Ken, November 15 2026). The microphone and the
+ * data folder are each guarded by a question the DEVICE asks, outside the page, so the
+ * switch scan can neither highlight nor press it. Nothing a page can do changes that;
+ * what the app can do is say so BEFORE the question appears, so a helper is called.
+ * Shown only when switch access is on and the device is actually going to ask.
+ */
+
+// The start screen: pressing Start makes Android ask for the data folder again, every
+// launch. A plain line, not a card - a card would need its own press, and Start's tap
+// has to reach the folder request directly (see handleStart).
+async function refreshHelperNote() {
+    const note = document.getElementById('helperNote');
+    if (!note) return;
+    let show = false;
+    try { show = storage.loadSwitchCount() > 0 && await storage.folderWillAsk(); } catch { show = false; }
+    note.textContent = show
+        ? 'When you press Start, this device will ask to let Conversant back into your data '
+            + 'folder. Your switches cannot answer that question. Ask a helper to tap Allow.'
+        : '';
+    note.hidden = !show;
+}
+
+// The microphone permission, kept up to date so Listen can read it WITHOUT waiting:
+// any wait in the Listen tap would end the tap, and Safari starts its own recognizer
+// only inside one. 'unknown' where the browser will not say, and then nothing is shown.
+let micPermission = 'unknown';
+async function watchMicPermission() {
+    try {
+        if (!navigator.permissions || !navigator.permissions.query) return;
+        const status = await navigator.permissions.query({ name: 'microphone' });
+        micPermission = status.state;
+        status.onchange = () => { micPermission = status.state; };
+    } catch { micPermission = 'unknown'; }
+}
+
+// Listen, for a switch user, when the device has not been given the microphone yet.
+// Resolves true to go on and open it.
+let micQuestionWarned = false;
+function micQuestionAhead() {
+    return storage.loadSwitchCount() > 0 && micPermission === 'prompt' && !micQuestionWarned;
 }
 
 function restoreConversationScreen() {
@@ -2430,6 +2476,20 @@ function toggleListening() {
         }
         stt.stopListening();
     } else {
+        // A switch user is warned before the device's own microphone question, which
+        // the switch scan cannot reach (see micQuestionAhead). Once per session: if the
+        // helper was not there, Listen goes straight to the question next time.
+        if (micQuestionAhead()) {
+            micQuestionWarned = true;
+            confirmNeutral({
+                title: 'The microphone question',
+                body: 'This device is about to ask whether Conversant may use the microphone. '
+                    + 'Your switches cannot answer that question. Ask a helper to tap Allow when it appears.',
+                confirmLabel: 'Start listening',
+                cancelLabel: 'Not now',
+            }).then((go) => { if (go && !isListening) toggleListening(); });
+            return;
+        }
         // Never open the microphone while a recording is still audible (CR-064).
         if (audioPlayer) { preemptSound().then(() => { if (!isListening) toggleListening(); }); return; }
         // Manual start: arm auto-resume for the rest of this session.
@@ -9182,7 +9242,7 @@ function openSettings() {
     document.getElementById('pickFolderBtn').onclick = async () => {
         setStatusLine('dataFolderStatus', null, '');
         try {
-            if (!(await confirmFolderChoice())) return;
+            if (!(await confirmFolderChoice({ switchUser: storage.loadSwitchCount() > 0 }))) return;
             await storage.pickDataFolder();
             await adoptDataFolder();
         } catch (err) {

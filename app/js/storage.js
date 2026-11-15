@@ -184,7 +184,7 @@ const folderTrace = [];
 function noteFolder(step) { if (folderTrace.length < 20) folderTrace.push(step); }
 export function folderReconnectTrace() { return folderTrace.join(' > '); }
 
-(async () => {
+const priming = (async () => {
     if (!supportsFolderPicker()) { noteFolder('no-picker'); return; }
     try {
         primedHandle = await idbGet(DIR_HANDLE_KEY);
@@ -194,6 +194,21 @@ export function folderReconnectTrace() { return folderTrace.join(' > '); }
         noteFolder('primed-failed:' + (err && err.name || 'unknown'));
     }
 })();
+
+/*
+ * Will pressing Start make the device ask to let Conversant back into the data folder?
+ * True only when a folder is remembered and its permission is back at "ask" - Android,
+ * every launch; Windows keeps the permission, so false there. Asks nothing: the lookup
+ * and queryPermission need no tap. Used to warn a switch user beforehand, because the
+ * device's own question is outside the page and the switch scan cannot reach it
+ * (Ken, November 15 2026).
+ */
+export async function folderWillAsk() {
+    try { await priming; } catch { /* decide on what we have */ }
+    if (!primedHandle || typeof primedHandle.queryPermission !== 'function') return false;
+    try { return (await primedHandle.queryPermission({ mode: 'readwrite' })) === 'prompt'; }
+    catch { return false; }
+}
 
 // A permission request started from a user gesture, awaited later by
 // restoreDataFolder. Cleared once consumed so a stale answer is never reused.

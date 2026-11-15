@@ -181,7 +181,7 @@ function renderFolderPrompt() {
                 const btn = e.currentTarget;
                 btn.disabled = true;
                 try {
-                    if (!(await confirmFolderChoice())) { btn.disabled = false; return; }
+                    if (!(await confirmFolderChoice({ switchUser: storage.loadSwitchCount() > 0 }))) { btn.disabled = false; return; }
                     await storage.pickDataFolder();
                     // File-in-folder wins (v0.2.25): adopt an existing
                     // worldview.json, or promote cache-only answers to a new one.

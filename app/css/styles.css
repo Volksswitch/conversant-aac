@@ -1985,6 +1985,11 @@ body.opts-grid-below #responseArea { flex-direction: column; }
    be reached, so it is always present rather than shown on a condition. */
 /* Version on the opening screen. Quiet — it is a fact you look up, not something
    the user is being asked to read every launch. */
+/* For a switch user: a device question is coming that the switches cannot answer. */
+.helper-note {
+    margin: 0 0 0.8rem; text-align: center; color: var(--ink); font-size: 1rem;
+}
+.helper-note[hidden] { display: none; }
 .start-version {
     margin: 0.9rem 0 0; text-align: center; color: var(--ink-muted); font-size: 0.85rem;
 }
