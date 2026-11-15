@@ -96,8 +96,9 @@ the one that quietly waits forever.
 - **Built 2026-11-15:** with switch access on, Listen warns first (once a session) when the microphone is not yet allowed; the start screen warns when pressing Start will make the device ask for the data folder; the folder-choice card says a helper must use the folder window. All three User Manuals say which questions need a helper. Not run in a browser: the start-screen folder warning, which needs a real remembered folder (Android).
 - **Measured 2026-11-15 (Ken, iPad 10, 0.15.11, problem report):** allowing the microphone for the site in Safari does NOT reach the Home Screen app, which still asks. Consistent with the two being separate storage silos.
 - **Measured 2026-11-15 (Ken):** allowing the microphone at the PROMPT in a Safari tab, and THEN adding the app to the Home Screen, carries the permission into the installed app. The iPad manual's install steps (3.1) now say to do it in that order, and the switch-access note says the question then won't come up.
-- **What is wanted:** (1) Check that the carried-over permission survives closing and reopening the Home Screen app. (2) Decide what Android switch users are told: a helper at every launch, or no data folder.
-- **Why not now:** (1) needs Ken's iPad over two launches; (2) is Ken's call, and switch access is not offered to beta testers yet.
+- **Confirmed 2026-11-15 (Ken):** the carried-over permission survives fully closing and reopening the Home Screen app.
+- **What is wanted:** Decide what Android switch users are told: a helper at every launch, or no data folder.
+- **Why not now:** it is Ken's call, and switch access is not offered to beta testers yet.
 
 ### Switch access: run the device test plan
 - **Raised:** 2026-11-12 - Ken, reviewing the Switch Access Design: "Need a test plan for all the devices to ensure that all the outstanding questions and decisions are tested and answered." **Plan written 2026-11-13:** `Documents/Conversant AAC Switch Access Device Test Plan.docx` (Parts A to H; iPad in Safari and installed, Android tablet; a Chromebook and a MacBook are not tested separately because both run Chrome like the PC).
