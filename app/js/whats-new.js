@@ -22,6 +22,10 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.12": [
+    "When there's nothing from the other person to answer, the \"New 4\" button now suggests things you could say to keep the conversation going, or to start one. Before, it did nothing at all. Press it again for a different set. If you tap a person, place or feeling while these are showing, you get a new set that takes it into account.",
+    "In Practice, if you ask the other person to speak again before you've answered, they now carry on talking. Before, nothing happened."
+  ],
   "0.15.11": [
     "With a paid service hearing the other person, Conversant now waits until the microphone has actually gone quiet before it treats a gap as a pause. It could decide they had paused while they were still talking, because the service sends their words back in bursts, so new response options appeared partway through what they were saying. In a noisy room, where it never hears quiet, it waits at most 2 seconds longer than before."
   ],
