@@ -223,18 +223,6 @@
             </nav>
             <div id="settingsContent">
                 <div class="tab-panel active" data-tab="general">
-                    <!-- Touch or switches: the most basic choice in the app, so it is first
-                         on the General tab rather than inside the Switch Access tab
-                         (Switch Access Design section 2.7, Ken, November 12 2026). -->
-                    <div class="setting-group" data-help="switchCount">
-                        <label for="switchCountInput">Number of switches</label>
-                        <select id="switchCountInput">
-                            <option value="0">None: I use direct select</option>
-                            <option value="1">One switch</option>
-                            <option value="2">Two switches</option>
-                            <option value="3">Three switches</option>
-                        </select>
-                    </div>
                     <div class="setting-group" data-help="apiKey">
                         <label for="apiKeyInput">API Key</label>
                         <div id="apiKeyRow" class="key-row">
@@ -853,11 +841,22 @@
                          dock uses. -->
                 </div>
                 <!-- SWITCH ACCESS (Switch Access Design section 3, Ken, November 12 2026).
-                     "Number of switches" is on the General tab; everything else is here.
-                     A section named for a screen does nothing anywhere else. Values are
-                     written by app.js wireSwitchSettings and read by switch-access.js. -->
+                     "Number of switches" is the first section here (moved from the General
+                     tab, Ken, November 17 2026) and is the one control on this tab that is
+                     never grayed out. A section named for a screen does nothing anywhere
+                     else. Values are written by app.js wireSwitchSettings and read by
+                     switch-access.js. -->
                 <div class="tab-panel" data-tab="switch">
-                    <p class="tab-intro">Number of switches is on the General tab. One tap or two (General), the keyboard for typing and what More shows (Express Panel and Keyboard) also apply to switches.</p>
+                    <p class="tab-intro">One tap or two (General), the keyboard for typing and what More shows (Express Panel and Keyboard) also apply to switches.</p>
+                    <div class="setting-group" data-help="switchCount">
+                        <label for="switchCountInput">Number of switches</label>
+                        <select id="switchCountInput">
+                            <option value="0">None: I use direct select</option>
+                            <option value="1">One switch</option>
+                            <option value="2">Two switches</option>
+                            <option value="3">Three switches</option>
+                        </select>
+                    </div>
                     <div class="setting-group" data-help="switchKeysGroup">
                         <label>Your switches</label>
                         <div class="setting-item switch-key-row">

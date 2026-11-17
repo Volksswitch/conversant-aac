@@ -2189,7 +2189,7 @@ export function saveDoubleTapMs(ms) {
 }
 
 // --- Switch access (Switch Access Design, Ken, November 12 2026) ---
-// Number of switches: 0 is touch (the default), 1-3 is switches. On the General tab.
+// Number of switches: 0 is touch (the default), 1-3 is switches. First on the Switch Access tab.
 export function loadSwitchCount() {
     return normalizeCount(loadSettings().switchCount);
 }

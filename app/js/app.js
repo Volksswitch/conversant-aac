@@ -1079,8 +1079,8 @@ function initApp() {
 // Put the live conversation screen back after a review. Review is only entered with
 // no conversation under way, so "back" means the resting screen.
 // --- Switch access settings (Switch Access Design sections 2.7 and 3, Ken, November 12
-// 2026). "Number of switches" is on the General tab; the rest is on the Switch Access
-// tab. The scanner itself is switch-access.js; it reads storage when configure() runs.
+// 2026). Everything, "Number of switches" first, is on the Switch Access tab (moved from
+// General, Ken, November 17 2026). The scanner itself is switch-access.js; it reads storage when configure() runs.
 
 // The few app settings that suit switches, applied or put back through their OWN
 // controls, so each one's live effect (the keyboard mode, the panel, the cards per
@@ -1154,7 +1154,11 @@ function reflectSwitchSettings() {
     // not go with this number of switches (grayed out, not hidden, as the prototypes do).
     const panel = document.querySelector('.tab-panel[data-tab="switch"]');
     if (panel) {
-        panel.querySelectorAll('input, select, button').forEach((el) => { el.disabled = count === 0; });
+        // "Number of switches" sits on this tab too and must stay usable, or "None"
+        // could never be changed back.
+        panel.querySelectorAll('input, select, button').forEach((el) => {
+            if (el.id !== 'switchCountInput') el.disabled = count === 0;
+        });
         if (count) {
             document.querySelectorAll('input[name="switchMethod"]').forEach((r) => {
                 r.disabled = !methodsFor(count).includes(r.value);

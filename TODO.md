@@ -37,6 +37,15 @@ the one that quietly waits forever.
 
 ## Open
 
+### Documents still say "Number of switches" is on the General tab
+- **Raised 2026-11-17 (Ken):** the setting moved to the top of the Switch Access tab. Still saying General: the Switch Access Design document (sections 2.7 and 3, generator `generate-switch-access-design-doc.js`) and the Switch Device Test Plan (generator `generate-switch-device-test-plan-doc.js`, several steps say Settings > General).
+- **Why not now:** switch access is still being built and tried, so these documents wait for the next "sync docs" Ken chooses to run.
+
+### iPad Switch Control (Apple's own scanning) lands on the wrong things in Conversant
+- **Raised 2026-11-17 (Ken, trying it on his iPad):** the highlight often went to areas of a different screen, picked out explanatory text, or could not leave an area. Matters for switch users who already rely on Switch Control for their switches.
+- **Found so far on a computer (2026-11-17), not yet on an iPad:** with "In my own words" open, the "New 4" button is hidden behind the text box but still reachable; on the Express Panel and Keyboard tab of Settings, the Express Panel shown beside the tab sits over the lower tab names. Tab descriptions and headings are plain text, which Switch Control may treat as items.
+- **Why not now:** the iPad behavior cannot be seen from this computer; waiting for Ken to say which screens it happened on, and for his choice of direction.
+
 ### Kenny's quiet iPad microphone: Voice Memos hears his wife, Conversant does not
 - **Kenny's Voice Memos recording arrived 2026-11-14 and his microphone hears her.** 28 seconds, one channel. Quiet room 0.0011; counting beside the iPad mostly 0.016 to 0.032; counting from a few feet away mostly 0.004 to 0.03 (loudest 0.039). Typical speech was 10 times the room, and 42% of the recording was 4 or more times the room. In Conversant on the same iPad (0.15.11) almost all of her talking arrived at room level. The two volume scales differ, but speech-against-room does not depend on the scale: 10 times in Voice Memos, about 1 in Conversant. So the sound is lost between the microphone and the app, not at the microphone. Kept at `Reports/mic-recordings/kenny-ipad-pro-voice-memos-2026-11-14.m4a` (not in git).
   - **His answers:** iPad Pro 11-inch, 3rd generation (2021, five microphones). No case, only a Magic Keyboard; he has tried on and off the keyboard.
