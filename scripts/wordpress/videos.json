@@ -486,15 +486,15 @@
       }
     },
     "1.2-install-ipad": {
-      "signature": "3b3fcbbf6433f09d95d7bec619d4e73f9c1581a9c92267834212e8f3ef8880f3",
-      "seconds": 38,
+      "signature": "d2691ce01af93bf499fc296215374eb2d4247388c66ec71f47c9a9fa506454bb",
+      "seconds": 67,
       "video": {
-        "id": 24418,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-2-Installing-Conversant-iPad-2.mp4"
+        "id": 25109,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Conversant-1-2-Installing-Conversant-iPad.mp4"
       },
       "guide": {
-        "id": 24419,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-2-Installing-Conversant-iPad-Guide-2.pdf"
+        "id": 25110,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Conversant-1-2-Installing-Conversant-iPad-Guide.pdf"
       },
       "page": {
         "id": 24379,
