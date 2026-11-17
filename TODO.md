@@ -46,10 +46,10 @@ the one that quietly waits forever.
 
 ### Video: setting up an Azure speech account and copying the key and region
 - **Raised 2026-11-17 (Ken).** Azure is the recommended speech service after the beta.
-- **What it covers:** sign up for Azure pay-as-you-go (never the free trial, which switches off the free speech service after 30 days), create the free (F0) speech service, possibly through the pre-filled link in `setup/azure-speech-free-LINK.txt`, copy Key 1 and the region, and paste both into Settings > Speech. Same promise: Conversant never sees the password or credit card.
-- **How it is made:** a picture video from Ken's screenshots, at the end of Getting started (1.9). Settle first whether the pre-filled link stays, because it changes most of the steps.
+- **What it covers:** sign up for Azure pay-as-you-go (never the free trial, which switches off the free speech service after 30 days), create the free (F0) speech service through the pre-filled link in `setup/azure-speech-free-LINK.txt`, copy Key 1 and the region, and paste both into Settings > Speech. Same promise: Conversant never sees the password or credit card.
+- **How it is made:** a picture video from Ken's screenshots, at the end of Getting started (1.9). **Decided (Ken, 2026-11-17): it uses the pre-filled "create my free speech service" link**, not the regular Azure screens.
 - **Needs from Ken:** the same kind of screenshots, in `Videos/hand-captured screenshots/Azure/`, from a brand-new Microsoft account.
-- **Why not now:** waiting for the screenshots and the decision on the pre-filled link.
+- **Why not now:** waiting for the screenshots.
 
 ### Documents still say "Number of switches" is on the General tab
 - **Raised 2026-11-17 (Ken):** the setting moved to the top of the Switch Access tab. Still saying General: the Switch Access Design document (sections 2.7 and 3, generator `generate-switch-access-design-doc.js`) and the Switch Device Test Plan (generator `generate-switch-device-test-plan-doc.js`, several steps say Settings > General).
