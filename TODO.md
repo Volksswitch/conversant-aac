@@ -53,8 +53,7 @@ the one that quietly waits forever.
 
 ### Documents still say "Number of switches" is on the General tab
 - **Raised 2026-11-17 (Ken):** the setting moved to the top of the Switch Access tab. Still saying General: the Switch Access Design document (sections 2.7 and 3, generator `generate-switch-access-design-doc.js`) and the Switch Device Test Plan (generator `generate-switch-device-test-plan-doc.js`, several steps say Settings > General).
-- **Done 2026-11-17:** the three User Manuals (the row left the General tab table and became a paragraph after the tab overview in section 6) and republished.
-- **Why not now:** switch access is still being built and tried, so these documents wait for the next "sync docs" Ken chooses to run.
+- **Done 2026-11-17:** the three User Manuals (the row left the General tab table and became a paragraph after the tab overview in section 6) and republished; then the Switch Access Design and the Switch Device Test Plan, with both generators patched to match. Nothing left; remove this entry once the move is released.
 
 ### iPad Switch Control (Apple's own scanning) lands on the wrong things in Conversant
 - **Raised 2026-11-17 (Ken, trying it on his iPad):** the highlight often went to areas of a different screen, picked out explanatory text, or could not leave an area. Matters for switch users who already rely on Switch Control for their switches.

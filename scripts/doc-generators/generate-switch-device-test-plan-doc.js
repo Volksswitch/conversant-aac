@@ -168,7 +168,7 @@ const doc = new Document({
 
             h1("5. If You Get Stuck"),
             para("While switch access is on, touch does nothing, so a switch that stops working can leave you unable to do anything."),
-            bullet("First, use the keyboard. ", "Space moves the highlight and Enter chooses (with two switches). Go to the Command Bar, choose “Settings”, choose the General tab, choose “Number of switches”, and pick “None: I use touch”."),
+            bullet("First, use the keyboard. ", "Space moves the highlight and Enter chooses (with two switches). Go to the Command Bar, choose “Settings”, choose the Switch Access tab, choose “Number of switches”, and pick “None: I use direct select”."),
             bullet("If the keyboard doesn’t work either, ", "close the app. In a private tab, closing the tab is enough, since nothing carries over. Anywhere else the setting stays on when you reopen the app, so you have to delete the app’s data. On the iPad, use Settings > Apps > Safari > Advanced > Website Data for a Safari tab, or delete the Home Screen app and add it again. Then restore the backup from section 4."),
             bullet("Write down what you pressed and where the highlight was ", "before you do any of this. That is the part of the report I most need."),
 
@@ -190,7 +190,7 @@ const doc = new Document({
             gap(),
 
             h1("Part B. Switches Reach the App"),
-            para("If switch access isn’t on yet, tap Settings > General > “Number of switches” and choose “Two switches”. From then on, use the switches."),
+            para("If switch access isn’t on yet, tap Settings > Switch Access > “Number of switches” and choose “Two switches”. From then on, use the switches."),
             steps("B", [
                 ["Close the app completely and open it again. Don’t touch the screen. Press switch 2.", "The app starts. A switch works straight after opening, with no touch first."],
                 ["Press switch 1 several times.", "The highlight moves region by region. At the Express Panel it lands straight on the first row, never on the panel as a whole."],
@@ -210,7 +210,7 @@ const doc = new Document({
                 ["In Settings > Switch Access (in progress) > “Stray and mistimed presses”, set “Act on” to “Release”. Close and reopen, start, and choose a phrase.", "Record: is the phrase spoken? This is the main question of this part."],
                 ["Start a practice conversation (Settings > Practice) and let the partner speak.", "Record: does a holding phrase play, and is the listening tone heard?"],
                 ["Set “Act on” back to “Press”. Set “Ignore presses shorter than” to 0.5 seconds. Close and reopen, start, and choose a phrase with a long press.", "Record: is the phrase spoken? The choice now waits half a second after the press."],
-                ["Set “Ignore presses shorter than” back to “Off”. In Settings > General, set “Number of switches” to “One switch”, and confirm the red card if it appears. Set “How the highlight moves” to “Inverse”. Close and reopen, start, and choose a phrase.", "Record: is the phrase spoken? Inverse chooses when the switch is let go."],
+                ["Set “Ignore presses shorter than” back to “Off”. In Settings > Switch Access, set “Number of switches” to “One switch”, and confirm the red card if it appears. Set “How the highlight moves” to “Inverse”. Close and reopen, start, and choose a phrase.", "Record: is the phrase spoken? Inverse chooses when the switch is let go."],
                 ["Set “How the highlight moves” to “Hold to move, tap to choose”. Close and reopen, start, and choose a phrase.", "Record: is the phrase spoken?"],
                 ["Set “Number of switches” back to “Two switches”, and confirm the red card if it appears.", "The starting settings for two switches are back."],
             ]),
