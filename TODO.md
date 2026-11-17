@@ -97,6 +97,7 @@ the one that quietly waits forever.
 - **Measured 2026-11-15 (Ken, iPad 10, 0.15.11, problem report):** allowing the microphone for the site in Safari does NOT reach the Home Screen app, which still asks. Consistent with the two being separate storage silos.
 - **Measured 2026-11-15 (Ken):** allowing the microphone at the PROMPT in a Safari tab, and THEN adding the app to the Home Screen, carries the permission into the installed app. The iPad manual's install steps (3.1) now say to do it in that order, and the switch-access note says the question then won't come up.
 - **Confirmed 2026-11-15 (Ken):** the carried-over permission survives fully closing and reopening the Home Screen app.
+- **Confirmed 2026-11-17 (Ken):** setting Microphone to Allow in Safari's Website Settings, without ever tapping Start, then adding the app, also carries over. The iPad manual (3.1) and video 1.2 (iPad) now teach this route, and say not to tap Start in Safari when installing.
 - **What is wanted:** Decide what Android switch users are told: a helper at every launch, or no data folder.
 - **Why not now:** it is Ken's call, and switch access is not offered to beta testers yet.
 
