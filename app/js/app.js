@@ -4772,31 +4772,21 @@ async function handleRegenerate() {
         const prior = lastPalette.map((m) => m.text).filter(Boolean);
         if (await generateTalkAnswers(talkQuestion, { reason: 'regenerate', avoid: prior })) return;
     }
-    // Statements the user asked for to steer things on their own turn (CR-134): a
-    // different set for the same direction. There is no partner turn to answer here.
-    if (!currentPartnerText && activeSteer.lead && lastPalette.length) {
-        const token = ++generationToken;
-        ui.setPaletteBusy(true);
-        ui.setStatus('Getting different statements...');
-        const prior = lastPalette.map((m) => m.text).filter(Boolean);
-        try {
-            const result = await llm.generateStatements(activeSteer.lead, conversationHistory,
-                engine.buildRequestContext(), conversationPaletteCap(), { avoid: prior });
-            if (token !== generationToken) return;
-            const snap = engine.refreshPalette(result.responses);
-            ui.showEngineState(snap);
-            lastPalette = snap.palette;
-            showConversationPalette(snap.palette, 'Pick a statement to steer things');
-        } catch (err) {
-            if (token !== generationToken) return;
-            storage.logError('regenerateLead', err.message);
-            notePaletteReplacedByError();
-            ui.showResponseError(`Couldn't get new statements: ${err.message}`, handleRegenerate);
-            ui.setStatus(`Error: ${err.message}`);
-        }
+    // Nothing from the other person to answer: the user has the floor. "New N" asks for
+    // things they could say next (Ken, November 17 2026). It used to do nothing at all
+    // here, with nothing on screen to say why, so a user who wanted to keep a
+    // conversation going pressed it five times and gave up. With statements already up
+    // (these, or ones steered from "In my own words", CR-134) it asks for a different set
+    // in the same direction.
+    if (!currentPartnerText) {
+        if (tour) return;   // the button tour never calls the AI (practice-tour.js)
+        const onScreen = activeSteer.lead !== null && lastPalette.length
+            ? lastPalette.map((m) => m.text).filter(Boolean) : [];
+        if (activeSteer.lead === null) activeSteer.lead = '';   // '' = no direction typed
+        await suggestStatements({ reason: 'regenerate', avoid: onScreen });
         return;
     }
-    if (!currentPartnerText || !lastPalette.length) return;
+    if (!lastPalette.length) return;
     const token = ++generationToken;
     // The holding phrase is NOT touched (Ken, October 9 2026): asking for other options
     // says nothing aloud, and the floor still needs holding while the user waits.
@@ -4838,6 +4828,38 @@ async function handleRegenerate() {
         storage.logError('regenerate', err.message);
         notePaletteReplacedByError();
         ui.showResponseError(`Couldn't get new options: ${err.message}`, handleRegenerate);
+        ui.setStatus(`Error: ${err.message}`);
+    }
+}
+
+// Statements for the user to say on their own turn, when nothing from the other person
+// is waiting to be answered. Uses the direction typed in "In my own words" when there
+// was one (activeSteer.lead), otherwise just what would keep things going.
+async function suggestStatements({ reason, avoid = [] }) {
+    const direction = activeSteer.lead || '';
+    const token = ++generationToken;
+    ui.setPaletteBusy(true);   // the cards showing may be replaced - say so (Ken)
+    ui.setStatus(direction ? 'Getting different statements...' : 'Finding things you could say...');
+    llm.setWorldviewBlock(worldview.buildBlock());
+    llm.setExtraNames(worldview.extraNames());
+    llm.setRelationshipsBlock(relationships.buildBlock());
+    llm.setPlacesBlock(places.buildBlock(activePlace && activePlace.placeId));
+    llm.setSituationBlock(buildSituationBlock());
+    llm.setVoiceBlock(voiceBlockText());
+    try {
+        const result = await llm.generateStatements(direction, conversationHistory,
+            engine.buildRequestContext(), conversationPaletteCap(), { avoid, reason });
+        if (token !== generationToken) return;
+        const snap = engine.refreshPalette(result.responses);
+        ui.showEngineState(snap);
+        lastPalette = snap.palette;
+        showConversationPalette(snap.palette, direction ? 'Pick a statement to steer things'
+                                                        : 'Pick something to say');
+    } catch (err) {
+        if (token !== generationToken) return;
+        storage.logError('regenerateLead', err.message);
+        notePaletteReplacedByError();
+        ui.showResponseError(`Couldn't get new statements: ${err.message}`, handleRegenerate);
         ui.setStatus(`Error: ${err.message}`);
     }
 }
@@ -6168,6 +6190,12 @@ async function refreshForContextChange() {
     }
     if (currentPartnerText && currentPartnerText !== lastIngestedPartnerText) {
         generateOptions(currentPartnerText);   // picks up the new context too
+        return true;
+    }
+    // Things to say on the user's own turn are showing ("New N" with nothing to
+    // answer, or Reframe's statements): ask again with the new context.
+    if (!currentPartnerText && activeSteer.lead !== null && lastPalette.length && !tour) {
+        await suggestStatements({ reason: 'context change' });
         return true;
     }
     if (!currentPartnerText || !lastPalette.length) return false;

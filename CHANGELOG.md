@@ -26,6 +26,11 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+### Everyone
+
+- When there's nothing from the other person to answer, the "New 4" button now suggests things you could say to keep the conversation going, or to start one. Before, it did nothing at all. Press it again for a different set. If you tap a person, place or feeling while these are showing, you get a new set that takes it into account.
+- In Practice, if you ask the other person to speak again before you've answered, they now carry on talking. Before, nothing happened.
+
 ## Version 0.15.11
 
 ### Everyone

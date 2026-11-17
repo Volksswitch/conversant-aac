@@ -246,6 +246,56 @@ test('generateStatements parses a JSON array into STATEMENT-slot responses', asy
     assert.equal(r.responses[0].text, 'I wanted to tell you about my week.');
 });
 
+// Ken's problem report, November 16 2026: "AI won't give me options". With nothing from
+// the other person to answer, "New N" now asks for things to say with no direction.
+test('generateStatements with no direction asks for things to say next', async () => {
+    mockFetch(JSON.stringify({ statements: ['How has your day been?', 'I just got back from the YMCA.'] }));
+    const r = await llm.generateStatements('', [{ role: 'partner', text: 'Fair enough.' }], {}, 4, { avoid: ['Old one.'] });
+    assert.equal(r.responses.length, 2);
+    const call = getFetchCalls()[0];
+    const sys = sysText(call);
+    assert.match(sys, /has not said where/);
+    assert.doesNotMatch(sys, /direction they typed/);
+    assert.match(sys, /Old one\./, 'a different set from the one on screen');
+    const last = call.body.messages[call.body.messages.length - 1];
+    assert.equal(last.role, 'user');
+    assert.ok(last.content.trim().length > 0, 'the request carries a non-empty user message');
+});
+
+test('generateStatements with a direction still uses it', async () => {
+    mockFetch(JSON.stringify({ statements: ['One.'] }));
+    await llm.generateStatements('talk about the trip');
+    const sys = sysText(getFetchCalls()[0]);
+    assert.match(sys, /"talk about the trip"/);
+    assert.match(sys, /direction they typed/);
+});
+
+// The same report: cueing the practice partner again before answering sent a request
+// ending with the partner's own line, which the current model refuses ("does not
+// support assistant message prefill"). The request must end with a user turn.
+test('the practice partner request always ends with a user turn', async () => {
+    const scenario = { partnerPersona: 'a barista', register: 'casual' };
+    mockFetch('Anything else for you?');
+    await llm.generatePartnerUtterance(scenario, [
+        { role: 'partner', text: 'Hi, what can I get you?' },
+        { role: 'user', text: 'A latte, please.' },
+        { role: 'partner', text: 'What size?' },
+    ]);
+    let msgs = getFetchCalls()[0].body.messages;
+    assert.equal(msgs[msgs.length - 1].role, 'user');
+    assert.equal(msgs[msgs.length - 1].content, llm.PARTNER_KEEP_GOING);
+    assert.equal(msgs[msgs.length - 2].content, 'What size?', 'the unanswered line is still sent');
+
+    restoreFetch();
+    mockFetch('Sure thing.');
+    await llm.generatePartnerUtterance(scenario, [
+        { role: 'partner', text: 'Hi, what can I get you?' },
+        { role: 'user', text: 'A latte, please.' },
+    ]);
+    msgs = getFetchCalls()[0].body.messages;
+    assert.equal(msgs[msgs.length - 1].content, 'A latte, please.', 'nothing added after the user answered');
+});
+
 // CR-274. The statements come back in a fixed shape, and prose is refused rather than
 // split into lines that would become cards in the user's voice.
 test('generateStatements reads {statements}, sends a schema, and refuses prose', async () => {

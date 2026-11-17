@@ -769,6 +769,10 @@ Return the rewritten answer in "text".`;
     return out.trim();
 }
 
+// The cue sent when the practice partner is asked to speak again before the user has
+// answered (see generatePartnerUtterance).
+export const PARTNER_KEEP_GOING = '(The user has not replied yet. Carry on as you naturally would while waiting for an answer: add a little more, or gently prompt them. Do not repeat what you already said.)';
+
 export async function generatePartnerUtterance(scenario, conversationHistory = []) {
     if (!apiKey) throw new Error('API key not set');
 
@@ -801,6 +805,14 @@ ${NO_VULGARITY}`;
     // line), prime it with a neutral cue so the model produces the opening line.
     if (messages.length === 0 || messages[0].role !== 'user') {
         messages.unshift({ role: 'user', content: '(Begin the conversation.)' });
+    }
+    // ⚠ THE REQUEST MUST END WITH A USER TURN (Ken's problem report, November 16 2026).
+    // When the user cues the partner again before answering, the history ends with the
+    // partner's own line. Older models read that as "continue this line"; the model in
+    // use since September 30 2026 refuses it outright ("does not support assistant
+    // message prefill"), so every such cue failed silently. Say what happened instead.
+    if (messages[messages.length - 1].role === 'assistant') {
+        messages.push({ role: 'user', content: PARTNER_KEEP_GOING });
     }
 
     let line = await ask({ system: systemPrompt, messages, maxTokens: 200 });
@@ -878,6 +890,7 @@ ${NO_EMPTY_INTERJECTION}`;
 // footprint capacity.
 export async function generateStatements(steer, conversationHistory = [], context = {}, count = 4, opts = {}) {
     if (!apiKey) throw new Error('API key not set');
+    if (onRequest) { try { onRequest({ reason: opts.reason || 'statements' }); } catch { /* never break generation */ } }
     const n = count === 8 ? 8 : 4;
     // "New N" over a set of statements (CR-134): a different set, not the same again.
     const avoidBlock = (Array.isArray(opts.avoid) && opts.avoid.length)
@@ -888,15 +901,24 @@ export async function generateStatements(steer, conversationHistory = [], contex
         `${entry.role === 'partner' ? 'Partner' : 'User'}: ${entry.text}`
     ).join('\n');
 
-    const systemPrompt = `You are an AAC assistant speaking AS a non-speaking user in a live conversation. You speak in the user's OWN voice, never as a helpful assistant. The user currently HOLDS THE FLOOR — it is their turn — and they want to LEAD the conversation in a direction. They typed this direction/goal for what they want to say or where they want things to go:
-"${steer}"
+    // No direction typed: "New N" with nothing to answer (Ken, November 17 2026). The
+    // user has the floor and wants something to say next, and has not said where.
+    const direction = String(steer || '').trim();
+    const task = direction
+        ? `The user currently HOLDS THE FLOOR — it is their turn — and they want to LEAD the conversation in a direction. They typed this direction/goal for what they want to say or where they want things to go:
+"${direction}"
 
-Generate ${n} distinct STATEMENTS (or questions) the user could say NEXT to move the conversation toward that goal. These are things the USER initiates — NOT answers to a partner's question. Vary them: some plain statements, some questions that open the topic, some gentle lead-ins. Order them best-first.
+Generate ${n} distinct STATEMENTS (or questions) the user could say NEXT to move the conversation toward that goal. These are things the USER initiates — NOT answers to a partner's question. Vary them: some plain statements, some questions that open the topic, some gentle lead-ins. Order them best-first.`
+        : `The user currently HOLDS THE FLOOR — it is their turn — and the other person is not saying anything. The user wants to keep the conversation going but has not said where. If the conversation has not started, they want to open it.
 
-Speak only to what is real: never invent specific events, outcomes, dates, numbers, or names you were not given. You MAY use standing facts from the user's profile below and the direction they typed (being user-authored, it is TRUE). When a natural statement would need a specific you don't have, keep it general rather than fabricating.
+Generate ${n} distinct things the user could say NEXT. These are things the USER initiates — NOT answers to a partner's question. Vary them: follow up on what was just said, ask the other person something about themselves, or bring up something from the user's own life or the situation they are in. Each should be easy for the other person to answer. Order them best-first.`;
 
-${NO_OUTSIDE_KNOWLEDGE}
-The direction the user typed above is the exception that matters most here: whatever they stated in it is theirs to say, so use it in full.
+    const systemPrompt = `You are an AAC assistant speaking AS a non-speaking user in a live conversation. You speak in the user's OWN voice, never as a helpful assistant. ${task}
+
+Speak only to what is real: never invent specific events, outcomes, dates, numbers, or names you were not given. You MAY use standing facts from the user's profile below${direction ? ' and the direction they typed (being user-authored, it is TRUE)' : ''}. When a natural statement would need a specific you don't have, keep it general rather than fabricating.
+
+${NO_OUTSIDE_KNOWLEDGE}${direction ? `
+The direction the user typed above is the exception that matters most here: whatever they stated in it is theirs to say, so use it in full.` : ''}
 
 Do not begin any statement with an empty interjection ("Ah", "Oh", "Well", "So", "Hmm"). Open with the substance.
 
@@ -914,7 +936,7 @@ ${JSON.stringify(context)}${buildProfileBlock()}${buildSituationBlock()}${contex
     // "Sure! Here are some ways to bring it up:" into a card the user could speak.
     const text = await ask({
         system: systemPrompt,
-        messages: [{ role: 'user', content: steer }],
+        messages: [{ role: 'user', content: direction || '(Suggest what I could say next.)' }],
         maxTokens: 600,
         schema: STATEMENTS_SCHEMA,
     });

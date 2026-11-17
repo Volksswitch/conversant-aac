@@ -150,6 +150,17 @@ import { readFileSync } from 'node:fs';
 
 const appSource = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
 
+// Ken's problem report, November 16 2026: "New N" with nothing to answer did nothing.
+// app.js cannot be loaded by a test, so the decision is guarded in the source.
+test('"New N" with nothing to answer asks for things to say, never silently returns', () => {
+    const code = appSource.replace(/\/\*[\s\S]*?\*\//g, ' ').split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+    const start = code.indexOf('async function handleRegenerate');
+    const body = code.slice(start, code.indexOf('\n}\n', start));
+    assert.match(body, /if \(!currentPartnerText\) \{[\s\S]*?suggestStatements\(/);
+    assert.doesNotMatch(body, /if \(!currentPartnerText \|\| !lastPalette\.length\) return;/);
+    assert.match(body, /if \(tour\) return;/, 'the button tour never calls the AI');
+});
+
 test('the placeholder gate covers speech only, never an open composer', () => {
     // To the end of the LINE, not to the first ')': the argument is an arrow function,
     // so a lazy paren match stops at its own empty parameter list and captures nothing.
@@ -918,7 +929,9 @@ test('CR-132/133: clearing the cards stops the reading clock; an opener set is r
 
 test('CR-134: New N over steering statements asks for different statements', () => {
     const rg = appSource.slice(appSource.indexOf('async function handleRegenerate'));
-    assert.match(rg, /if \(!currentPartnerText && activeSteer\.lead && lastPalette\.length\)/);
+    // Since November 17 2026 the statements on screen are passed as the set to avoid.
+    assert.match(rg, /const onScreen = activeSteer\.lead !== null && lastPalette\.length/);
+    assert.match(rg, /suggestStatements\(\{ reason: 'regenerate', avoid: onScreen \}\)/);
     assert.match(appSource, /activeSteer = \{ focusChoice: null, steer: null, lead: null \};\n\}/);
 });
 
