@@ -46,6 +46,7 @@ the one that quietly waits forever.
   3. **Check the 0.15.14 key-row grouping** (Settings > General > API Key): does Switch Control now offer Paste, Clear and Test? If the box and buttons come up as one group, small groups are kept and only large ones split.
   4. **The iPad User Manual's switch section** should say when to use Switch Control and when Conversant's own scanning (the latter for speed-up while held and for Conversant's own grouping).
 - **Decided (Ken, 2026-11-18):** keyboard (Tab) and screen-reader order are low priority; useless stops for switch users are not. One order shared by Switch Control, Tab and screen readers; change the page order only for a specific order Ken wants.
+- **The full record of what was measured** is in CLAUDE.md, "Apple Switch Control with Conversant".
 - **Why not now:** waiting on Ken's tests of items 1 and 3.
 
 ### Video: creating an Anthropic account and copying the API key
