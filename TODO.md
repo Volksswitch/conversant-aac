@@ -37,6 +37,17 @@ the one that quietly waits forever.
 
 ## Open
 
+### Apple Switch Control on the iPad: working well with it
+- **Raised 2026-11-18 (Ken, testing Switch Control with Conversant on the iPad).** Ken expects most switch users to run Conversant inside the switch system they use for every app (Switch Control on an iPad, Switch Access on Android and Chromebooks), so working well with it comes ahead of more work on Conversant's own scanning. Windows has nothing comparable built in, so Conversant's own scanning still matters there.
+- **What was found:** item mode works throughout Conversant. With "Group Items" on, Switch Control splits the Command Bar and Express Panel rows in half, ignoring Conversant's groups (likely a size limit, unconfirmed); with it off, every button is its own stop and there is no speed-up while held, only "Move Repeat" at one fixed speed. Ken: the half rows are the lesser problem.
+- **Open, in order:**
+  1. **Settings opens but Switch Control keeps scanning the screen behind it** until it has gone round once. Test page published: https://volksswitch.org/index.php/conversant-switch-control-screen-test/ (five ways of opening a panel; `prototypes/switch-control-screen-test.html`). Waiting on Ken's results; then put the way that works into the app.
+  2. **The Settings title is a Switch Control target** because the app parks the cursor on it (`#settingsHeader` has tabindex -1, focused in `openSettings`). Fix with item 1: park the cursor on a real button.
+  3. **Check the 0.15.14 key-row grouping** (Settings > General > API Key): does Switch Control now offer Paste, Clear and Test? If the box and buttons come up as one group, small groups are kept and only large ones split.
+  4. **The iPad User Manual's switch section** should say when to use Switch Control and when Conversant's own scanning (the latter for speed-up while held and for Conversant's own grouping).
+- **Decided (Ken, 2026-11-18):** keyboard (Tab) and screen-reader order are low priority; useless stops for switch users are not. One order shared by Switch Control, Tab and screen readers; change the page order only for a specific order Ken wants.
+- **Why not now:** waiting on Ken's tests of items 1 and 3.
+
 ### Video: creating an Anthropic account and copying the API key
 - **Raised 2026-11-17 (Ken).** For users outside the beta, who get no key from us. Video 1.3 "Adding Your AI Key" starts from a key already in hand.
 - **What it covers:** sign up at the Anthropic Console, verify the email, add credit (the API is pay-as-you-go and needs credit before a key works), create an API key, copy it, and where it goes next (1.3). Say plainly that Conversant never sees the password or the credit card; only the key is pasted into Conversant.
