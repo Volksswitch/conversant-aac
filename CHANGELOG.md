@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **Apple's Switch Control and VoiceOver can reach the Paste, Clear and Test buttons more easily.** In Settings, each key box and its buttons are now marked as one group, so the scan reaches the buttons beside the box, not only the box itself.
+
 ## Version 0.15.13
 
 - **No more false "The app didn't start up properly" message.** Sometimes, mostly on an iPad, the app showed this red message at launch when nothing was wrong: it had only failed, for a moment, to check for a newer version. It now checks again when you press Start, and says nothing.

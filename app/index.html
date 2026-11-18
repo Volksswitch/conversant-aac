@@ -230,7 +230,7 @@
                 <div class="tab-panel active" data-tab="general">
                     <div class="setting-group" data-help="apiKey">
                         <label for="apiKeyInput">API Key</label>
-                        <div id="apiKeyRow" class="key-row">
+                        <div id="apiKeyRow" class="key-row" role="group" aria-label="API key">
                             <input type="text" id="apiKeyInput" data-key-field data-no-predict data-no-autocap placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
                             <button id="pasteApiKeyBtn" type="button" aria-label="Paste API key">Paste</button>
                             <button id="clearApiKeyBtn" type="button" aria-label="Clear API key">Clear</button>
@@ -534,13 +534,13 @@
                                  narrow screen (Ken, November 3 2026): full width, buttons on the line below.
                                  The earlier layout grouped each box with its buttons, which squeezed the box. -->
                             <label for="azureKeyInput">Key</label>
-                            <div id="azureKeyRow" class="key-row">
+                            <div id="azureKeyRow" class="key-row" role="group" aria-label="Azure key">
                                 <input type="text" id="azureKeyInput" data-key-field data-no-predict data-no-autocap placeholder="Your Azure Speech key" autocomplete="off" spellcheck="false">
                                 <button id="pasteAzureKeyBtn" type="button" aria-label="Paste Azure Speech key">Paste</button>
                                 <button id="clearAzureKeyBtn" type="button" aria-label="Clear Azure Speech key">Clear</button>
                             </div>
                             <label for="azureRegionInput">Region</label>
-                            <div id="azureRegionRow" class="key-row">
+                            <div id="azureRegionRow" class="key-row" role="group" aria-label="Azure region">
                                 <input type="text" id="azureRegionInput" data-key-field data-no-predict data-no-autocap placeholder="e.g. eastus" autocomplete="off" spellcheck="false">
                                 <button id="pasteAzureRegionBtn" type="button" aria-label="Paste Azure region">Paste</button>
                                 <button id="testAzureKeyBtn" type="button">Test</button>
@@ -556,7 +556,7 @@
                                  a form that creates the free speech service. Conversant never sees the password
                                  or the credit card. Proven end to end on a brand-new account, September 19 2026. -->
                             <p class="setting-hint">Do you have a Microsoft account? If not, start with step 1; otherwise start with step 2. Each step opens Microsoft's own site in a new tab. Conversant never sees your password or credit card.</p>
-                            <div class="key-row wrap">
+                            <div class="key-row wrap" role="group" aria-label="Azure sign-up steps">
                                 <button id="azureMsAccountBtn" type="button">1. Create Microsoft Account</button>
                                 <button id="azureSignUpBtn" type="button">2. Create a “Pay as you Go” Azure account</button>
                                 <button id="azureCreateServiceBtn" type="button">3. Create my free speech service</button>
@@ -566,7 +566,7 @@
 
                         <div class="setting-item">
                             <label for="googleKeyInput">Google Cloud</label>
-                            <div id="googleKeyRow" class="key-row">
+                            <div id="googleKeyRow" class="key-row" role="group" aria-label="Google Cloud key">
                                 <input type="text" id="googleKeyInput" data-key-field data-no-predict data-no-autocap placeholder="Your Google Cloud API key" autocomplete="off" spellcheck="false">
                                 <button id="pasteGoogleKeyBtn" type="button" aria-label="Paste Google Cloud key">Paste</button>
                                 <button id="clearGoogleKeyBtn" type="button" aria-label="Clear Google Cloud key">Clear</button>
@@ -577,7 +577,7 @@
 
                         <div class="setting-item">
                             <label for="deepgramKeyInput">Deepgram</label>
-                            <div id="deepgramKeyRow" class="key-row">
+                            <div id="deepgramKeyRow" class="key-row" role="group" aria-label="Deepgram key">
                                 <input type="text" id="deepgramKeyInput" data-key-field data-no-predict data-no-autocap placeholder="Your Deepgram API key" autocomplete="off" spellcheck="false">
                                 <button id="pasteDeepgramKeyBtn" type="button" aria-label="Paste Deepgram key">Paste</button>
                                 <button id="clearDeepgramKeyBtn" type="button" aria-label="Clear Deepgram key">Clear</button>
@@ -591,7 +591,7 @@
                             <!-- ElevenLabs identifies a voice by an id from their
                                  library rather than by a name, so the picker below is
                                  filled from the account once a key is in. -->
-                            <div id="elevenlabsKeyRow" class="key-row">
+                            <div id="elevenlabsKeyRow" class="key-row" role="group" aria-label="ElevenLabs key">
                                 <input type="text" id="elevenlabsKeyInput" data-key-field data-no-predict data-no-autocap placeholder="Your ElevenLabs API key" autocomplete="off" spellcheck="false">
                                 <button id="pasteElevenlabsKeyBtn" type="button" aria-label="Paste ElevenLabs key">Paste</button>
                                 <button id="clearElevenlabsKeyBtn" type="button" aria-label="Clear ElevenLabs key">Clear</button>
