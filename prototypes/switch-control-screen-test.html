@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Switch Control Screen Test</title>
+<!--
+  Test page for Apple's Switch Control (Ken, November 18 2026). When Conversant opens
+  Settings, Switch Control keeps scanning the conversation screen behind it until it
+  has gone round once. Nothing on a web page can tell Switch Control directly that the
+  screen changed, so this page opens the same panel five different ways, and Ken
+  checks on the iPad which ones Switch Control notices straight away.
+
+    A  As the app does now: a modal dialog, cursor parked on the non-button title bar
+       (the title bar has tabindex=-1, which is also why Switch Control targets it).
+    B  Modal dialog, cursor on a real button (the first tab).
+    C  B, plus the screen behind marked hidden from assistive tools (aria-hidden).
+    D  B, plus the screen behind taken out of the page (display: none).
+    E  No dialog at all: the screen behind is taken out and an ordinary panel shown.
+
+  The screen behind has as many buttons as Conversant's (a Command Bar and an Express
+  Panel), so a full scan cycle is long enough to notice. Nothing here is the real app.
+-->
+<style>
+  :root { --ink:#1d2731; --muted:#55626e; --edge:#5b6b7a; --page:#f4f6f8; --raised:#fff;
+          --accent:#2c4a7a; --panel:#eef3fa; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+         color: var(--ink); background: var(--page); }
+  #screen { padding: 12px; }
+  h1 { font-size: 1.15rem; margin: 0 0 4px; }
+  .note { color: var(--muted); margin: 0 0 10px; font-size: .95rem; }
+  .bar { display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px; margin-bottom: 10px; }
+  .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  button { font: inherit; min-height: 56px; padding: 6px; border: 2px solid var(--edge);
+           border-radius: 8px; background: var(--raised); color: var(--ink); }
+  .open { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  #log { margin-top: 10px; font-size: .85rem; color: var(--muted); white-space: pre-line; }
+  .ver { font-size: .75rem; color: var(--muted); margin-top: 6px; }
+
+  /* The panel, in both its dialog form (A-D) and its plain form (E). */
+  dialog.panel { width: 100%; height: 100%; max-width: none; max-height: none;
+                 margin: 0; inset: 0; border: 0; padding: 0; background: var(--panel); }
+  dialog.panel::backdrop { background: rgba(0,0,0,.3); }
+  .panel-body { padding: 12px; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between;
+                gap: 8px; margin-bottom: 10px; }
+  .panel-title { font-size: 1.4rem; font-weight: 700; }
+  .panel-head:focus { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .tabs button[aria-selected="true"] { background: var(--accent); color: #fff; }
+  .rows { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  #plainPanel { display: none; background: var(--panel); min-height: 100vh; }
+  #plainPanel.on { display: block; }
+</style>
+</head>
+<body>
+
+<div id="screen">
+  <h1>Switch Control screen test</h1>
+  <p class="note">Each "Settings" button opens the same panel a different way. With Switch
+    Control on, open each one and note whether the highlight moves into the panel at once,
+    or keeps going around the buttons behind it. Then close it and try the next.</p>
+
+  <div class="bar" role="group" aria-label="Command Bar">
+    <button type="button" class="open" data-way="A">Settings A</button>
+    <button type="button" class="open" data-way="B">Settings B</button>
+    <button type="button" class="open" data-way="C">Settings C</button>
+    <button type="button" class="open" data-way="D">Settings D</button>
+    <button type="button" class="open" data-way="E">Settings E</button>
+    <button type="button">Listen</button>
+    <button type="button">Hold on</button>
+    <button type="button">Repeat</button>
+    <button type="button">End</button>
+  </div>
+
+  <div class="grid" aria-label="Phrases">
+    <button type="button">Yes</button><button type="button">No</button>
+    <button type="button">I don't know</button><button type="button">Maybe</button>
+    <button type="button">OK</button><button type="button">Excuse me</button>
+    <button type="button">Hey there</button><button type="button">Please help me</button>
+    <button type="button">Hi</button><button type="button">Bye</button>
+    <button type="button">Thank you</button><button type="button">Sorry</button>
+    <button type="button">Mom</button><button type="button">Devon</button>
+    <button type="button">Home</button><button type="button">Work</button>
+    <button type="button">Happy</button><button type="button">Tired</button>
+  </div>
+
+  <div id="log" aria-hidden="true"></div>
+  <div class="ver">@@PROTO_VERSION@@</div>
+</div>
+
+<dialog id="dialogPanel" class="panel" aria-labelledby="dlgTitle"></dialog>
+<div id="plainPanel" class="panel" role="region" aria-labelledby="plainTitle"></div>
+
+<script>
+(() => {
+  const screen = document.getElementById('screen');
+  const dlg = document.getElementById('dialogPanel');
+  const plain = document.getElementById('plainPanel');
+  const log = document.getElementById('log');
+  let way = null;
+
+  const WAYS = {
+    A: 'As the app does now: cursor on the title bar',
+    B: 'Cursor on the first tab',
+    C: 'Cursor on the first tab, screen behind hidden',
+    D: 'Cursor on the first tab, screen behind removed',
+    E: 'No dialog: screen behind removed, plain panel',
+  };
+
+  function note(text) {
+    const t = new Date().toLocaleTimeString();
+    log.textContent = (t + '  ' + text + '\n' + log.textContent).split('\n').slice(0, 8).join('\n');
+  }
+
+  // The panel's contents. Only way A makes the title bar focusable, copying the app.
+  function fill(host, titleId) {
+    const headFocus = way === 'A' ? ' tabindex="-1"' : '';
+    host.innerHTML =
+      '<div class="panel-body">' +
+        '<div class="panel-head" id="' + titleId + 'Head"' + headFocus + '>' +
+          '<span class="panel-title" id="' + titleId + '">Settings ' + way + '</span>' +
+          '<button type="button" class="close">Close</button>' +
+        '</div>' +
+        '<p class="note">' + WAYS[way] + '</p>' +
+        '<div class="tabs" role="tablist" aria-label="Settings tabs">' +
+          '<button type="button" role="tab" aria-selected="true">General</button>' +
+          '<button type="button" role="tab" aria-selected="false">About Me</button>' +
+          '<button type="button" role="tab" aria-selected="false">Speech</button>' +
+        '</div>' +
+        '<div class="rows">' +
+          '<button type="button">API Key</button>' +
+          '<button type="button">Where your data is kept</button>' +
+          '<button type="button">Settings profiles</button>' +
+          '<button type="button">One tap or two</button>' +
+        '</div>' +
+      '</div>';
+    host.querySelector('.close').addEventListener('click', close);
+    host.querySelectorAll('[role="tab"]').forEach((t) => t.addEventListener('click', () => {
+      host.querySelectorAll('[role="tab"]').forEach((x) => x.setAttribute('aria-selected', String(x === t)));
+    }));
+  }
+
+  function open(w) {
+    way = w;
+    if (w === 'E') {
+      fill(plain, 'plainTitle');
+      screen.style.display = 'none';
+      plain.classList.add('on');
+      plain.querySelector('[role="tab"]').focus();
+    } else {
+      fill(dlg, 'dlgTitle');
+      if (w === 'C') screen.setAttribute('aria-hidden', 'true');
+      if (w === 'D') screen.style.display = 'none';
+      dlg.showModal();
+      if (w === 'A') document.getElementById('dlgTitleHead').focus();
+      else dlg.querySelector('[role="tab"]').focus();
+    }
+    note('Opened Settings ' + w);
+  }
+
+  function close() {
+    if (way === 'E') plain.classList.remove('on');
+    else dlg.close();
+    screen.removeAttribute('aria-hidden');
+    screen.style.display = '';
+    const opener = screen.querySelector('[data-way="' + way + '"]');
+    note('Closed Settings ' + way);
+    way = null;
+    if (opener) opener.focus();
+  }
+
+  // Escape closes the dialog without our handler; put the screen back the same way.
+  dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(); });
+  screen.querySelectorAll('.open').forEach((b) => b.addEventListener('click', () => open(b.dataset.way)));
+})();
+</script>
+</body>
+</html>

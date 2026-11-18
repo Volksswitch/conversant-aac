@@ -59,6 +59,15 @@ PAGES = [
                'Nothing here uses the real AI. It works best on a computer with a mouse and a wide window.'),
      'other': [('conversant-switch-access-prototype', 'The conversation screen has its own prototype.'),
                ('conversant-switch-access-settings-prototype', 'Scanning the Settings panel has its own prototype.')]},
+    # Not a prototype of Conversant's own scanning: a test of how Apple's Switch Control
+    # notices a screen change (Ken, November 18 2026). Best opened on an iPad.
+    {'slug': 'conversant-switch-control-screen-test', 'title': 'Conversant AAC Switch Control Screen Test',
+     'file': 'switch-control-screen-test.html', 'height': 900,
+     'intro': ('This page tests how Apple’s Switch Control on an iPad notices that a new panel has opened. '
+               'Turn on Switch Control, then open each of the five “Settings” buttons in turn and note whether the '
+               'highlight moves into the panel at once or keeps going around the buttons behind it. '
+               'Nothing here is the real app.'),
+     'other': []},
 ]
 
 
