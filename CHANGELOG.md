@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.15.14
+
 - **Apple's Switch Control and VoiceOver can reach the Paste, Clear and Test buttons more easily.** In Settings, each key box and its buttons are now marked as one group, so the scan reaches the buttons beside the box, not only the box itself.
 
 ## Version 0.15.13
