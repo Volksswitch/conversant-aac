@@ -544,8 +544,24 @@ function initApp() {
     // would type one into is exactly what may be unreachable (Ken, August 7 2026).
     try {
         const startReportBtn = document.getElementById('startReportBtn');
-        if (startReportBtn) startReportBtn.addEventListener('click', () => sendProblemReportFromStart());
+        if (startReportBtn) startReportBtn.addEventListener('click', () => sendProblemReportFromStart(startReportBtn));
     } catch { /* the report link must never be what stops the app starting */ }
+    // The same report, from inside the red start-up failure card (Ken, November 17 2026):
+    // on a short screen the link at the foot of the block can be out of sight, so a real
+    // failure carries its own way to report. Wired here for the same reason as above.
+    try {
+        const failReportBtn = document.getElementById('startupErrorReportBtn');
+        if (failReportBtn) failReportBtn.addEventListener('click', () => sendProblemReportFromStart(failReportBtn));
+    } catch { /* never what stops the app starting */ }
+    // A failed update check at launch (sw-register.js) is not a start-up failure: the
+    // app is running and Start checks again. Recorded quietly so it can be counted.
+    try {
+        const noteSwUpdate = (msg) => {
+            try { storage.logError('sw-update', `update check failed: ${msg}`, null, { quiet: true }); } catch { /* best effort */ }
+        };
+        if (window.__aacSwUpdateFailure) noteSwUpdate(window.__aacSwUpdateFailure);
+        window.addEventListener('aac-sw-update-failed', (e) => noteSwUpdate(e && e.detail));
+    } catch { /* never what stops the app starting */ }
 
     // One copy at a time (SEC-9). A second copy covers its screen and waits; Start is
     // refused while it waits (see handleStart), so it never opens a microphone.
@@ -8323,12 +8339,13 @@ async function oneReportAtATime(run) {
     problemReportInProgress = true;
     try { await run(); } finally { problemReportInProgress = false; }
 }
-function sendProblemReportFromStart() { return oneReportAtATime(sendProblemReportFromStartNow); }
-async function sendProblemReportFromStartNow() {
+function sendProblemReportFromStart(btn) { return oneReportAtATime(() => sendProblemReportFromStartNow(btn)); }
+async function sendProblemReportFromStartNow(pressed) {
     // The status line lives in Settings, which is the panel that may be unreachable,
     // so the button reports on itself. Without this the tester gets no confirmation
     // at all beyond whatever the browser happens to show, which can be nothing.
-    const btn = document.getElementById('startReportBtn');
+    // Whichever was pressed: the link at the foot of the block, or the one in the red card.
+    const btn = pressed || document.getElementById('startReportBtn');
     const say = (msg) => {
         setProblemReportStatus(msg);
         if (btn) {

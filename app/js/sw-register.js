@@ -38,11 +38,29 @@ if ('serviceWorker' in navigator) {
         try {
             const reg = await navigator.serviceWorker.register('sw.js');
             // Check for a newer worker on every launch.
-            reg.update();
+            // ⚠ CAUGHT ON PURPOSE (Ken's iPad, November 17 2026). When the device cannot
+            // fetch sw.js at that moment, update() rejects with "Script ... sw.js load
+            // failed". Uncaught, that reached the start-up failure handler in app.js and
+            // put a red "didn't start up properly" card on a screen that was working: the
+            // worker was already registered, offline still works, and Start checks for an
+            // update again. So it is recorded quietly and nothing is shown.
+            reg.update().catch(noteUpdateFailure);
         } catch (err) {
             console.warn('Service worker registration failed:', err);
         }
     });
+}
+
+// A failed update check, handed to app.js for the error log (quietly: no red wash).
+// Kept on window as well as sent as an event, so it is not lost if app.js has not
+// started listening yet.
+function noteUpdateFailure(err) {
+    const msg = (err && err.message) || String(err);
+    try { console.warn('Service worker update check failed:', msg); } catch { /* no console */ }
+    try {
+        window.__aacSwUpdateFailure = msg;
+        window.dispatchEvent(new CustomEvent('aac-sw-update-failed', { detail: msg }));
+    } catch { /* best effort */ }
 }
 
 // True when the worker's cache name is the one this page's code would use, i.e.

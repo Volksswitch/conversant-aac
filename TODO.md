@@ -425,9 +425,10 @@ Safari uses is not published. Ken can live with it.
 
 ### The iPad sometimes fails to load the app's offline helper at start-up
 - **Raised:** 2026-10-11 - found in the same report.
-- **What:** "Script https://conversant.volksswitch.org/sw.js load failed" at start-up, seven times between August 11 and October 10 2026, across many versions, all on the iPad. CLAUDE.md had recorded it as seen once. When it fails, that launch cannot update itself or work offline.
-- **What is wanted:** find out when it happens (first launch after a release? a weak connection?) and whether a quiet retry would cover it.
-- **Why not now:** needs looking into on the iPad.
+- **What:** "Script https://conversant.volksswitch.org/sw.js load failed" at start-up, seven times between August 11 and October 10 2026, across many versions, all on the iPad.
+- **Cause found and fixed, 2026-11-17 (not yet released, not yet tried on the iPad):** it is the launch's check for a NEWER version failing for a moment, not the app failing to load. The offline helper was already in place, so working offline was never affected, and Start checks for a new version again. The failure was not caught, so it reached the start-up failure handler and showed Ken the red "The app didn't start up properly" card on a working app (v0.13.20, November 17 2026). It is now caught and recorded quietly in the error log as `sw-update`, with no card and no red wash.
+- **What is still wanted:** watch the error logs for `sw-update` to see how often it happens and whether it is the first launch after a release or a weak connection. Nothing to do unless Start's own check also starts failing.
+- **Why not now:** needs time and real iPad use to collect.
 
 ### How long the app took to hear the first words (please confirm)
 - **Raised:** 2026-10-11 - same report.

@@ -22,6 +22,10 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.13": [
+    "No more false \"The app didn't start up properly\" message. Sometimes, mostly on an iPad, the app showed this red message at launch when nothing was wrong: it had only failed, for a moment, to check for a newer version. It now checks again when you press Start, and says nothing.",
+    "The red start-up message now has its own \"Send a report\" button. On a short screen the message's top line could be cut off and the report link below it pushed out of sight. Now the message starts at the top, the rest scrolls into view, and you can report straight from the message."
+  ],
   "0.15.12": [
     "When there's nothing from the other person to answer, the \"New 4\" button now suggests things you could say to keep the conversation going, or to start one. Before, it did nothing at all. Press it again for a different set. If you tap a person, place or feeling while these are showing, you get a new set that takes it into account.",
     "In Practice, if you ask the other person to speak again before you've answered, they now carry on talking. Before, nothing happened."

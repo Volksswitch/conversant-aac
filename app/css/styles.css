@@ -1069,7 +1069,9 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    /* Start, not center: centering is done by the two empty items below, which is
+       what lets the contents start at the top when they do not fit. */
+    justify-content: flex-start;
     gap: 1rem;
     /* No padding: when the "What's new" card shows it fills the ENTIRE transcript
        control (Ken). The pre-start Start button just centers in the same space. */
@@ -1078,6 +1080,22 @@ body {
     z-index: 5;
     pointer-events: auto;   /* clickable even while main is disabled */
 }
+/* SAFE CENTERING (Ken's iPad, November 17 2026). With justify-content: center, content
+   taller than the block spills off the TOP as well as the bottom, and the top part
+   cannot be scrolled to: the red start-up card's first line was sliced off and the
+   report link pushed out of sight. These two empty items take the spare space as auto
+   margins, so the contents stay centered when they fit and start at the top, with the
+   rest scrollable, when they do not. Auto margins only get space left over after
+   growing, so the "What's new" panel still fills the whole region. The negative
+   margins cancel the gap each one would otherwise add. Auto margins rather than
+   "justify-content: safe center" because they behave the same in every browser. */
+#startBlock::before,
+#startBlock::after {
+    content: '';
+    flex: 0 0 0;
+}
+#startBlock::before { margin-top: auto; margin-bottom: -1rem; }
+#startBlock::after { margin-bottom: auto; margin-top: -1rem; }
 
 #startBlock.hidden {
     display: none;
@@ -2004,6 +2022,8 @@ body.opts-grid-below #responseArea { flex-direction: column; }
     display: block; margin: 0.9rem auto 0; background: none; border: none;
     color: var(--ink-muted); font-size: 0.85rem; text-decoration: underline; cursor: pointer;
     min-height: 0; padding: 0.3rem 0.6rem;
+    /* Never squashed: on a short screen it was shrunk to a sliver under its own text. */
+    flex-shrink: 0;
 }
 
 /* Settings-profiles controls (About tab) — a picker row + a save row. */
@@ -3709,6 +3729,11 @@ dialog select {
     border-left-color: var(--danger);
 }
 #startupError .apikey-prompt-title { color: var(--danger-ink); }
+#startupError .apikey-prompt-actions { justify-content: center; margin-top: 0.6rem; }
+#startupErrorReportBtn {
+    background: var(--surface-raised); color: var(--danger-ink); border: 2px solid var(--danger);
+    padding: 0.7rem 1.4rem; border-radius: 8px; font-size: 1rem; cursor: pointer;
+}
 /* The exception text: monospace so a stack trace stays readable, and wrapped so a
    long single-token message can't push the card wider than the screen. */
 #startupErrorDetail {

@@ -795,7 +795,7 @@ test('CR-080: a sound only clears the playing record while it is still its own',
 
 test('CR-081: both report buttons go through the one-at-a-time guard', () => {
     assert.match(appSource, /function sendProblemReport\(\) \{ return oneReportAtATime\(/);
-    assert.match(appSource, /function sendProblemReportFromStart\(\) \{ return oneReportAtATime\(/);
+    assert.match(appSource, /function sendProblemReportFromStart\(btn\) \{ return oneReportAtATime\(/);
     const g = appSource.slice(appSource.indexOf('async function oneReportAtATime'));
     assert.match(g.slice(0, 300), /finally \{ problemReportInProgress = false; \}/);
 });
@@ -1346,4 +1346,32 @@ test('each speaking-voice list sits directly under its own service choice', () =
         const rowAt = after.indexOf(`id="${row}"`);
         assert.ok(rowAt > 0 && (nextRadio < 0 || rowAt < nextRadio), `${row} follows the ${value} choice`);
     }
+});
+
+// Ken's iPad, November 17 2026. A failed update check at launch is not a start-up
+// failure: it must never reach the unhandledrejection handler and its red card.
+test('the launch update check is caught and logged quietly, not shown as a start-up failure', () => {
+    const reg = readFileSync(new URL('../app/js/sw-register.js', import.meta.url), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    assert.match(reg, /reg\.update\(\)\.catch\(noteUpdateFailure\)/);
+    assert.doesNotMatch(reg, /reg\.update\(\);/);
+    const init = appSource.slice(appSource.indexOf('function initApp()'));
+    const at = init.indexOf("'aac-sw-update-failed'");
+    assert.ok(at > 0 && at < init.indexOf('storage.setAppVersion'));
+    assert.match(init.slice(0, at), /storage\.logError\('sw-update', [^\n]*\{ quiet: true \}\)/);
+});
+
+// Same report. The red card carries its own report button, wired first, and the
+// pre-start block starts at the top when its contents do not fit.
+test('the start-up failure card can always be reported from, and is never cut off at the top', () => {
+    const html = readFileSync(new URL('../app/index.html', import.meta.url), 'utf8');
+    const card = html.slice(html.indexOf('<div id="startupError"'), html.indexOf('<div id="whatsNewPanel"'));
+    assert.match(card, /id="startupErrorReportBtn"/);
+    const init = appSource.slice(appSource.indexOf('function initApp()'));
+    assert.ok(init.indexOf("getElementById('startupErrorReportBtn')") < init.indexOf('storage.setAppVersion'));
+    const css = readFileSync(new URL('../app/css/styles.css', import.meta.url), 'utf8');
+    assert.match(css, /#startBlock::before \{ margin-top: auto; margin-bottom: -1rem; \}/);
+    assert.match(css, /#startBlock::after \{ margin-bottom: auto; margin-top: -1rem; \}/);
+    const block = css.slice(css.indexOf('#startBlock {'));
+    assert.match(block.slice(0, 600), /justify-content: flex-start;/);
 });

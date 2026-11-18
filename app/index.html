@@ -65,7 +65,12 @@
                     <div id="startupError" hidden>
                         <p class="apikey-prompt-title">The app didn't start up properly.</p>
                         <p class="setting-hint" id="startupErrorDetail"></p>
-                        <p class="setting-hint">Close the app completely and open it again. If it keeps happening, tap the report link below; this text goes with it.</p>
+                        <p class="setting-hint">Close the app completely and open it again. If it keeps happening, send us a report; this text goes with it.</p>
+                        <!-- Its own way to report (Ken, November 17 2026): on a short screen the
+                             link at the foot of this block can be out of sight. -->
+                        <div class="apikey-prompt-actions">
+                            <button id="startupErrorReportBtn" type="button">Send a report</button>
+                        </div>
                     </div>
                     <!-- The two optional pre-start screens, in the order the
                          sequence shows them: the upgrade notice, then the API-key
