@@ -52,9 +52,9 @@ the one that quietly waits forever.
 ### Apple Switch Control on a Mac: could not reach Conversant
 - **Raised 2026-11-19 (Ken, MacBook Air, USB switch interface sending Tab and Enter).** He could not get Switch Control to scan Conversant's window and stopped for now. What was found is in CLAUDE.md, "Apple Switch Control on a Mac".
 - **Open, in order:**
-  1. **Get the App scan to reach a window.** Check the app name beside the Apple menu while trying; try a simple app (TextEdit) first to learn whether the trouble is Conversant's browser window or the scan itself. Then look at Restart action position, Loops and Pause on first item (Switch Control > Navigation).
-  2. **A switch-only way to turn Switch Control off and on**: try Siri, a Shortcuts action, and the panel's X in pointer mode.
-  3. **The Mac instructions** (in the Windows/computer manual or a Mac note) should say: letter and number keys are refused as switches, so the interface needs a mode sending keys like Tab, Enter or Space, and Conversant's Switch keys must match; Switch Control has no shortcut to toggle it; the password prompt is refused with Caps Lock on.
+  1. **Get the scan past Conversant's title bar into the page.** The scan reaches only the title bar's buttons, then returns to the Home panel, so the page itself is probably not being offered to Switch Control. Try, in order: the same page in Safari (if Safari's content is scanned, the problem is the browser Conversant was installed with); in Chrome or Edge, `chrome://accessibility` (or `edge://accessibility`) and turn on the page-reading options, since these browsers build the page's list of controls only when they detect assistive software; a simple app such as TextEdit, to confirm the scan reaches window content at all.
+  2. **A switch-only way to turn Switch Control off and on**: try Siri, a Shortcuts action, and the panel's X in pointer mode. (A mouse works alongside Switch Control, so a helper can always turn it off.)
+  3. **The Mac instructions** (in the Windows/computer manual or a Mac note) should say: letter and number keys are refused as switches, so the interface needs a mode sending keys like Tab, Enter or Space, and Conversant's Switch keys must match; Switch Control has no shortcut to toggle it, but a mouse still works while it is on.
 - **Why not now:** Ken has put it down; Mac is not a beta platform.
 
 ### Video: creating an Anthropic account and copying the API key
