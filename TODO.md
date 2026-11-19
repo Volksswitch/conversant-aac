@@ -55,7 +55,7 @@ the one that quietly waits forever.
   1. **Get the scan past Conversant's title bar into the page.** The scan reaches only the title bar's buttons, then returns to the Home panel, so the page itself is probably not being offered to Switch Control. Try, in order: the same page in Safari (if Safari's content is scanned, the problem is the browser Conversant was installed with); in Chrome or Edge, `chrome://accessibility` (or `edge://accessibility`) and turn on the page-reading options, since these browsers build the page's list of controls only when they detect assistive software; a simple app such as TextEdit, to confirm the scan reaches window content at all.
   2. **A switch-only way to turn Switch Control off and on**: try Siri, a Shortcuts action, and the panel's X in pointer mode. (A mouse works alongside Switch Control, so a helper can always turn it off.)
   3. **The Mac instructions** (in the Windows/computer manual or a Mac note) should say: letter and number keys are refused as switches, so the interface needs a mode sending keys like Tab, Enter or Space, and Conversant's Switch keys must match; Switch Control has no shortcut to toggle it, but a mouse still works while it is on.
-- **Why not now:** Ken has put it down; Mac is not a beta platform.
+- **Why not now:** Ken has put it down; Mac is not a beta platform, and (Ken, 2026-11-19) it is not known how important switch access on a laptop is at all. Settle that before more work here.
 
 ### Video: creating an Anthropic account and copying the API key
 - **Raised 2026-11-17 (Ken).** For users outside the beta, who get no key from us. Video 1.3 "Adding Your AI Key" starts from a key already in hand.
