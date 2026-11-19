@@ -49,6 +49,14 @@ the one that quietly waits forever.
 - **The full record of what was measured** is in CLAUDE.md, "Apple Switch Control with Conversant".
 - **Why not now:** waiting on Ken's tests of items 1 and 3.
 
+### Apple Switch Control on a Mac: could not reach Conversant
+- **Raised 2026-11-19 (Ken, MacBook Air, USB switch interface sending Tab and Enter).** He could not get Switch Control to scan Conversant's window and stopped for now. What was found is in CLAUDE.md, "Apple Switch Control on a Mac".
+- **Open, in order:**
+  1. **Get the App scan to reach a window.** Check the app name beside the Apple menu while trying; try a simple app (TextEdit) first to learn whether the trouble is Conversant's browser window or the scan itself. Then look at Restart action position, Loops and Pause on first item (Switch Control > Navigation).
+  2. **A switch-only way to turn Switch Control off and on**: try Siri, a Shortcuts action, and the panel's X in pointer mode.
+  3. **The Mac instructions** (in the Windows/computer manual or a Mac note) should say: letter and number keys are refused as switches, so the interface needs a mode sending keys like Tab, Enter or Space, and Conversant's Switch keys must match; Switch Control has no shortcut to toggle it; the password prompt is refused with Caps Lock on.
+- **Why not now:** Ken has put it down; Mac is not a beta platform.
+
 ### Video: creating an Anthropic account and copying the API key
 - **Raised 2026-11-17 (Ken).** For users outside the beta, who get no key from us. Video 1.3 "Adding Your AI Key" starts from a key already in hand.
 - **What it covers:** sign up at the Anthropic Console, verify the email, add credit (the API is pay-as-you-go and needs credit before a key works), create an API key, copy it, and where it goes next (1.3). Say plainly that Conversant never sees the password or the credit card; only the key is pasted into Conversant.
