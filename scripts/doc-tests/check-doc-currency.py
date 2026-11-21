@@ -44,7 +44,12 @@ ROW = re.compile(r'^\|\s*(?P<doc>[^|]+?\.docx)\s*\|\s*(?P<status>[^|]*?)\s*\|'
 # is one backup format" three releases after there were two. Both times it was found by
 # a hand sweep instead. **The test for this list is who the document is written FOR, not
 # where it happens to sit in the tracker.**
+# Beta Tester Responsibilities was added on November 21 2026 (Ken): a one-page handout
+# every new tester receives, attached to the welcome emails, so it is wrong in a way
+# that reaches a person. While the beta runs, a sync that changes it also rebuilds those
+# emails (CLAUDE.md, "sync docs" step 6b).
 READER_FACING = (
+    'Conversant AAC Beta Tester Responsibilities.docx',
     'Conversant AAC Product Overview.docx',
     'Conversant AAC User Manual (Windows Chromebook Mac).docx',
     'Conversant AAC User Manual (iPad).docx',
@@ -68,12 +73,14 @@ def releases_since(commit):
     out = git('log', '--oneline', '--grep', '^Release ', f'{commit}..origin/main')
     if out is None:
         return None
-    return [ln for ln in out.splitlines() if ln.strip()]
+    # Only titles that name a version: "Release notes: ..." is a changelog edit, not a
+    # release, and counting it listed "notes:" as a missed version.
+    return [ln for ln in out.splitlines() if re.search(r'\bRelease\s+\d', ln)]
 
 
 def version_of(line):
-    """'<sha> Release 0.10.9 - ...' -> '0.10.9'."""
-    m = re.search(r'\bRelease\s+(\S+)', line)
+    """'<sha> Release 0.10.9 - ...' -> '0.10.9' (also '0.14.0: ...' -> '0.14.0')."""
+    m = re.search(r'\bRelease\s+(\d[\d.]*\d)', line)
     return m.group(1) if m else '?'
 
 
