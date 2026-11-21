@@ -96,7 +96,13 @@ def device_word(item):
 
 
 def build_page(cfg, course):
-    out = ['<!-- wp:paragraph -->\n<p>Short videos, about two minutes each, that show you how to use '
+    # The site's home page links to Conversant (November 21 2026), so the public can
+    # reach this page; it says the app is in beta, as the Conversant page and FAQ do.
+    out = ['<!-- wp:paragraph -->\n<p><strong>Conversant AAC is in beta testing.</strong> A small group of '
+           'testers is trying it now, and it isn’t publicly released yet. Interested in taking part? '
+           '<a href="https://volksswitch.org/index.php/conversant-beta/">Sign up for the beta</a>.</p>\n'
+           '<!-- /wp:paragraph -->',
+           '<!-- wp:paragraph -->\n<p>Short videos, about two minutes each, that show you how to use '
            'Conversant AAC. Each has a one-page guide with the same steps. Each video opens in its '
            'own tab, and when it finishes you can go straight on to the next one.</p>\n<!-- /wp:paragraph -->']
     if cfg.get('courseMap'):
