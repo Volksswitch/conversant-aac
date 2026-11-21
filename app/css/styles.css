@@ -2016,15 +2016,39 @@ body.opts-grid-below #responseArea { flex-direction: column; }
 /* An author `display` beats the browser's own [hidden] rule, so hiding this from
    script would silently do nothing without this line. It is hidden while the
    "What's new" notice is up, so the notice gets the whole transcript region. */
-#startReportBtn.start-report[hidden] { display: none; }
+:is(#startReportBtn, #switchOffBtn).start-report[hidden] { display: none; }
 
-#startReportBtn.start-report {
+/* The report link, and "Switches not working?" (shown only with switch access on). The
+   second sits right under Start, so a helper sees it without scrolling a short screen. */
+:is(#startReportBtn, #switchOffBtn).start-report {
     display: block; margin: 0.9rem auto 0; background: none; border: none;
     color: var(--ink-muted); font-size: 0.85rem; text-decoration: underline; cursor: pointer;
     min-height: 0; padding: 0.3rem 0.6rem;
     /* Never squashed: on a short screen it was shrunk to a sliver under its own text. */
     flex-shrink: 0;
 }
+#startBtn + #switchOffBtn.start-report { margin-top: 0; }
+
+/* A touch that did nothing because switch access is on (switch-access.js showTouchNote),
+   drawn over the screen in the switch highlight's colors, so nothing moves. Shown only
+   while touch is blocked, which waits until switch access is finished. */
+#touchOffNote {
+    position: fixed;
+    top: 0.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2147483001;
+    pointer-events: none;
+    max-width: min(90vw, 40rem);
+    padding: 0.4rem 0.9rem;
+    border-radius: 6px;
+    background: var(--scan-hl);
+    color: var(--scan-hl-inner);
+    font-weight: bold;
+    font-size: 1rem;
+    text-align: center;
+}
+#touchOffNote[hidden] { display: none; }
 
 /* Settings-profiles controls (About tab) — a picker row + a save row. */
 .profiles-row { display: flex; gap: 0.5rem; margin-top: 0.4rem; align-items: center; flex-wrap: wrap; }

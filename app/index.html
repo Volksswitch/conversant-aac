@@ -106,6 +106,12 @@
                          is the device's own and the switch scan cannot reach it. -->
                     <p id="helperNote" class="helper-note" hidden></p>
                     <button id="startBtn">Start</button>
+                    <!-- A way out when the switches stop working (Ken, November 21 2026).
+                         Shown only while switch access is on; it takes touch even when
+                         touch is otherwise off (switch-access.js TOUCH_ESCAPES), and the
+                         scan passes it by (data-scan-skip), so a stray switch press cannot
+                         turn the switches off. Asks before it acts. -->
+                    <button id="switchOffBtn" type="button" class="start-report" data-scan-skip hidden>Switches not working? Turn switch access off</button>
                     <!-- Version, back on the opening screen (Ken, August 9 2026).
                          The support instructions tell testers to quote their
                          version, and Settings is UNREACHABLE from here (main is

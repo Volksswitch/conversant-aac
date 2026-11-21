@@ -13,10 +13,12 @@
  * words" (.ep-imow), the Command Bar (#listenControls), the keyboard's rows (.kbd-row),
  * Settings' tabs and sections, and any confirmation card.
  *
- * WHILE SWITCH ACCESS IS ON, TOUCH DOES NOTHING (Ken, November 12 2026: "commit to the
- * direct select vs switch access decision that the users make"). A mouse's buttons act
- * as switches 1, 2 and 3 unless turned off, which is how a supporter helps. The
- * scanner's own presses are let through by a counter, so nothing else can be.
+ * TOUCH (Ken, November 12 2026: "commit to the direct select vs switch access decision
+ * that the users make"): touch is to do nothing while switch access is on - but not yet.
+ * That rule waits until switch access is finished and reliable (Ken, November 21 2026;
+ * see BLOCK_TOUCH_WITH_SWITCHES). A mouse's buttons act as switches 1, 2 and 3 unless
+ * turned off, which is how a supporter helps. While touch is blocked, the scanner's own
+ * presses are let through by a counter, so nothing else can be.
  *
  * NOTHING MOVES. The highlight is an outline drawn inside the button and the "Leave"
  * outline is a separate box drawn over the region, so the layout - and the keyguard -
@@ -146,20 +148,63 @@ const SCREEN_NAMES = {
 const screenName = (id) => SCREEN_NAMES[id] || id;
 
 /*
- * THE REPORT LINK STAYS USABLE BY TOUCH (Ken, November 21 2026). Touch does nothing while
- * switch access is on, which is right for using the app - but the report link on the
- * start screen exists for when the app cannot be driven, and when the SWITCHES are what
- * stopped working, a helper holding the tablet has nothing but touch. So the report link,
- * the "Send a report" button on the start-up failure card, and the cards a report opens,
- * take touch. A mouse whose buttons are switches stays a set of switches even there.
+ * TOUCH WORKS ALONGSIDE THE SWITCHES, FOR NOW (Ken, November 21 2026: "That 'rule' has to
+ * wait for switch support to be comprehensive and not error prone"). The rule of November
+ * 12 - touch does nothing while switch access is on, so the user commits to one way of
+ * using the app - is right for the finished feature and wrong while switch access is
+ * still being built: when the switches stopped working on his Android tablet, touch was
+ * off too and nothing at all could be done. So until switch access is claimed (the
+ * Switch Access tab stops saying "in progress"; tests/switch-settings.test.mjs then asks
+ * for this to be true), touch, a pen and a mouse whose buttons are not switches work as
+ * they do without switches. A mouse whose buttons ARE switches is a set of switches
+ * either way. "?block-touch" in the address turns the rule on for testing.
  */
-const TOUCH_ESCAPES = '#startReportBtn, #startupErrorReportBtn';
+const BLOCK_TOUCH_WITH_SWITCHES = false;
+const blockTouch = BLOCK_TOUCH_WITH_SWITCHES || (() => {
+    try { return new URLSearchParams(location.search).has('block-touch'); } catch { return false; }
+})();
+
+/*
+ * WHAT STILL TAKES TOUCH WHEN THE RULE IS ON. The report link on the start screen exists
+ * for when the app cannot be driven, and when the SWITCHES are what stopped working, a
+ * helper holding the tablet has nothing but touch. So the report link, the "Send a report"
+ * button on the start-up failure card, the start screen's "Switches not working?" link,
+ * and the cards they open, take touch. A mouse whose buttons are switches stays a set of
+ * switches even there.
+ */
+const TOUCH_ESCAPES = '#startReportBtn, #startupErrorReportBtn, #switchOffBtn';
 let touchDepth = 0;
 let lastTouchAt = -1e12;
 function escapesBlock(t) {
     if (!(t instanceof Element)) return false;
     if (t.closest(TOUCH_ESCAPES)) return true;
     return touchDepth > 0 && !!t.closest('dialog[open]');
+}
+
+/*
+ * THE NOTE WHEN A TOUCH IS IGNORED (Ken, November 21 2026). With nothing on screen to
+ * say so, a touch that does nothing reads as a frozen app - it read that way to Ken, who
+ * decided touch should be off. Shown only while the rule above is on. Drawn over the
+ * screen in the switch highlight's colors, so nothing moves.
+ */
+let touchNoteEl = null;
+let touchNoteTimer = null;
+function showTouchNote() {
+    try {
+        if (!touchNoteEl) {
+            touchNoteEl = document.createElement('div');
+            touchNoteEl.id = 'touchOffNote';
+            touchNoteEl.setAttribute('role', 'status');
+        }
+        const host = topDialog() || (settingsOpen() ? $('settingsDialog') : null) || document.body;
+        if (touchNoteEl.parentNode !== host) host.appendChild(touchNoteEl);
+        touchNoteEl.textContent = prestart()
+            ? 'Touch is off while switch access is on. If the switches are not working, tap "Switches not working?" below.'
+            : 'Touch is off while switch access is on. If the switches are not working, close and reopen the app to turn switch access off.';
+        touchNoteEl.hidden = false;
+        clearTimeout(touchNoteTimer);
+        touchNoteTimer = setTimeout(() => { if (touchNoteEl) touchNoteEl.hidden = true; }, 5000);
+    } catch { /* a note must never be what breaks the switches */ }
 }
 // Did this event come from a mouse? A tap also produces mouse events, after the touch.
 function fromMouse(e) {
@@ -444,6 +489,10 @@ function controlsIn(container, scope) {
     const walk = (el) => {
         for (const child of el.children) {
             if (child.hidden || child.id === 'appKeyboard' || child.id === 'predGhost' || child.id === 'scanFrame') continue;
+            // A control meant for a helper's touch, not the switches (data-scan-skip):
+            // "Switches not working?" would otherwise let a stray press turn the
+            // switches off.
+            if (child.dataset && 'scanSkip' in child.dataset) continue;
             if (child.tagName === 'DETAILS') { out.push(...sectionNodes(child, scope)); continue; }
             if (isControl(child)) {
                 if (usable(child) && !skipControl(child)) out.push(controlNode(child, scope));
@@ -1025,27 +1074,43 @@ let installed = false;
 function install() {
     if (installed) return;
     installed = true;
-    // While switch access is on, touch does nothing and a mouse is a set of switches.
+    // While switch access is on, a mouse whose buttons are switches is a set of switches,
+    // and - once the rule comes back (blockTouch) - touch does nothing.
     const block = (e) => {
         if (!on || synthetic) return;
         const mouse = fromMouse(e);
         const pressStart = e.type === 'pointerdown' || e.type === 'touchstart';
         if (!mouse && pressStart) lastTouchAt = performance.now();
-        // The report link and the cards a report opens (see TOUCH_ESCAPES).
-        if (escapesBlock(e.target) && !(mouse && mouseOn)) return;
-        guarded('a mouse switch', () => {
-            if (e.type === 'pointerdown' && e.pointerType === 'mouse') {
-                if (mouseOn && MOUSE[e.button]) rawDown(MOUSE[e.button], 'mouse ' + BUTTON[e.button]);
-                else note('mouse', { src: 'mouse ' + (BUTTON[e.button] || e.button), did: mouseOn ? 'not a switch button' : 'ignored: mouse buttons are not switches' });
+        if (mouse && mouseOn) {
+            // Every press is a switch press, never a click - even over the report link.
+            guarded('a mouse switch', () => {
+                if (e.type === 'pointerdown' && e.pointerType === 'mouse') {
+                    if (MOUSE[e.button]) rawDown(MOUSE[e.button], 'mouse ' + BUTTON[e.button]);
+                    else note('mouse', { src: 'mouse ' + e.button, did: 'not a switch button' });
+                }
+                if (e.type === 'pointerup' && e.pointerType === 'mouse' && MOUSE[e.button]) rawUp(MOUSE[e.button], 'mouse ' + BUTTON[e.button]);
+            });
+        } else {
+            // Touch, a pen, or a mouse whose buttons are not switches: direct select, which
+            // works alongside the switches until the rule comes back, and even then on the
+            // report link, the "Switches not working?" link and the cards they open.
+            if (!blockTouch || escapesBlock(e.target)) return;
+            if (e.type === 'pointerdown') {
+                note(mouse ? 'mouse' : 'touch', { did: 'ignored: touch is off while switch access is on' });
+                showTouchNote();
             }
-            if (e.type === 'pointerup' && e.pointerType === 'mouse' && mouseOn && MOUSE[e.button]) rawUp(MOUSE[e.button], 'mouse ' + BUTTON[e.button]);
-            if (e.type === 'pointerdown' && !mouse) note('touch', { did: 'ignored: touch is off while switch access is on' });
-        });
+        }
         e.preventDefault();
         e.stopImmediatePropagation();
     };
-    for (const t of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'dblclick', 'auxclick', 'contextmenu', 'touchstart', 'touchend']) {
+    for (const t of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'dblclick', 'auxclick', 'contextmenu']) {
         window.addEventListener(t, block, { capture: true, passive: false });
+    }
+    // Touch events are only ever stopped while the rule is on. A listener that might stop
+    // them makes every touch wait for the app before the page can scroll, so they are
+    // only listened to that way then.
+    for (const t of ['touchstart', 'touchend']) {
+        window.addEventListener(t, block, { capture: true, passive: !blockTouch });
     }
     // A mouse press the browser canceled never sends its release.
     window.addEventListener('pointercancel', (e) => {

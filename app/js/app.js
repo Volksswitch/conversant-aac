@@ -553,6 +553,12 @@ function initApp() {
         const failReportBtn = document.getElementById('startupErrorReportBtn');
         if (failReportBtn) failReportBtn.addEventListener('click', () => sendProblemReportFromStart(failReportBtn));
     } catch { /* never what stops the app starting */ }
+    // "Switches not working? Turn switch access off" (Ken, November 21 2026), wired here
+    // for the same reason: it is the way out when the app cannot be driven.
+    try {
+        const switchOffBtn = document.getElementById('switchOffBtn');
+        if (switchOffBtn) switchOffBtn.addEventListener('click', () => turnSwitchAccessOffFromStart());
+    } catch { /* never what stops the app starting */ }
     // A failed update check at launch (sw-register.js) is not a start-up failure: the
     // app is running and Start checks again. Recorded quietly so it can be counted.
     try {
@@ -1060,6 +1066,7 @@ function initApp() {
     switchAccess.init();
     if (firstLaunch && askAccessOnFirstLaunch()) showFirstLaunchChoice();
     refreshHelperNote();
+    refreshSwitchOffLink();
     watchMicPermission();
 
     // Conversation Review: the second controller for the conversation screen. It owns
@@ -1212,6 +1219,7 @@ function wireSwitchSettings() {
         if ((prev === 0) !== (next === 0)) applySwitchAppSettingsLive(next > 0);
         switchAccess.configure();
         reflectSwitchSettings();
+        refreshSwitchOffLink();
     };
     const radios = { switchMethod: 'method', switchPattern: 'pattern', switchExit: 'exit', switchNewOpts: 'newOpts' };
     for (const [name, field] of Object.entries(radios)) {
@@ -1317,6 +1325,7 @@ function showFirstLaunchChoice() {
         }
         switchAccess.configure();
         refreshHelperNote();
+        refreshSwitchOffLink();
     });
 }
 
@@ -1341,6 +1350,49 @@ async function refreshHelperNote() {
             + 'folder. Your switches cannot answer that question. Ask a helper to tap Allow.'
         : '';
     note.hidden = !show;
+}
+
+/*
+ * "SWITCHES NOT WORKING? TURN SWITCH ACCESS OFF" on the start screen (Ken, November 21
+ * 2026). On his Android tablet the switches stopped responding, and with touch off while
+ * switch access was on, nothing at all could be done. This is the way out. It shows only
+ * while switch access is on; it takes touch even if touch is off (switch-access.js
+ * TOUCH_ESCAPES); the scan passes it by, so a stray switch press cannot turn the switches
+ * off; and it asks first. Turning switch access off here does what choosing "None" in
+ * Settings does: the app settings that suit switches are put back as the user had them.
+ * It does not ask about the scan settings, as "None" in Settings can: a helper whose user
+ * is locked out needs one question, not two.
+ */
+function refreshSwitchOffLink() {
+    const btn = document.getElementById('switchOffBtn');
+    if (!btn) return;
+    // It belongs to the start screen's footer: hidden with the report link while the
+    // "What's new" notice has the region.
+    const report = document.getElementById('startReportBtn');
+    btn.hidden = storage.loadSwitchCount() === 0 || !!(report && report.hidden);
+}
+let switchOffInProgress = false;
+async function turnSwitchAccessOffFromStart() {
+    if (switchOffInProgress) return;
+    switchOffInProgress = true;
+    try {
+        const ok = await switchAccess.withTouch(() => confirmNeutral({
+            title: 'Turn switch access off?',
+            body: 'Touch will work as usual, and the switches will do nothing. To turn switch access '
+                + 'back on, open Settings, go to the Switch Access tab, and choose the number of switches.',
+            confirmLabel: 'Turn it off',
+            cancelLabel: 'Keep it on',
+        }));
+        if (!ok) return;
+        storage.saveSwitchCount(0);
+        try { applySwitchAppSettingsLive(false); } catch { /* the switches are off either way */ }
+        switchAccess.configure();
+        try { reflectSwitchSettings(); } catch { /* Settings catches up when it is opened */ }
+        refreshHelperNote();
+        refreshSwitchOffLink();
+    } finally {
+        switchOffInProgress = false;
+    }
 }
 
 // The microphone permission, kept up to date so Listen can read it WITHOUT waiting:
@@ -2399,6 +2451,7 @@ function setStartScreenFooter(show) {
         const el = document.getElementById(id);
         if (el) el.hidden = !show;
     }
+    refreshSwitchOffLink();   // goes with the report link
 }
 
 // Step 4 — the API-key notice, shown only when no key is set (informational: the

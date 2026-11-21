@@ -99,3 +99,23 @@ test('the first-launch access question returns when the Switch Access tab stops 
             + 'ASK_ACCESS_ON_FIRST_LAUNCH to true in app.js to bring back the first-launch question.');
     }
 });
+
+/*
+ * TOUCH BLOCKING COMES BACK THE SAME WAY (Ken, November 21 2026: "That 'rule' has to wait
+ * for switch support to be comprehensive and not error prone"). Touch works alongside the
+ * switches until switch access is claimed; then the rule of November 12 returns.
+ */
+test('touch blocking returns when the Switch Access tab stops saying "in progress"', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const html = await readFile(new URL('../app/index.html', import.meta.url), 'utf8');
+    const sa = await readFile(new URL('../app/js/switch-access.js', import.meta.url), 'utf8');
+    const tab = html.match(/data-tab="switch"[^>]*>([^<]*)</);
+    assert.ok(tab, 'the Switch Access tab was not found in index.html');
+    const flag = sa.match(/const BLOCK_TOUCH_WITH_SWITCHES\s*=\s*(true|false)\s*;/);
+    assert.ok(flag, 'BLOCK_TOUCH_WITH_SWITCHES was not found in switch-access.js');
+    if (!/in progress/i.test(tab[1])) {
+        assert.equal(flag[1], 'true',
+            'Switch access is now claimed (the tab no longer says "in progress"), so touch '
+            + 'blocking returns: set BLOCK_TOUCH_WITH_SWITCHES to true in switch-access.js.');
+    }
+});

@@ -154,16 +154,16 @@ try {
     // ---- The start screen.
     let h = await moveUntil((x) => x.id === 'startBtn', 6);
     check(!!h, 'the scan reaches the Start button');
-    await page.touchscreen.tap(640, 400);
-    const startBox = await page.$eval('#startBtn', (b) => { const r = b.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
-    await page.touchscreen.tap(startBox.x, startBox.y);
-    await pace(400);
-    check(await page.evaluate(() => document.querySelector('main').classList.contains('disabled')), 'touching Start does nothing while switch access is on');
+    // "Switches not working?" is there for a helper's touch, and the scan passes it by,
+    // so a stray switch press cannot turn the switches off (Ken, November 21 2026).
+    const startStops = new Set();
+    for (let i = 0; i < 4; i++) { startStops.add((await hl()).id); await move(); }
+    check(await page.$eval('#switchOffBtn', (b) => !b.hidden) && startStops.has('startBtn')
+        && startStops.has('startReportBtn') && !startStops.has('switchOffBtn'),
+        'the start screen shows "Switches not working?", and the scan passes it by');
 
-    // ---- The report link still takes touch (Ken, November 21 2026): when the switches
-    // are what stopped working, a helper's touch is the only way left to send a report.
-    // The scan presses are recorded first, so the report has some to list.
-    await move(); await move();
+    // ---- The report link takes touch (Ken, November 21 2026). The scan presses above
+    // are in the report.
     await moveUntil((x) => x.id === 'startBtn', 6);
     const linkBox = await page.$eval('#startReportBtn', (b) => { const r = b.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
     await page.touchscreen.tap(linkBox.x, linkBox.y);
@@ -208,11 +208,18 @@ try {
     const spoken = await page.evaluate((n) => window.__spoken.slice(n), spokenBefore);
     check(spoken.some((t) => t && phrase && t.toLowerCase().includes(phrase.toLowerCase().slice(0, 4))), `choosing a phrase speaks it (${phrase})`);
 
-    // Touch and a stray tap do nothing; the mouse acts as a switch.
-    const settingsBox = await page.$eval('#settingsBtn', (b) => { const r = b.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
-    await page.touchscreen.tap(settingsBox.x, settingsBox.y);
-    await pace(400);
-    check(!(await page.$eval('#settingsDialog', (d) => d.open)), 'touching Settings does nothing');
+    // Touch works alongside the switches until switch access is finished (Ken, November 21
+    // 2026); the mouse acts as a switch.
+    const tapEl = async (p, sel) => {
+        const b = await p.$eval(sel, (el) => { const r = el.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
+        await p.touchscreen.tap(b.x, b.y);
+    };
+    await tapEl(page, '#settingsBtn');
+    await pace(600);
+    const settingsByTouch = await page.$eval('#settingsDialog', (d) => d.open);
+    if (settingsByTouch) { await tapEl(page, '#closeSettingsBtn'); await pace(600); }
+    check(settingsByTouch && !(await page.$eval('#settingsDialog', (d) => d.open)),
+        'touching Settings opens it and touching its close button closes it, with switch access on');
     const beforeMouse = await hl();
     await page.mouse.click(5, 5, { button: 'left' });
     await pace(200);
@@ -530,6 +537,74 @@ try {
     await pace(500);
     check(await p2.evaluate(() => window.__mic.isOn() && !document.querySelector('dialog[open]')),
         'the warning is given once a session');
+
+    // ---- Touch blocking, as it returns once switch access is finished ("?block-touch";
+    // Ken, November 21 2026). What still takes touch then is the way out: the report link,
+    // "Switches not working?" and the cards they open. Switch access is still on, two
+    // switches, from the setup above.
+    await p2.close();
+    const p3 = await browser.newPage();
+    await p3.setViewport({ width: 1280, height: 800, hasTouch: true });
+    await p3.evaluateOnNewDocument(stubs);
+    p3.on('pageerror', (e) => { console.log('PAGE ERROR', e.message); failures++; });
+    await p3.goto(URL + '?block-touch', { waitUntil: 'load' });
+    await pace(700);
+    const onStart = () => p3.evaluate(() => document.querySelector('main').classList.contains('disabled'));
+    const openCard = (re) => p3.evaluate((src) => {
+        const d = [...document.querySelectorAll('dialog[open]')].find((x) => new RegExp(src).test(x.textContent));
+        return d ? [...d.querySelectorAll('button')].map((b) => b.textContent.trim()) : null;
+    }, re);
+    const tapCardButton = async (label) => {
+        const b = await p3.evaluate((l) => {
+            const btn = [...document.querySelectorAll('dialog[open] button')].find((x) => x.textContent.trim() === l);
+            if (!btn) return null;
+            const r = btn.getBoundingClientRect();
+            return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+        }, label);
+        if (b) await p3.touchscreen.tap(b.x, b.y);
+        return !!b;
+    };
+    await tapEl(p3, '#startBtn');
+    await pace(500);
+    const touchNote = await p3.evaluate(() => { const n = document.getElementById('touchOffNote'); return n && !n.hidden ? n.textContent : ''; });
+    check(await onStart() && /^Touch is off while switch access is on/.test(touchNote),
+        'with touch blocking on, touching Start does nothing and a note says touch is off');
+    await tapEl(p3, '#startReportBtn');
+    let cardButtons = null;
+    for (let i = 0; i < 60 && !cardButtons; i++) { await pace(250); cardButtons = await openCard('Send this report'); }
+    check(!!cardButtons, 'the report link still takes touch');
+    check(cardButtons && await tapCardButton('Not now') && (await pace(500), !(await openCard('Send this report'))),
+        'and so does the card it opens');
+    await tapEl(p3, '#switchOffBtn');
+    await pace(500);
+    cardButtons = await openCard('Turn switch access off');
+    check(!!cardButtons && cardButtons.includes('Turn it off') && cardButtons.includes('Keep it on'),
+        'touching "Switches not working?" asks before turning switch access off');
+    await tapCardButton('Turn it off');
+    await pace(600);
+    check(await p3.evaluate(async () => (await import('/js/storage.js')).loadSwitchCount() === 0
+        && !document.body.classList.contains('switch-access-on')
+        && !document.querySelector('.scan-hl, .scan-held')
+        && document.getElementById('switchOffBtn').hidden),
+        'confirming turns switch access off: no highlight, and the link is gone');
+    await tapEl(p3, '#startBtn');
+    await pace(1500);
+    for (let i = 0; i < 4 && await onStart(); i++) {
+        const any = await p3.evaluate(() => {
+            const b = [...document.querySelectorAll('#startBlock button')].find((x) => x.offsetParent !== null && /Close|Not now/.test(x.textContent));
+            return b ? b.id || b.textContent : null;
+        });
+        if (!any) break;
+        const sel = await p3.evaluate((t) => {
+            const b = [...document.querySelectorAll('#startBlock button')].find((x) => (x.id || x.textContent) === t);
+            b.setAttribute('data-tap-me', '1');
+            return '[data-tap-me="1"]';
+        }, any);
+        await tapEl(p3, sel);
+        await p3.evaluate(() => document.querySelectorAll('[data-tap-me]').forEach((x) => x.removeAttribute('data-tap-me')));
+        await pace(800);
+    }
+    check(!(await onStart()), 'after that, touching Start starts the app');
 } finally {
     await browser.close();
     server.kill();
