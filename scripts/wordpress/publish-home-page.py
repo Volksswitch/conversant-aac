@@ -1,7 +1,9 @@
 """Publish the Conversant AAC home page on volksswitch.org, once.
 
-The page is shared only with beta testers (through the welcome email) and is not
-linked from any other page on the site. Its reviewed draft is
+The page was first shared only with beta testers (through the welcome email). Since
+November 21 2026 the Volksswitch home page links to it (an "I use AAC" card marked
+"In beta testing"), so it opens with a beta notice for the public, and the tester
+material sits under "If You're a Beta Tester". Its original reviewed draft is
 Documents/Conversant AAC Website Home Page.docx (generator
 scripts/doc-generators/generate-home-page-doc.js); the text below matches that draft
 with the reviewer notes and the "[Beta: remove at public release]" markers left out.
