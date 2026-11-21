@@ -9233,7 +9233,18 @@ function openSettings() {
     // it live for the current conversation).
     const noSaveDefaultInput = document.getElementById('noSaveDefaultInput');
     noSaveDefaultInput.checked = storage.loadNoSaveDefault();
-    noSaveDefaultInput.onchange = () => storage.saveNoSaveDefault(noSaveDefaultInput.checked);
+    // Takes effect for the NEXT conversation straight away (Ken, November 21 2026). It
+    // used to be read only at startup and at End conversation, so the first
+    // conversation after changing it still followed the old default. A conversation
+    // already under way keeps its own choice: that is what the Command Bar button is
+    // for, and switching it here would delete or start a record without asking.
+    noSaveDefaultInput.onchange = () => {
+        storage.saveNoSaveDefault(noSaveDefaultInput.checked);
+        if (!conversationInProgress() && !storage.getConversationId()) {
+            conversationPrivate = noSaveDefaultInput.checked;
+            applyPrivacyState();
+        }
+    };
     // Use the whole screen. Applying it here, in the change handler, is what makes
     // the toggle the way BACK IN too: tapping it is a user gesture, so a user who
     // has left fullscreen (Esc, or the browser dropping it) can restore it without
@@ -9659,9 +9670,8 @@ function openSettings() {
         else showApiKeyStatus('warn', "Couldn't reach the service — check your internet connection and try again.");
     };
     // --- Transcription backend (Ken, July 30 2026) ---------------------------
-    // Changing the provider or the key needs a reload, because stt.init() builds
-    // the capture source once at startup. Say so plainly rather than leaving the
-    // user to wonder why the setting appears to do nothing until next time.
+    // Changing the provider takes effect at once (switchHearing, below); a key is
+    // read when listening starts. Neither needs a reload any more.
     const deepgramKeyInput = document.getElementById('deepgramKeyInput');
     const reflectSttProvider = () => {
         const provider = storage.loadSttProvider();
