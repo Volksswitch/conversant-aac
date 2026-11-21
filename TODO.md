@@ -129,6 +129,12 @@ the one that quietly waits forever.
 - **What is wanted:** decide whether words are still the right cue when (a) other languages arrive, where the same idea can take many more characters and the tag may not fit over a small button, and (b) the app serves users with lower literacy, who cannot read it. Alternatives to weigh: changing the button's background color while it waits, or a flashing or pulsing background. Caution on the second: the Listen button already pulses, and there it means the microphone is on, so a pulse here would give one look two meanings.
 - **Why not now:** the app is English-only and its users must be able to read. Revisit with the Spanish work or the lower-literacy work, whichever comes first.
 
+### Switch access: bring back the first-launch question when switch access is claimed
+- **Raised:** 2026-11-21 - Ken hid the Start screen's "How will you use Conversant?" question (Direct select, One switch, Two switches, Three switches) because switch access is not ready to claim, and asked that it come back when it is.
+- **What is wanted:** when switch access is officially supported, set `ASK_ACCESS_ON_FIRST_LAUNCH` to true in `app/js/app.js`. In the same pass: take "(in progress)" off the Switch Access tab in Settings, take `?ask-access` back out of `scripts/switch-access/browser-check.mjs` (it can stay, but is no longer needed), and check the Switch Device Test Plan and both User Manuals still describe the question.
+- **Guard:** `tests/switch-settings.test.mjs` fails if the Switch Access tab stops saying "in progress" while the question is still hidden, so claiming support without bringing it back breaks the build.
+- **Why not now:** switch access is still being tried; the beta accepts only direct select users.
+
 ### Switch access: what the first build did not check
 - **Raised:** 2026-11-12 - built from the Switch Access Design ("implement the design").
 - **What is wanted:** browser checks (in `scripts/switch-access/browser-check.mjs`) for inverse scanning, hold to move, acting on release, the Leave outline in Settings, a drop-down opened as a list, and a newer set of options held while the highlight is inside the options; then the device checks. The three prototypes still show Leave buttons in Settings, where the app now uses the outline (Design section 3.2).

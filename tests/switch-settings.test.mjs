@@ -60,3 +60,26 @@ test('while a switch is held the highlight speeds up evenly to the top speed', (
     assert.equal(raceWait(9, scan), 0.5);
     assert.equal(raceWait(1, { ...scan, rampStops: 0 }), 0.5);
 });
+
+/*
+ * THE FIRST-LAUNCH QUESTION COMES BACK WHEN SWITCH ACCESS IS CLAIMED (Ken, November 21
+ * 2026). It was hidden while switch access is unfinished, and a hidden thing is easy to
+ * forget. The claim is made by taking "(in progress)" off the Switch Access tab in
+ * Settings, so that is the moment this test watches: once the tab no longer says it,
+ * ASK_ACCESS_ON_FIRST_LAUNCH in app.js must be true, or the build fails.
+ */
+test('the first-launch access question returns when the Switch Access tab stops saying "in progress"', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const html = await readFile(new URL('../app/index.html', import.meta.url), 'utf8');
+    const app = await readFile(new URL('../app/js/app.js', import.meta.url), 'utf8');
+    const tab = html.match(/data-tab="switch"[^>]*>([^<]*)</);
+    assert.ok(tab, 'the Switch Access tab was not found in index.html');
+    const flag = app.match(/const ASK_ACCESS_ON_FIRST_LAUNCH\s*=\s*(true|false)\s*;/);
+    assert.ok(flag, 'ASK_ACCESS_ON_FIRST_LAUNCH was not found in app.js');
+    const claimed = !/in progress/i.test(tab[1]);
+    if (claimed) {
+        assert.equal(flag[1], 'true',
+            'Switch access is now claimed (the tab no longer says "in progress"), so set '
+            + 'ASK_ACCESS_ON_FIRST_LAUNCH to true in app.js to bring back the first-launch question.');
+    }
+});
