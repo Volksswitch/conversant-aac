@@ -105,7 +105,7 @@ item("asks", "Use it when a conversation comes up. ", "There’s no daily quota.
 item("asks", "Report problems, and good moments too. ", "In Settings, then Troubleshooting, write a line under “Report a problem” and tap “Send”. “I pressed Listen and nothing happened” is a perfect report. Always report a conversation panel that turns faintly red, or anything that should happen and doesn’t."),
 item("asks", "Leave automatic reporting on. ", "About once a week the app sends us counts and timings, never what anyone said. Each report carries your tester name."),
 item("asks", "Check the Known Issues page. ", "It lists the faults we already know about and are investigating. Settings, then Troubleshooting, has a button for it. If one causes you real trouble, tell us anyway."),
-item("asks", "Talk with us at the end. ", "After six weeks, we’d like to talk with you in whatever form works for you. If you stop early, we’d still like five minutes to hear why."),
+item("asks", "Check in with us. ", "In week 2 and again at the end, we’d like a short talk with you, in whatever form works for you. If you stop early, we’d still like five minutes to hear why."),
 
 heading1("What We’re Trying to Learn"),
 item("questions", "Do you keep using it? ", "Six weeks in, do you still reach for it?"),

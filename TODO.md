@@ -2224,6 +2224,7 @@ about to fall by an order of magnitude is the trap.
 - **Wanted:** ask testers' communication partners about this directly during the beta, and
   revisit the partner card's wording in light of what they say.
 - **Why not now:** it is a beta interview question and a wording review, not a build.
+- **2026-11-21:** the question is now in the Beta Test Plan (section 6): with the tester's permission, a few minutes with one of their partners. The partner card's wording review still waits on what partners say.
 
 #### 5. A short, regular check-in for testers
 - **The finding:** every three days the author answered a few questions - how helpful the
@@ -2245,6 +2246,7 @@ about to fall by an order of magnitude is the trap.
   with the one that didn't?" Sort each miss as length, formality, wrong kind of reply,
   missing fact, humor, or the AI's own habits. It also advises against an absolute "does
   this sound like me, 1 to 7" rating, which runs high whatever the real fit.
+- **2026-11-21: DONE.** Added to the Beta Test Plan (sections 3 and 6): a check-in in week 2 and again at the end, asking for one option that sounded like the tester and one that didn't, and how much it sounds like them and how much control they feel. No rating scale. The handout says so too.
 
 #### 6. Mixing languages within a sentence
 - **The finding:** the AI followed the author's Spanish-English mixing and Argentine slang,
