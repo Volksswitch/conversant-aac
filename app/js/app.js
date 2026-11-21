@@ -1058,7 +1058,7 @@ function initApp() {
     // Switch access (Switch Access Design, Ken, November 12 2026). Off unless "Number of
     // switches" is one, two or three; with it off the app is exactly as before.
     switchAccess.init();
-    if (firstLaunch) showFirstLaunchChoice();
+    if (firstLaunch && askAccessOnFirstLaunch()) showFirstLaunchChoice();
     refreshHelperNote();
     watchMicPermission();
 
@@ -1271,6 +1271,21 @@ function wireSwitchSettings() {
  * switches. A switch user answers with switch 1 while the choices are highlighted in
  * turn (switch-access.js runChooser). After this the choice is only on the General tab.
  */
+/*
+ * ⚠ HIDDEN FOR NOW (Ken, November 21 2026): "we are probably a way from claiming that
+ * we support switches." Nothing is deleted; set ASK_ACCESS_ON_FIRST_LAUNCH back to true
+ * when switch access is ready to offer. Meanwhile every new user is a direct select
+ * user, which is already what an unset "Number of switches" means, so nothing else
+ * needs changing. The Switch Access tab in Settings is untouched.
+ * A "?ask-access" in the address still shows the question, so
+ * scripts/switch-access/browser-check.mjs can go on testing it.
+ */
+const ASK_ACCESS_ON_FIRST_LAUNCH = false;
+function askAccessOnFirstLaunch() {
+    if (ASK_ACCESS_ON_FIRST_LAUNCH) return true;
+    try { return new URLSearchParams(location.search).has('ask-access'); } catch { return false; }
+}
+
 function showFirstLaunchChoice() {
     const block = document.getElementById('startBlock');
     const startBtn = document.getElementById('startBtn');

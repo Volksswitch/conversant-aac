@@ -116,8 +116,10 @@ try {
         return null;
     }
 
-    // ---- The first launch asks touch or switches.
-    await page.goto(URL, { waitUntil: 'load' });
+    // ---- The first launch asks touch or switches. The question is hidden from real
+    // users until switch access is offered (Ken, November 21 2026); "?ask-access"
+    // brings it back for this check.
+    await page.goto(URL + '?ask-access', { waitUntil: 'load' });
     await pace(500);
     check(!!(await page.$('#firstLaunchChoice')), 'the first launch asks touch or switches');
     check(await page.$eval('#startBtn', (b) => b.hidden), 'the Start button waits for the answer');
