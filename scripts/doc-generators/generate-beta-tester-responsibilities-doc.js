@@ -92,7 +92,7 @@ new Paragraph({
 }),
 new Paragraph({
     spacing: { before: 0, after: 240 },
-    children: [new TextRun({ text: "Kenneth R. Hackbarth  |  Volksswitch.org  |  Last updated October 27, 2026", color: GRAY, size: 20, font: "Arial" })]
+    children: [new TextRun({ text: "Kenneth R. Hackbarth  |  Volksswitch.org  |  Last updated November 21, 2026", color: GRAY, size: 20, font: "Arial" })]
 }),
 
 para("Thank you for testing Conversant AAC. For six weeks, what you tell us will decide what we fix, change, and drop. This page covers only the highlights. The full Beta Test Plan, linked at the bottom, explains setup, privacy, and why we ask what we ask. Please read that document too."),
@@ -113,7 +113,7 @@ item("questions", "Can you say what you meant? ", "How often is a response optio
 item("questions", "Does it keep up? ", "Is the wait before you speak short enough to be comfortable?"),
 
 heading1("Good to Know"),
-item("know", "Any conversation can stay private. ", "Tap “Don’t save this conversation”, and nothing that was said is kept."),
+item("know", "Any conversation can stay private. ", "Tap “Don’t save this conversation” twice, and nothing that was said is kept."),
 item("know", "Questions? ", "Our contact details are in your welcome packet."),
 item("know", "The full Beta Test Plan, and your User Manual: ", "https://volksswitch.org/index.php/conversant-documents/"),
 
