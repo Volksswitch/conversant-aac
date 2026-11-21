@@ -267,7 +267,7 @@ export function formatSystemInfo(info) {
  * `errorReport` and `usageText` are passed in rather than gathered here so this
  * module stays free of app.js's conversation state; app.js owns the SEC-2 decision
  * about whether a live private transcript may be included. */
-export async function buildProblemReport({ note, appVersion, buildId, conversationText = '', errorReport = '', usageText = '', recentEvents = '' }) {
+export async function buildProblemReport({ note, appVersion, buildId, conversationText = '', errorReport = '', usageText = '', recentEvents = '', switchText = '' }) {
     const info = await collectSystemInfo({ appVersion, buildId });
     const trimmed = (note || '').trim();
     return [
@@ -301,6 +301,9 @@ export async function buildProblemReport({ note, appVersion, buildId, conversati
         '════════ SYSTEM INFORMATION ════════',
         formatSystemInfo(info),
         '',
+        // Only for someone who uses switches (switch-access.js describeForReport). After
+        // the system information so the report readers that stop at it are unaffected.
+        ...(switchText ? ['════════ SWITCH PRESSES (no words) ════════', switchText, ''] : []),
         '(No API keys are included in this report.)',
     ].join('\n');
 }

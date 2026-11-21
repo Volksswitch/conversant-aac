@@ -8299,6 +8299,8 @@ async function buildProblemReportText({ note = null, about = null } = {}) {
     let conversationText = '';
     try { conversationText = await aboutConversation(about, logs); }
     catch (e) { conversationText = `(could not read it: ${e && e.message ? e.message : e})`; }
+    let switchText = '';
+    try { switchText = switchAccess.describeForReport(); } catch { switchText = ''; }
     return diagnostics.buildProblemReport({
         note: note != null ? note : (noteEl ? noteEl.value : ''),
         appVersion: APP_VERSION,
@@ -8307,6 +8309,7 @@ async function buildProblemReportText({ note = null, about = null } = {}) {
         errorReport,
         usageText,
         recentEvents: metrics.formatRecent(),
+        switchText,
     });
 }
 
@@ -8354,7 +8357,10 @@ async function oneReportAtATime(run) {
     problemReportInProgress = true;
     try { await run(); } finally { problemReportInProgress = false; }
 }
-function sendProblemReportFromStart(btn) { return oneReportAtATime(() => sendProblemReportFromStartNow(btn)); }
+// With switch access on, touch is allowed on the cards this report opens, as it is on
+// the link that starts it: when the switches are what stopped working, a helper's touch
+// is the only way to send it (switch-access.js, TOUCH_ESCAPES).
+function sendProblemReportFromStart(btn) { return oneReportAtATime(() => switchAccess.withTouch(() => sendProblemReportFromStartNow(btn))); }
 async function sendProblemReportFromStartNow(pressed) {
     // The status line lives in Settings, which is the panel that may be unreachable,
     // so the button reports on itself. Without this the tester gets no confirmation
@@ -8492,7 +8498,8 @@ const REPORT_DISCLOSURE =
     + 'the conversation you are in (or the last one you had, or the one you are reviewing), '
     + 'and the errors it recorded, along with what was said in any conversation those errors happened in. '
     + 'A conversation you marked "Don\u2019t save" has no transcript here, though an error '
-    + 'from it may still be listed. Your API keys are never included.';
+    + 'from it may still be listed. If you use switches, it also lists your recent switch '
+    + 'presses and what each one did. Your API keys are never included.';
 
 
 /* Send the problem report back over the same path the weekly report uses (Ken,

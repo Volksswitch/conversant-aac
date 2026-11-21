@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { STARTING_VALUES, normalizeScan, normalizeCount, changedFromStart, methodsFor,
-         keyMap, keyName, raceWait } from '../app/js/switch-settings.js';
+         keyMap, keyName, raceWait, describeOtherKey } from '../app/js/switch-settings.js';
 
 test('each number of switches has the Design section 4 starting values', () => {
     assert.equal(STARTING_VALUES[1].method, 'auto');
@@ -51,6 +51,22 @@ test('a set key is added for its switch and taken from any other switch', () => 
     assert.equal(m.Enter, 2);
     assert.equal(keyName('KeyF'), 'F');
     assert.equal(keyName('Numpad2'), 'Keypad 2');
+});
+
+/*
+ * The record of switch presses in a problem report names a key that is not a switch,
+ * because which key arrived is what tells a wrongly set interface from a silent one -
+ * but a key that TYPES something only by its kind, so a report can never be read back
+ * as what somebody typed (Ken, November 21 2026).
+ */
+test('a key that is not a switch is named, unless it would type something', () => {
+    for (const c of ['KeyA', 'KeyZ']) assert.equal(describeOtherKey(c), 'a letter key');
+    for (const c of ['Digit0', 'Digit9', 'Numpad5']) assert.equal(describeOtherKey(c), 'a number key');
+    for (const c of ['Comma', 'Period', 'Slash', 'Quote', 'Semicolon', 'NumpadDecimal']) assert.equal(describeOtherKey(c), 'a symbol key');
+    assert.equal(describeOtherKey('Tab'), 'key Tab');
+    assert.equal(describeOtherKey('ArrowDown'), 'key ArrowDown');
+    assert.equal(describeOtherKey('Escape'), 'key Escape');
+    assert.equal(describeOtherKey(''), 'a key with no name');
 });
 
 test('while a switch is held the highlight speeds up evenly to the top speed', () => {

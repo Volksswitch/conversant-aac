@@ -88,7 +88,8 @@ const server = await startServer();
 const browser = await puppeteer.launch({ headless: true, args: ['--use-fake-ui-for-media-stream'] });
 try {
     const page = await browser.newPage();
-    await page.setViewport({ width: 1280, height: 800 });
+    // A touch screen, so a tap is a real tap (a tablet is where touch is blocked).
+    await page.setViewport({ width: 1280, height: 800, hasTouch: true });
     await browser.defaultBrowserContext().overridePermissions(`http://localhost:${PORT}`, ['microphone']);
     await page.evaluateOnNewDocument(stubs);
     page.on('pageerror', (e) => { console.log('PAGE ERROR', e.message); failures++; });
@@ -158,6 +159,32 @@ try {
     await page.touchscreen.tap(startBox.x, startBox.y);
     await pace(400);
     check(await page.evaluate(() => document.querySelector('main').classList.contains('disabled')), 'touching Start does nothing while switch access is on');
+
+    // ---- The report link still takes touch (Ken, November 21 2026): when the switches
+    // are what stopped working, a helper's touch is the only way left to send a report.
+    // The scan presses are recorded first, so the report has some to list.
+    await move(); await move();
+    await moveUntil((x) => x.id === 'startBtn', 6);
+    const linkBox = await page.$eval('#startReportBtn', (b) => { const r = b.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
+    await page.touchscreen.tap(linkBox.x, linkBox.y);
+    const reportDialog = () => page.evaluate(() => {
+        const d = [...document.querySelectorAll('dialog[open]')].find((x) => /Send this report/.test(x.textContent));
+        if (!d) return null;
+        const pre = d.querySelector('.danger-preview');
+        const no = [...d.querySelectorAll('button')].find((b) => /Not now/.test(b.textContent));
+        const r = no ? no.getBoundingClientRect() : null;
+        return { text: pre ? pre.value : '', no: r ? { x: r.x + r.width / 2, y: r.y + r.height / 2 } : null };
+    });
+    let rd = null;
+    for (let i = 0; i < 60 && !rd; i++) { await pace(250); rd = await reportDialog(); }
+    check(!!rd, 'touching the report link starts a report while switch access is on');
+    check(!!rd && /SWITCH PRESSES/.test(rd.text) && /press {2}key Space {2}switch 1 {2}-> moved to/.test(rd.text),
+        'the report lists the switch presses and what each one did');
+    if (rd && rd.no) await page.touchscreen.tap(rd.no.x, rd.no.y);
+    await pace(600);
+    check(!(await reportDialog()) && await page.evaluate(() => document.querySelector('main').classList.contains('disabled')),
+        'touching "Not now" on the report card closes it, and Start is still untouched');
+    await moveUntil((x) => x.id === 'startBtn', 6);
     await choose();
     await pace(1200);
     // Any notice after Start: choose whatever is highlighted until the conversation screen.
@@ -196,6 +223,57 @@ try {
     const boxes = () => page.$$eval('#epGrid .ep-btn, #listenControls button, #regenerateBtn',
         (els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.x, r.y, r.width, r.height].map((v) => Math.round(v * 10) / 10).join(','); }));
     const withHighlight = await boxes();
+
+    // ---- Holding a switch, and a release that never arrives (Ken, November 21 2026: on
+    // his Android tablet the switches went dead after switch 1 was held down).
+    const report = () => page.evaluate(async () => (await import('/js/switch-access.js')).describeForReport());
+    const key = (code, opts = {}) => page.evaluate((c, o) => window.dispatchEvent(new KeyboardEvent(o.up ? 'keyup' : 'keydown',
+        { code: c, key: c === 'Space' ? ' ' : c, repeat: !!o.repeat, bubbles: true, cancelable: true })), code, opts);
+    const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    // Held, with the key repeating as a keyboard's does: the highlight races, and stops
+    // when the switch comes up.
+    await moveUntil((x) => /ep-row/.test(x.cls), 40);
+    const raced = new Set();
+    await page.keyboard.down('Space');
+    for (let i = 0; i < 40; i++) { await page.keyboard.down('Space'); raced.add(JSON.stringify(await hl())); await pace(50); }
+    await page.keyboard.up('Space');
+    await pace(300);
+    let h1 = await hl(); await pace(1000); let h2 = await hl();
+    check(raced.size >= 3 && same(h1, h2), `holding switch 1 races through the stops and letting go stops it (${raced.size} stops)`);
+    // Pressed again with the release missing: the old press is let go and the new one
+    // counts. On the row that starts with "Yes", so the second press speaks.
+    await moveUntil((x) => /ep-row/.test(x.cls) && /^Yes/.test(x.text), 40);
+    await key('Enter');
+    await pace(900);                          // longer than a key's wait before it repeats
+    const inRow = await hl();
+    const spokenAt = await page.evaluate(() => window.__spoken.length);
+    await key('Enter');                       // no key-up came in between
+    await pace(500);
+    let rep = await report();
+    check(/ep-btn/.test(inRow.cls) && rep.includes('pressed again with no release in between')
+        && await page.evaluate((n) => window.__spoken.length > n, spokenAt),
+        'switch 2 pressed again with its release missing still works');
+    await key('Enter', { up: true });
+    await pace(300);
+    // A held key that stops repeating with no release after it: let go, and the race stops.
+    await key('Space');
+    for (let i = 0; i < 12; i++) { await key('Space', { repeat: true }); await pace(50); }
+    await pace(2200);
+    h1 = await hl(); await pace(900); h2 = await hl();
+    rep = await report();
+    check(rep.includes('the key stopped repeating') && /Held down now: none/.test(rep) && same(h1, h2),
+        'a held key that stops repeating with no release is let go, and its race stops');
+    // Held while the app loses focus: let go, and the race stops.
+    await key('Space');
+    await pace(1000);
+    await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+    await pace(200);
+    h1 = await hl(); await pace(1000); h2 = await hl();
+    rep = await report();
+    check(rep.includes('the app lost focus') && /Held down now: none/.test(rep) && same(h1, h2),
+        'a switch held while the app loses focus is let go, and its race stops');
+    await key('Space', { up: true });   // the late release does nothing
+    await pace(200);
 
     // ---- Options: Listen, the other person speaks, and the options region is highlighted.
     h = await moveUntil((x) => x.id === 'listenControls', 40);

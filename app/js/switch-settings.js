@@ -107,6 +107,22 @@ export function keyName(code) {
     return String(code || '').replace(/^Key/, '').replace(/^Digit/, '').replace(/^Numpad/, 'Keypad ').replace(/^Arrow/, 'Arrow ');
 }
 
+/*
+ * A key that is NOT a switch, as the record of switch presses names it (switch-access.js).
+ * A key that types something is named only by its kind, so typing on a physical keyboard
+ * cannot be read back out of a problem report; any other key (Tab, Escape, an arrow) is
+ * named, because which one arrived is exactly what tells a wrongly set switch interface
+ * apart from one that has stopped sending.
+ */
+const SYMBOL_KEYS = /^(Minus|Equal|BracketLeft|BracketRight|Backslash|Semicolon|Quote|Backquote|Comma|Period|Slash|IntlBackslash|IntlRo|IntlYen|NumpadDecimal|NumpadAdd|NumpadSubtract|NumpadMultiply|NumpadDivide|NumpadComma|NumpadEqual)$/;
+export function describeOtherKey(code) {
+    const c = String(code || '');
+    if (/^Key[A-Z]$/.test(c)) return 'a letter key';
+    if (/^(Digit|Numpad)\d$/.test(c)) return 'a number key';
+    if (SYMBOL_KEYS.test(c)) return 'a symbol key';
+    return c ? 'key ' + c : 'a key with no name';
+}
+
 // The app settings that suit switches (Design section 2.7). Choosing switches sets
 // these; choosing "None" puts back what the user had.
 export const SWITCH_APP_SETTINGS = {

@@ -27,7 +27,7 @@ import * as storage from './storage.js';
 import * as tapGuard from './tap-guard.js';
 import * as keyboard from './keyboard.js';
 import { createScanner } from './scan-rules.js';
-import { keyMap, keyName, raceWait, STARTING_VALUES } from './switch-settings.js';
+import { keyMap, keyName, raceWait, STARTING_VALUES, describeOtherKey } from './switch-settings.js';
 import * as pressAgain from './press-again.js';
 
 const $ = (id) => document.getElementById(id);
@@ -58,9 +58,121 @@ let listFor = null;
 let capture = null;           // { n, done } while a switch's key is being set
 let lastSetCode = '';
 let lastAccept = -1e12;
-const mkSw = () => ({ down: false, t: 0, minTimer: null, raceTimer: null, raced: false });
+// `src` is what pressed it ("key Space", "mouse left"): a release only ends the press
+// it belongs to. `lastBeat` and `beatTimer` follow a held key's repeats (see beat()).
+const mkSw = () => ({ down: false, src: '', t: 0, lastBeat: 0, beatTimer: null, minTimer: null, raceTimer: null, raced: false });
 const sw = { 1: mkSw(), 2: mkSw(), 3: mkSw() };
 const MOUSE = { 0: 1, 2: 2, 1: 3 };   // left, right, middle
+const BUTTON = { 0: 'left', 1: 'middle', 2: 'right' };
+
+// ---------------------------------------------------------------- what the switches did
+/*
+ * A SHORT RECORD OF EVERY SWITCH PRESS AND WHAT BECAME OF IT, for the problem report
+ * (Ken, November 21 2026). On his Android tablet the switches stopped doing anything after
+ * switch 1 was held down, and stayed dead after the app was restarted, and nothing on
+ * screen or in a report could say whether the presses were still ARRIVING and being
+ * ignored, or had stopped arriving at all. Those call for completely different fixes,
+ * so each press is noted with what it did, or why it did nothing.
+ *
+ * NO WORDS. A key that is a switch is named (the user chose it); any other key is noted
+ * only as "a letter key" or "a number key" when it would type something, so typing on a
+ * physical keyboard cannot be read back out of a report. A press is noted by the stop it
+ * acted on (its position, '#startBtn' or 'epGrid/2.1'), never by a phrase's words.
+ *
+ * Kept in browser storage as well, so a report sent after a restart still carries the
+ * session that went wrong.
+ */
+const TRACE_MAX = 80;
+const TRACE_KEY = 'aac_switch_trace';
+const TRACE_MAX_AGE_MS = 7 * 24 * 3600 * 1000;
+const sessionStart = new Date().toISOString();
+const trace = [];
+let previousTrace = null;
+let traceSaveTimer = null;
+try {
+    const raw = JSON.parse(localStorage.getItem(TRACE_KEY));
+    if (raw && Array.isArray(raw.entries) && raw.entries.length && raw.at
+        && Date.now() - Date.parse(raw.at) < TRACE_MAX_AGE_MS) previousTrace = raw;
+} catch { previousTrace = null; }
+
+function note(what, { src = '', n = 0, did = '' } = {}) {
+    try {
+        const t = Math.round(performance.now());
+        const last = trace[trace.length - 1];
+        const said = String(did).slice(0, 80);
+        // The same thing again is counted, not listed: a held key's repeats or a run of
+        // blocked touches would otherwise push everything useful out of the record.
+        if (last && last.what === what && last.src === src && last.n === n && last.did === said) {
+            last.times = (last.times || 1) + 1;
+            last.until = t;
+        } else {
+            trace.push({ t, what, src, n, did: said });
+            while (trace.length > TRACE_MAX) trace.shift();
+        }
+        if (!traceSaveTimer) traceSaveTimer = setTimeout(saveTrace, 1000);
+    } catch { /* never what breaks the switches */ }
+}
+function saveTrace() {
+    traceSaveTimer = null;
+    try { localStorage.setItem(TRACE_KEY, JSON.stringify({ at: sessionStart, entries: trace })); } catch { /* full or private */ }
+}
+
+/*
+ * A FAILURE IN ONE STEP MUST NOT STOP THE SCAN. The automatic scan, racing and the
+ * inverse scan are each a chain of timers, and an exception part-way through a step
+ * used to end the chain silently: the highlight froze and the switches looked dead.
+ * Now the failure is noted, logged (at most a few times a session), and the chain
+ * carries on.
+ */
+let loggedFailures = 0;
+function guarded(what, fn) {
+    try { return fn(); }
+    catch (err) {
+        const msg = (err && err.message) || String(err);
+        note('failure', { did: `${what}: ${msg}` });
+        if (loggedFailures++ < 3) {
+            try { storage.logError('switch-access', `${what}: ${(err && err.stack) || msg}`); } catch { /* best effort */ }
+        }
+        return undefined;
+    }
+}
+
+// The screens by the names a person would use, for the report (currentScreen's ids are
+// for the code).
+const SCREEN_NAMES = {
+    list: 'a drop-down list', dialog: 'a card', kbd: 'the keyboard', settings: 'Settings',
+    prestart: 'the start screen', composer: '"In my own words"', conversation: 'the conversation screen',
+};
+const screenName = (id) => SCREEN_NAMES[id] || id;
+
+/*
+ * THE REPORT LINK STAYS USABLE BY TOUCH (Ken, November 21 2026). Touch does nothing while
+ * switch access is on, which is right for using the app - but the report link on the
+ * start screen exists for when the app cannot be driven, and when the SWITCHES are what
+ * stopped working, a helper holding the tablet has nothing but touch. So the report link,
+ * the "Send a report" button on the start-up failure card, and the cards a report opens,
+ * take touch. A mouse whose buttons are switches stays a set of switches even there.
+ */
+const TOUCH_ESCAPES = '#startReportBtn, #startupErrorReportBtn';
+let touchDepth = 0;
+let lastTouchAt = -1e12;
+function escapesBlock(t) {
+    if (!(t instanceof Element)) return false;
+    if (t.closest(TOUCH_ESCAPES)) return true;
+    return touchDepth > 0 && !!t.closest('dialog[open]');
+}
+// Did this event come from a mouse? A tap also produces mouse events, after the touch.
+function fromMouse(e) {
+    if (e.type.startsWith('touch')) return false;
+    if (e.pointerType) return e.pointerType === 'mouse';
+    if (e.sourceCapabilities) return !e.sourceCapabilities.firesTouchEvents;
+    return performance.now() - lastTouchAt > 800;
+}
+/** Run a problem report with touch allowed on the cards it opens. */
+export async function withTouch(run) {
+    touchDepth++;
+    try { return await run(); } finally { touchDepth--; }
+}
 
 // ---------------------------------------------------------------- reading the page
 
@@ -530,8 +642,9 @@ function firstKeyIn(container) {
 
 // ---------------------------------------------------------------- moving and choosing
 
+// Returns what it did, for the record of switch presses.
 function move(dir) {
-    if (!scanner) return;
+    if (!scanner) return 'no scanner';
     // The reading time is for the wait on the options themselves. Any move makes a
     // pending one stale, or it would surface later as one long, unexplained pause.
     readingNext = false;
@@ -544,6 +657,8 @@ function move(dir) {
         scanner.retreat();
     }
     afterMove();
+    const n = scanner.current();
+    return (dir > 0 ? 'moved to ' : 'moved back to ') + (n ? n.key : 'nothing');
 }
 function afterMove() {
     const n = scanner.current();
@@ -554,24 +669,27 @@ function afterMove() {
     schedule();
 }
 
+// Returns what it did, for the record of switch presses.
 function choose() {
-    if (!scanner) return;
+    if (!scanner) return 'no scanner';
     const effect = scanner.choose();
     stayPending = false;
     clearTimeout(holdTimer);
-    if (!effect) { draw(); schedule(); return; }
+    if (!effect) { draw(); schedule(); return 'nothing to choose'; }
     if (effect.type === 'hold') {
         // Waiting for the second press, for as long as "Time allowed between the two
         // taps" allows; then the scan carries on.
-        holdTimer = setTimeout(() => { scanner.cancelHold(); draw(); schedule(); }, secondPressMs());
+        holdTimer = setTimeout(() => guarded('waiting for a second press', () => { scanner.cancelHold(); draw(); schedule(); }), secondPressMs());
         clearTimeout(autoTimer);
         draw();
-        return;
+        return 'waiting for a second press on ' + effect.node.key;
     }
     if (effect.type === 'act') perform(effect);
     releaseHeldOptions();
     draw();
     schedule();
+    const key = effect.node ? effect.node.key : '';
+    return (effect.type === 'act' ? 'pressed ' : effect.type === 'entered' ? 'went into ' : 'left ') + key;
 }
 
 // How long the scan waits for the second press. NOT the touch "Time allowed between the
@@ -586,71 +704,159 @@ function secondPressMs() {
 
 function schedule() {
     clearTimeout(autoTimer);
+    autoTimer = null;
     if (!on || scan.method !== 'auto' || !scanner || scanner.held()) return;
     const wait = (readingNext ? scan.reading : scan.speed) * 1000;
     readingNext = false;
-    autoTimer = setTimeout(() => move(1), Math.max(200, wait));
+    autoTimer = setTimeout(() => {
+        autoTimer = null;
+        guarded('automatic scan', () => move(1));
+        // move() schedules the next step itself; if it failed before getting there,
+        // the scan must not stop.
+        if (!autoTimer) schedule();
+    }, Math.max(200, wait));
 }
 
 // ---------------------------------------------------------------- the switches
 
-function stopRace() { clearTimeout(raceTimer); raceTimer = null; }
+let raceSteps = 0;
+function stopRace() {
+    if (raceTimer) note('racing stopped', { did: `after ${raceSteps} stop${raceSteps === 1 ? '' : 's'}` });
+    clearTimeout(raceTimer); raceTimer = null; raceSteps = 0;
+}
 function race(dir, k = 1) {
-    move(dir);
+    guarded('racing', () => move(dir));
+    raceSteps++;
     raceTimer = setTimeout(() => race(dir, k + 1), raceWait(k, scan) * 1000);
 }
-function rawDown(n) {
+// `src` says what pressed the switch: "key Space", "mouse left".
+function rawDown(n, src) {
     lightTest(n, true);
-    if (!on || n > count) return;   // a switch the user doesn't have does nothing
+    if (!on) { note('press', { src, n, did: 'ignored: switch access is off' }); return; }
+    if (n > count) {   // a switch the user doesn't have does nothing
+        note('press', { src, n, did: `ignored: ${count === 1 ? 'only one switch is' : `only ${count} switches are`} set` });
+        return;
+    }
     const s = sw[n];
-    if (s.down) return;
-    s.down = true; s.t = performance.now(); s.raced = false;
+    if (s.down) {
+        // One interface that sends a key AND a click for the same switch: the first one
+        // is the press, the other is the same press arriving twice.
+        if (s.src !== src) { note('press', { src, n, did: 'ignored: already down from ' + s.src }); return; }
+        // The same switch pressed again with no release in between: the release never
+        // reached the page. Let go of the old press, or the switch stays dead.
+        release(n, 'pressed again with no release in between');
+    }
+    s.down = true; s.src = src; s.t = performance.now(); s.lastBeat = s.t; s.raced = false;
     // Inverse: hold switch 1 and the highlight moves; let go to choose.
     if (n === 1 && scan.method === 'inverse') {
-        if (!scanner.held()) { clearInterval(inverseTimer); clearTimeout(autoTimer); inverseTimer = setInterval(() => move(1), scan.speed * 1000); }
+        if (!scanner.held()) {
+            clearInterval(inverseTimer); clearTimeout(autoTimer);
+            inverseTimer = setInterval(() => guarded('inverse scan', () => move(1)), scan.speed * 1000);
+        }
+        note('press', { src, n, did: 'holding: the highlight moves' });
         return;
     }
     // Hold to move: hold to move, let go to stop, tap to choose.
     if (n === 1 && scan.method === 'hold') {
-        if (!scanner.held()) s.raceTimer = setTimeout(() => {
+        if (!scanner.held()) s.raceTimer = setTimeout(() => guarded('hold to move', () => {
             if (!s.down) return;
-            s.raced = true; move(1);
+            s.raced = true;
+            note('racing', { src, n });
+            move(1);
+            raceSteps = 1;
             raceTimer = setTimeout(() => race(1, 2), raceWait(1, scan) * 1000);
-        }, scan.tapMs);
+        }), scan.tapMs);
+        note('press', { src, n, did: 'a tap chooses, a hold moves' });
         return;
     }
     // Step: holding a switch that moves races once the press is a hold.
     if (scan.method === 'step' && n !== 2) {
-        s.raceTimer = setTimeout(() => { if (!s.down || scanner.held()) return; s.raced = true; race(n === 1 ? 1 : -1); }, scan.tapMs);
+        s.raceTimer = setTimeout(() => {
+            if (!s.down || scanner.held()) return;
+            s.raced = true;
+            note('racing', { src, n });
+            race(n === 1 ? 1 : -1);
+        }, scan.tapMs);
     }
     if (scan.actOn === 'press') {
-        if (scan.minMs > 0) s.minTimer = setTimeout(() => { if (s.down) accept(n); }, scan.minMs);
-        else accept(n);
+        if (scan.minMs > 0) {
+            s.minTimer = setTimeout(() => { if (s.down) note('press held long enough', { src, n, did: guarded('choosing', () => accept(n)) || '' }); }, scan.minMs);
+            note('press', { src, n, did: `waiting: presses shorter than ${scan.minMs} ms are ignored` });
+        } else {
+            note('press', { src, n, did: accept(n) });
+        }
+    } else {
+        note('press', { src, n, did: 'acts when let go' });
     }
 }
-function rawUp(n) {
+function rawUp(n, src) {
     lightTest(n, false);
     const s = sw[n];
-    if (!s.down) return;
-    s.down = false;
-    clearTimeout(s.minTimer); clearTimeout(s.raceTimer);
+    if (!s.down) { note('release', { src, n, did: 'no press to end' }); return; }
+    // Only the press it belongs to: a key and a click from one interface are one press.
+    if (src && s.src && s.src !== src) { note('release', { src, n, did: 'ignored: the press came from ' + s.src }); return; }
+    s.down = false; s.src = '';
+    clearTimeout(s.minTimer); clearTimeout(s.raceTimer); clearTimeout(s.beatTimer);
     if (s.raced) stopRace();
     if (!on) return;
-    if (n === 1 && scan.method === 'inverse') { clearInterval(inverseTimer); accept(1); return; }
-    if (n === 1 && scan.method === 'hold') { if (!s.raced && performance.now() - s.t >= scan.minMs) accept(1); return; }
-    if (scan.actOn === 'release' && !s.raced && performance.now() - s.t >= scan.minMs) accept(n);
+    const held = performance.now() - s.t;
+    if (n === 1 && scan.method === 'inverse') { clearInterval(inverseTimer); note('release', { src, n, did: accept(1) }); return; }
+    if (n === 1 && scan.method === 'hold') {
+        note('release', { src, n, did: s.raced ? 'stopped moving' : held >= scan.minMs ? accept(1) : 'ignored: too short' });
+        return;
+    }
+    if (scan.actOn === 'release' && !s.raced) {
+        note('release', { src, n, did: held >= scan.minMs ? accept(n) : 'ignored: too short' });
+        return;
+    }
+    note('release', { src, n, did: s.raced ? 'stopped racing' : '' });
 }
 function accept(n) {
     const now = performance.now();
-    if (now - lastAccept < scan.repeatMs) return;   // a quick repeat is a bounce
+    if (now - lastAccept < scan.repeatMs) return 'ignored: too soon after the last press';   // a bounce
     lastAccept = now;
     if (scan.method === 'step') {
-        if (n === 1) move(1);
-        else if (n === 3) move(-1);
-        else choose();
-        return;
+        if (n === 1) return move(1);
+        if (n === 3) return move(-1);
+        return choose();
     }
-    choose();
+    return choose();
+}
+
+/*
+ * LETTING GO OF A SWITCH WHOSE RELEASE NEVER ARRIVED. A switch that is down ignores
+ * further presses until it comes up, so a release that is lost - the page lost focus
+ * while it was held, the browser canceled the press, the key-up went elsewhere - used
+ * to leave that switch dead, and a race it had started running, until the app was
+ * restarted. This lets it go without counting as a press: nothing is chosen.
+ */
+function release(n, why) {
+    const s = sw[n];
+    if (!s.down) return;
+    s.down = false; s.src = '';
+    clearTimeout(s.minTimer); clearTimeout(s.raceTimer); clearTimeout(s.beatTimer);
+    if (s.raced) stopRace();
+    if (n === 1 && scan.method === 'inverse') clearInterval(inverseTimer);
+    lightTest(n, false);
+    note('let go', { n, did: why });
+}
+function releaseAll(why) { for (const n of [1, 2, 3]) release(n, why); }
+
+// A held key repeats many times a second. When the repeats stop and no release follows,
+// the key came up and its release went missing. Only armed once repeats have been seen:
+// an interface that sends no repeats would otherwise be let go of during a long hold.
+const BEAT_GAP_MS = 1500;
+// A key-down not marked as a repeat, for a switch already down from the same key, is
+// read as a repeat when it comes this soon after the press or the last repeat, and as
+// a new press (its release lost) when it comes later. Long enough to cover a keyboard's
+// wait before it starts repeating (about half a second), so a device that does not mark
+// its repeats cannot turn one held press of the choose switch into two.
+const REPEAT_WINDOW_MS = 700;
+function beat(n) {
+    const s = sw[n];
+    s.lastBeat = performance.now();
+    clearTimeout(s.beatTimer);
+    s.beatTimer = setTimeout(() => release(n, 'the key stopped repeating and no release came'), BEAT_GAP_MS);
 }
 
 // The line on the Switch Access tab that lights up when a switch is pressed.
@@ -698,11 +904,18 @@ function drawRegion(target, i, strong) {
     el.classList.toggle('scan-region-strong', !!strong);
     el.hidden = false;
 }
-function draw() {
+// `reveal`: scroll the highlighted button into view. Only when the highlight has gone
+// somewhere new - never on a redraw caused by scrolling, or the highlight would pull
+// back a panel the user, or a helper, is scrolling, and a scroll that the reveal itself
+// causes could set off another redraw and another reveal.
+let lastDrawnKey = null;
+function draw(reveal = true) {
     clearMarks();
     if (!on || !scanner) { flush(); return; }
     const n = scanner.current();
     if (!n) { flush(); return; }
+    const moved = n.key !== lastDrawnKey;
+    lastDrawnKey = n.key;
     let ri = 0;
     for (const g of scanner.path()) if (g.el) { g.el.classList.add('scan-in'); drawRegion(g.el, ri++, false); }
     if (n.kind === 'group' && n.el) drawRegion(n.el, ri++, true);
@@ -718,7 +931,9 @@ function draw() {
     } else if (n.el) {
         n.el.classList.add(scanner.held() ? 'scan-held' : 'scan-hl');
         if (scanner.held()) pressAgain.show(n.el);
-        try { n.el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch { /* ignore */ }
+        if (reveal || moved) {
+            try { n.el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch { /* ignore */ }
+        }
     }
     flush();
 }
@@ -737,12 +952,13 @@ function flush() { if (observer) observer.takeRecords(); }
 function queueUpdate() {
     if (updateQueued || !on) return;
     updateQueued = true;
-    requestAnimationFrame(() => { updateQueued = false; update(); });
+    requestAnimationFrame(() => { updateQueued = false; guarded('reading the screen', update); });
 }
 function update() {
     if (!on || !scanner) return;
     const id = currentScreen();
     if (id !== screenId) {
+        note('screen', { did: screenName(id) });
         screenId = id;
         stayPending = false;
         scanner.reset();
@@ -757,7 +973,7 @@ function update() {
     scanner.refresh();
     if (pendingFocus) { scanner.afterAct({ focusKey: pendingFocus }); pendingFocus = null; schedule(); }
     releaseHeldOptions();
-    draw();
+    draw(false);
 }
 
 // ---------------------------------------------------------------- new options
@@ -812,14 +1028,33 @@ function install() {
     // While switch access is on, touch does nothing and a mouse is a set of switches.
     const block = (e) => {
         if (!on || synthetic) return;
-        if (e.type === 'pointerdown' && e.pointerType === 'mouse' && mouseOn && MOUSE[e.button]) rawDown(MOUSE[e.button]);
-        if (e.type === 'pointerup' && e.pointerType === 'mouse' && mouseOn && MOUSE[e.button]) rawUp(MOUSE[e.button]);
+        const mouse = fromMouse(e);
+        const pressStart = e.type === 'pointerdown' || e.type === 'touchstart';
+        if (!mouse && pressStart) lastTouchAt = performance.now();
+        // The report link and the cards a report opens (see TOUCH_ESCAPES).
+        if (escapesBlock(e.target) && !(mouse && mouseOn)) return;
+        guarded('a mouse switch', () => {
+            if (e.type === 'pointerdown' && e.pointerType === 'mouse') {
+                if (mouseOn && MOUSE[e.button]) rawDown(MOUSE[e.button], 'mouse ' + BUTTON[e.button]);
+                else note('mouse', { src: 'mouse ' + (BUTTON[e.button] || e.button), did: mouseOn ? 'not a switch button' : 'ignored: mouse buttons are not switches' });
+            }
+            if (e.type === 'pointerup' && e.pointerType === 'mouse' && mouseOn && MOUSE[e.button]) rawUp(MOUSE[e.button], 'mouse ' + BUTTON[e.button]);
+            if (e.type === 'pointerdown' && !mouse) note('touch', { did: 'ignored: touch is off while switch access is on' });
+        });
         e.preventDefault();
         e.stopImmediatePropagation();
     };
     for (const t of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'dblclick', 'auxclick', 'contextmenu', 'touchstart', 'touchend']) {
         window.addEventListener(t, block, { capture: true, passive: false });
     }
+    // A mouse press the browser canceled never sends its release.
+    window.addEventListener('pointercancel', (e) => {
+        if (!on || e.pointerType !== 'mouse') return;
+        for (const n of [1, 2, 3]) if (sw[n].down && sw[n].src.startsWith('mouse')) release(n, 'the browser canceled the press');
+    }, true);
+    // A switch held while the app loses focus or is hidden never sends its release here.
+    window.addEventListener('blur', (e) => { if (on && e.target === window) releaseAll('the app lost focus'); });
+    document.addEventListener('visibilitychange', () => { if (on && document.hidden) releaseAll('the app was hidden'); });
     window.addEventListener('keydown', (e) => {
         if (capture) {
             e.preventDefault(); e.stopImmediatePropagation();
@@ -831,9 +1066,22 @@ function install() {
         }
         if (!on) return;
         const n = map[e.code];
-        if (!n) return;
+        if (!n) {
+            if (!e.repeat) note('other key', { src: e.code ? describeOtherKey(e.code) : `a key with no code (${(e.key || '').length > 1 ? e.key : 'a character'})`, did: 'not a switch key' });
+            return;
+        }
         e.preventDefault(); e.stopImmediatePropagation();
-        if (!e.repeat) rawDown(n);
+        const src = 'key ' + e.code;
+        const s = sw[n];
+        // A held key's repeats keep it down. A "repeat" not marked as one but arriving
+        // soon after the last is one too (REPEAT_WINDOW_MS).
+        if (s.down && s.src === src && (e.repeat || performance.now() - s.lastBeat < REPEAT_WINDOW_MS)) {
+            beat(n);
+            note('repeat', { src, n });
+            return;
+        }
+        if (e.repeat) return;   // the repeat of a press that began before this page saw it
+        guarded('a switch press', () => rawDown(n, src));
     }, true);
     window.addEventListener('keyup', (e) => {
         if (e.code && e.code === lastSetCode) { lastSetCode = ''; e.preventDefault(); e.stopImmediatePropagation(); return; }
@@ -841,7 +1089,7 @@ function install() {
         const n = map[e.code];
         if (!n) return;
         e.preventDefault(); e.stopImmediatePropagation();
-        rawUp(n);
+        guarded('a switch release', () => rawUp(n, 'key ' + e.code));
     }, true);
     observer = new MutationObserver(() => queueUpdate());
     observer.observe(document.documentElement, { subtree: true, childList: true, attributes: true,
@@ -853,7 +1101,7 @@ function install() {
     window.addEventListener('scroll', () => {
         if (!on || scrollQueued) return;
         scrollQueued = true;
-        requestAnimationFrame(() => { scrollQueued = false; draw(); });
+        requestAnimationFrame(() => { scrollQueued = false; guarded('redrawing after a scroll', () => draw(false)); });
     }, true);
 }
 
@@ -888,11 +1136,15 @@ export function configure() {
     mouseOn = storage.loadMouseSwitches();
     const wasOn = on;
     on = count > 0;
+    note('settings', { did: on ? `${count} switch${count === 1 ? '' : 'es'}, ${scan.method}${mouseOn ? '' : ', mouse buttons not switches'}` : 'switch access off' });
     document.body.classList.toggle('switch-access-on', on);
     clearTimeout(autoTimer); autoTimer = null;
     readingNext = false; readOnOptions = false;
     clearInterval(inverseTimer); stopRace();
-    for (const s of Object.values(sw)) { s.down = false; clearTimeout(s.minTimer); clearTimeout(s.raceTimer); }
+    for (const s of Object.values(sw)) {
+        s.down = false; s.src = '';
+        clearTimeout(s.minTimer); clearTimeout(s.raceTimer); clearTimeout(s.beatTimer);
+    }
     if (!on) { heldOptions = null; closeList(); clearMarks(); return; }
     install();
     if (!scanner) scanner = createScanner({ build: buildRoot, cfg: () => scan, now: () => performance.now() });
@@ -915,6 +1167,51 @@ export function keyLabel(code) { return keyName(code); }
 /** Show which keys each switch answers to. */
 export function keysFor(n) {
     return Object.keys(map).filter((c) => map[c] === n).map(keyName);
+}
+
+/*
+ * The "SWITCH PRESSES" part of a problem report: how switch access is set, where the
+ * highlight is, and the record of presses (see note()) for this session and the one
+ * before it. Empty when switch access is off and nothing was recorded, so a direct
+ * select user's report is unchanged.
+ */
+export function describeForReport() {
+    try {
+        if (!on && !trace.length && !previousTrace) return '';
+        const lines = [];
+        if (on) {
+            lines.push(`Switch access: on, ${count} switch${count === 1 ? '' : 'es'}, ${scan.method === 'auto' ? 'automatic' : scan.method} scanning, acts on ${scan.actOn}`);
+            for (const n of [1, 2, 3].filter((k) => k <= count)) lines.push(`  switch ${n}: ${keysFor(n).join(', ') || '(no keys)'}${mouseOn ? `, mouse ${BUTTON[Object.keys(MOUSE).find((b) => MOUSE[b] === n)]}` : ''}`);
+            lines.push(`  mouse buttons are switches: ${mouseOn ? 'yes' : 'no'}`);
+            lines.push(`  ignore presses shorter than ${scan.minMs} ms; ignore repeats within ${scan.repeatMs} ms`);
+            const cur = scanner ? scanner.current() : null;
+            lines.push(`Screen: ${screenName(currentScreen())}; highlight on: ${cur ? cur.key : '(nothing)'}${scanner && scanner.held() ? ' (waiting for a second press)' : ''}`);
+            const down = [1, 2, 3].filter((n) => sw[n].down).map((n) => `switch ${n} (${sw[n].src}, ${((performance.now() - sw[n].t) / 1000).toFixed(1)} s)`);
+            lines.push(`Held down now: ${down.join('; ') || 'none'}${raceTimer ? ', racing' : ''}`);
+        } else {
+            lines.push('Switch access: off');
+        }
+        lines.push('', `This session (opened ${sessionStart.slice(11, 19)} UTC):`);
+        lines.push(...formatTrace(trace));
+        if (previousTrace) {
+            lines.push('', `The session before (opened ${String(previousTrace.at).slice(0, 19).replace('T', ' ')} UTC):`);
+            lines.push(...formatTrace(previousTrace.entries));
+        }
+        return lines.join('\n');
+    } catch (err) {
+        return `(could not describe switch access: ${(err && err.message) || err})`;
+    }
+}
+function formatTrace(entries) {
+    if (!entries || !entries.length) return ['  (no switch presses)'];
+    const clock = (ms) => {
+        const s = Math.max(0, ms) / 1000;
+        return `${String(Math.floor(s / 60)).padStart(2, '0')}:${(s % 60).toFixed(1).padStart(4, '0')}`;
+    };
+    return entries.map((e) => {
+        const times = e.times > 1 ? ` (x${e.times} to ${clock(e.until)})` : '';
+        return `  ${clock(e.t)}  ${e.what}${e.src ? '  ' + e.src : ''}${e.n ? '  switch ' + e.n : ''}${e.did ? '  -> ' + e.did : ''}${times}`;
+    });
 }
 
 /*
