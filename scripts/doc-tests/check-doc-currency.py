@@ -47,8 +47,11 @@ ROW = re.compile(r'^\|\s*(?P<doc>[^|]+?\.docx)\s*\|\s*(?P<status>[^|]*?)\s*\|'
 # Beta Tester Responsibilities was added on November 21 2026 (Ken): a one-page handout
 # every new tester receives, attached to the welcome emails, so it is wrong in a way
 # that reaches a person. While the beta runs, a sync that changes it also rebuilds those
-# emails (CLAUDE.md, "sync docs" step 6b).
+# emails (CLAUDE.md, "sync docs" step 6b). The Beta Test Plan joined the same day: every
+# tester is asked to read it, and the handout summarizes it, so a change to the plan
+# means checking the handout too.
 READER_FACING = (
+    'Conversant AAC Beta Test Plan.docx',
     'Conversant AAC Beta Tester Responsibilities.docx',
     'Conversant AAC Product Overview.docx',
     'Conversant AAC User Manual (Windows Chromebook Mac).docx',
