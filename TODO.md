@@ -131,7 +131,7 @@ the one that quietly waits forever.
 
 ### Switch access: bring back the first-launch question when switch access is claimed
 - **Raised:** 2026-11-21 - Ken hid the Start screen's "How will you use Conversant?" question (Direct select, One switch, Two switches, Three switches) because switch access is not ready to claim, and asked that it come back when it is.
-- **What is wanted:** when switch access is officially supported, set `ASK_ACCESS_ON_FIRST_LAUNCH` to true in `app/js/app.js`. In the same pass: take "(in progress)" off the Switch Access tab in Settings, take `?ask-access` back out of `scripts/switch-access/browser-check.mjs` (it can stay, but is no longer needed), and check the Switch Device Test Plan and both User Manuals still describe the question.
+- **What is wanted:** when switch access is officially supported, set `ASK_ACCESS_ON_FIRST_LAUNCH` to true in `app/js/app.js`. In the same pass: take "(in progress)" off the Switch Access tab in Settings, take `?ask-access` back out of `scripts/switch-access/browser-check.mjs` (it can stay, but is no longer needed), put back the paragraph about the question at the end of section 3.1 in each of the three User Manuals (taken out November 21 2026: "The first time you open Conversant on a device, it asks “How will you use Conversant?” Tap “Direct select”..."; the full text is in the Doc Backups copies of that date), and check the Switch Device Test Plan still describes the question.
 - **Guard:** `tests/switch-settings.test.mjs` fails if the Switch Access tab stops saying "in progress" while the question is still hidden, so claiming support without bringing it back breaks the build.
 - **Why not now:** switch access is still being tried; the beta accepts only direct select users.
 
