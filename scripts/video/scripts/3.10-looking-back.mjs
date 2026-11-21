@@ -37,8 +37,8 @@ export default {
     { speaker: 'narrator', tap: card(1), press: true,
       say: "He taps the first option." },
     { speaker: 'user', waitFor: onScreen(SAID), say: SAID },
-    { speaker: 'narrator', highlight: '#endConversationBtn', press: true,
-      say: "And ends the conversation. Later, he looks back at it." },
+    { speaker: 'narrator', highlight: '#endConversationBtn', press: 2,
+      say: "And taps End conversation twice to end it. Later, he looks back at it." },
     // 8 seconds, as in the published video; the real length varies from render to render.
     { speaker: 'narrator', before: (p) => fixConversationLength(p, 8), highlight: '#settingsBtn', press: true,
       say: "Open Settings," },

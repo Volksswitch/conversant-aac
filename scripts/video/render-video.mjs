@@ -841,9 +841,17 @@ async function main() {
       }
       // A step with press: true then really taps what it pointed at, so the app
       // does the work and the next picture shows the result.
+      // press: 2 taps twice, a quarter second apart: End conversation and "Don't
+      // save" always need a second tap (Ken, November 13 2026), and it has to come
+      // within about 2 seconds of the first - far less than the time between two
+      // steps, which each make their own sound.
       if (step.press && !script.pictures) {
         await clearMark(page);
         await page.click(tap || step.highlight);
+        if (step.press === 2) {
+          await new Promise((r) => setTimeout(r, 250));
+          await page.click(tap || step.highlight);
+        }
       }
       if (step.after) await step.after(page);
     }
