@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.15.15
+
 - Changing "Don't save conversations by default" in Settings now applies to your very next conversation. Before, the first conversation after the change still followed the old choice. A conversation that is already going keeps its own choice; use the "Don't save" button for that one.
 
 ## Version 0.15.14

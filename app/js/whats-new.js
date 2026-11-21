@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.15": [
+    "Changing \"Don't save conversations by default\" in Settings now applies to your very next conversation. Before, the first conversation after the change still followed the old choice. A conversation that is already going keeps its own choice; use the \"Don't save\" button for that one."
+  ],
   "0.15.14": [
     "Apple's Switch Control and VoiceOver can reach the Paste, Clear and Test buttons more easily. In Settings, each key box and its buttons are now marked as one group, so the scan reaches the buttons beside the box, not only the box itself."
   ],
