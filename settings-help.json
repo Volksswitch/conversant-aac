@@ -49,8 +49,9 @@
         "placeholders": "What the app says to hold your place while you choose a response, how long it waits, and the wording itself."
     },
     "sections": {
-        "switchCount": "Whether you use direct select or switches, and how many switches. Choosing switches turns on scanning and sets a few settings that suit it.",
-        "switchKeysGroup": "The keys your switches send, whether mouse buttons count as switches, and a line that lights up so you can test them.",
+        "switchOnGroup": "Turns switch access on or off. Turning it off keeps your number of switches and switch settings for next time.",
+        "switchCount": "How many switches you use. Each number has its own starting settings.",
+        "switchKeysGroup": "Which of your switches is switch one, two and three, whether mouse buttons count as switches, and a test line that shows each press.",
         "switchEveryScreen": "On every screen: how the highlight moves, what holding a switch does, how stops are grouped, and how stray presses are handled.",
         "switchMethodGroup": "On every screen, how the highlight moves from stop to stop, and how long it waits on each one.",
         "switchHoldGroup": "On every screen, what holding a switch down does: how long a press must be to count as a hold, and how fast it moves.",
@@ -136,11 +137,12 @@
         "screenOrientation": "Choose whether the screen turns with the device, stays upright, or stays sideways."
     },
     "controls": {
-        "switchCountInput": "Direct select, or how many switches you use. Choosing switches turns on scanning. Choosing a different number puts back its starting values.",
-        "switchKeySet1": "Press this, then press your first switch. The app learns the key it sends.",
-        "switchKeySet2": "Press this, then press your second switch. The app learns the key it sends.",
-        "switchKeySet3": "Press this, then press your third switch. The app learns the key it sends.",
-        "switchKeyReset": "Forgets the keys you set and goes back to the starting keys: Space or 1, Enter or 2, and 3.",
+        "switchOnInput": "Check this to use switches. Uncheck it to go back to direct select. Your switch settings are kept.",
+        "switchCountInput": "How many switches you use. Choosing a different number puts back its starting values.",
+        "switchKeySet1": "Press this, then press the switch you want as switch one. A key or a mouse button both work.",
+        "switchKeySet2": "Press this, then press the switch you want as switch two. A key or a mouse button both work.",
+        "switchKeySet3": "Press this, then press the switch you want as switch three. A key or a mouse button both work.",
+        "switchKeyReset": "Forgets the switches you set and goes back to the starting keys and mouse buttons.",
         "mouseSwitchesInput": "Lets the left, right and middle mouse buttons act as switches one, two and three. Turn it off if one press counts twice.",
         "switchSpeedInput": "On every screen, how many seconds the highlight waits on each stop before it moves on.",
         "switchTapMsInput": "On every screen, how long you hold a switch before the press counts as a hold rather than a tap.",

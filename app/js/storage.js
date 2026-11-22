@@ -3,7 +3,7 @@ import * as tlog from './transcript-log.js';
 import * as platform from './platform.js';
 // keyboard-layouts.js imports nothing either.
 import { resolveLayoutId } from './keyboard-layouts.js';
-import { normalizeCount, normalizeScan } from './switch-settings.js';
+import { normalizeCount, normalizeNumber, normalizeScan } from './switch-settings.js';
 
 const STORAGE_KEY = 'aac_settings';
 const IDB_NAME = 'aac-db';
@@ -637,6 +637,7 @@ const SETTING_RULES = {
     layoutUnlocked:      { label: 'Layout borders unlocked', check: isBoolean },
     showNoveltyVoices:   { label: "Show this device's joke voices", check: isBoolean },
     switchCount:         { label: 'Number of switches', check: wholeIn(0, 3) },
+    switchOn:            { label: 'Use switches', check: isBoolean },
     switchScan:          { label: 'Switch access settings', check: (v) => !!v && typeof v === 'object' && !Array.isArray(v) },
     convLayout:          { label: 'Screen layout', check: (v) => !!v && typeof v === 'object' && !Array.isArray(v) },
     spokenWords:         { label: 'Words the voice gets wrong', check: (v) => Array.isArray(v)
@@ -2189,22 +2190,53 @@ export function saveDoubleTapMs(ms) {
 }
 
 // --- Switch access (Switch Access Design, Ken, November 12 2026) ---
-// Number of switches: 0 is touch (the default), 1-3 is switches. First on the Switch Access tab.
-export function loadSwitchCount() {
-    return normalizeCount(loadSettings().switchCount);
+// Switch access ON/OFF and the NUMBER of switches are two settings (Ken, November 22
+// 2026: "separate the turning of switch support on and the number of switches"), so
+// turning switches off and on again keeps the number and the scan settings.
+// ⚠ STORED VALUES FROM BEFORE THE SPLIT: there was only `switchCount`, where 0 meant
+// off. With no `switchOn` stored, switches are on exactly when that count is 1-3, and a
+// stored 0 leaves the number at its default (1) for when switches are turned on.
+export function loadSwitchesOn() {
+    const s = loadSettings();
+    if (typeof s.switchOn === 'boolean') return s.switchOn;
+    return normalizeCount(s.switchCount) > 0;
 }
-export function saveSwitchCount(n) {
+export function saveSwitchesOn(on) {
     const settings = loadSettings();
-    settings.switchCount = normalizeCount(n);
+    settings.switchOn = !!on;
+    settings.switchCount = normalizeNumber(settings.switchCount);
+    saveSettings(settings);
+}
+// The number of switches, 1-3, whether or not switch access is on.
+export function loadSwitchNumber() {
+    return normalizeNumber(loadSettings().switchCount);
+}
+export function saveSwitchNumber(n) {
+    const settings = loadSettings();
+    if (typeof settings.switchOn !== 'boolean') settings.switchOn = normalizeCount(settings.switchCount) > 0;
+    settings.switchCount = normalizeNumber(n);
+    saveSettings(settings);
+}
+// The number of switches IN USE: 0 when switch access is off, 1-3 when on. What every
+// "is switch access on?" question in the app reads.
+export function loadSwitchCount() {
+    return loadSwitchesOn() ? loadSwitchNumber() : 0;
+}
+// 0 turns switch access off and keeps the number; 1-3 turns it on with that number.
+export function saveSwitchCount(n) {
+    const c = normalizeCount(n);
+    const settings = loadSettings();
+    settings.switchOn = c > 0;
+    settings.switchCount = c > 0 ? c : normalizeNumber(settings.switchCount);
     saveSettings(settings);
 }
 // The rest of the scan settings, completed from the starting values for this number.
-export function loadSwitchScan(count = loadSwitchCount()) {
+export function loadSwitchScan(count = loadSwitchNumber()) {
     return normalizeScan(loadSettings().switchScan, count);
 }
 export function saveSwitchScan(scan) {
     const settings = loadSettings();
-    settings.switchScan = normalizeScan(scan, settings.switchCount);
+    settings.switchScan = normalizeScan(scan, normalizeNumber(settings.switchCount));
     saveSettings(settings);
 }
 // The keys set for each switch: { 1: 'KeyF', ... }. Stays on this device.

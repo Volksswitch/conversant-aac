@@ -5,8 +5,9 @@
  * published guidance; switch access is marked "in progress" so they can change in the
  * app as feedback comes in.
  *
- * "Number of switches" (0 = touch, 1-3 = switches) is stored on its own, because it is
- * the most basic choice in the app and lives on the General tab. Everything else is one
+ * "Use switches" (on/off) and "Number of switches" (1-3) are stored on their own, as
+ * `switchOn` and `switchCount` (before November 22 2026 a count of 0 meant off; storage.js
+ * reads those values the same way). Everything else is one
  * object, `switchScan`, so choosing a different number can put back its starting values
  * in one step.
  */
@@ -58,6 +59,12 @@ export function normalizeCount(n) {
     return [0, 1, 2, 3].includes(v) ? v : 0;
 }
 
+/** The number of switches, 1-3 (switch access on or off is stored separately). */
+export function normalizeNumber(n) {
+    const v = Number(n);
+    return [1, 2, 3].includes(v) ? v : 1;
+}
+
 /** A complete, valid set of scan settings for this number of switches. */
 export function normalizeScan(raw, count) {
     const c = normalizeCount(count) || 1;
@@ -87,11 +94,14 @@ export function isScanObject(v) {
     return !!v && typeof v === 'object' && !Array.isArray(v);
 }
 
-// Keys a switch interface can send. A set key is added for that switch and taken from
-// any other switch that had it. The starting keys stay.
-export const START_KEYS = { Space: 1, Digit1: 1, Numpad1: 1, Enter: 2, NumpadEnter: 2, Digit2: 2, Numpad2: 2, Digit3: 3, Numpad3: 3 };
+// Keys a switch interface can send, and the mouse buttons ('Mouse0' left, 'Mouse1'
+// middle, 'Mouse2' right, as the browser numbers them). A switch set by pressing it
+// ("Set", Ken, November 22 2026: "set which switch is switch 1 vs 2 vs 3") is added for
+// that switch and taken from any other switch that had it. The starting keys stay.
+export const START_KEYS = { Space: 1, Digit1: 1, Numpad1: 1, Enter: 2, NumpadEnter: 2, Digit2: 2, Numpad2: 2, Digit3: 3, Numpad3: 3,
+    Mouse0: 1, Mouse2: 2, Mouse1: 3 };
 
-/** key code -> switch number, from the user's set keys. */
+/** key code (or 'MouseN') -> switch number, from the user's set switches. */
 export function keyMap(custom) {
     const map = { ...START_KEYS };
     const mine = Object.values(custom || {});
@@ -102,9 +112,14 @@ export function keyMap(custom) {
     return map;
 }
 
-/** How a key code reads on screen: "F", "1", "Keypad 2", "Space". */
+export function isMouseCode(code) { return /^Mouse\d+$/.test(String(code || '')); }
+
+/** How a key code reads on screen: "F", "1", "Keypad 2", "Space", "left mouse button". */
 export function keyName(code) {
-    return String(code || '').replace(/^Key/, '').replace(/^Digit/, '').replace(/^Numpad/, 'Keypad ').replace(/^Arrow/, 'Arrow ');
+    const c = String(code || '');
+    const m = c.match(/^Mouse(\d+)$/);
+    if (m) return ({ 0: 'left mouse button', 1: 'middle mouse button', 2: 'right mouse button' })[m[1]] || `mouse button ${Number(m[1]) + 1}`;
+    return c.replace(/^Key/, '').replace(/^Digit/, '').replace(/^Numpad/, 'Keypad ').replace(/^Arrow/, 'Arrow ');
 }
 
 /*

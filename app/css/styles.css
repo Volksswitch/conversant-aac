@@ -5519,6 +5519,8 @@ body.switch-access-on :is(button, summary, select, [role="button"], .settings-ta
 }
 .switch-key-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .switch-key-row .switch-key-name { min-width: 8rem; }
+/* What the last press sent (a key, a mouse button), switch or not. */
+.switch-last-press { margin: 0.4rem 0 0; }
 /* The first-launch question: touch, or one, two or three switches. */
 #firstLaunchChoice { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; }
 #firstLaunchChoice .first-launch-buttons { display: flex; gap: 0.6rem; flex-wrap: wrap; justify-content: center; }

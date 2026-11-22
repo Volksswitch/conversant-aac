@@ -29,7 +29,7 @@ import * as storage from './storage.js';
 import * as tapGuard from './tap-guard.js';
 import * as keyboard from './keyboard.js';
 import { createScanner } from './scan-rules.js';
-import { keyMap, keyName, raceWait, STARTING_VALUES, describeOtherKey } from './switch-settings.js';
+import { keyMap, keyName, isMouseCode, raceWait, STARTING_VALUES, describeOtherKey } from './switch-settings.js';
 import * as pressAgain from './press-again.js';
 
 const $ = (id) => document.getElementById(id);
@@ -57,15 +57,26 @@ let frameEl = null;           // the "Leave" outline box
 const regionEls = [];         // outlines drawn OVER a highlighted region (see drawRegion)
 let listEl = null;            // a drop-down list opened for scanning
 let listFor = null;
-let capture = null;           // { n, done } while a switch's key is being set
+let capture = null;           // { done, timer } while a switch is being set by pressing it
 let lastSetCode = '';
+let lastSetMouse = -1;        // the mouse button just used to set a switch: its release is not a press
 let lastAccept = -1e12;
 // `src` is what pressed it ("key Space", "mouse left"): a release only ends the press
 // it belongs to. `lastBeat` and `beatTimer` follow a held key's repeats (see beat()).
 const mkSw = () => ({ down: false, src: '', t: 0, lastBeat: 0, beatTimer: null, minTimer: null, raceTimer: null, raced: false });
 const sw = { 1: mkSw(), 2: mkSw(), 3: mkSw() };
-const MOUSE = { 0: 1, 2: 2, 1: 3 };   // left, right, middle
 const BUTTON = { 0: 'left', 1: 'middle', 2: 'right' };
+// Which switch a mouse button is: the starting buttons (left 1, right 2, middle 3) unless
+// the user set a mouse button for a switch (see keyMap).
+const mouseSwitch = (button) => map['Mouse' + button] || 0;
+const mouseSrc = (button) => 'mouse ' + (BUTTON[button] || button);
+// "key Enter" -> "Enter", "mouse left" -> "left mouse button": the name on screen.
+function srcName(src) {
+    const s = String(src || '');
+    if (s.startsWith('key ')) return keyName(s.slice(4));
+    if (s.startsWith('mouse ')) return s.slice(6) + ' mouse button';
+    return s;
+}
 
 // ---------------------------------------------------------------- what the switches did
 /*
@@ -781,6 +792,7 @@ function race(dir, k = 1) {
 // `src` says what pressed the switch: "key Space", "mouse left".
 function rawDown(n, src) {
     lightTest(n, true);
+    showLastPress(`${srcName(src)}: switch ${n}${on && n > count ? `, which is not used with ${count === 1 ? 'one switch' : `${count} switches`}` : ''}`);
     if (!on) { note('press', { src, n, did: 'ignored: switch access is off' }); return; }
     if (n > count) {   // a switch the user doesn't have does nothing
         note('press', { src, n, did: `ignored: ${count === 1 ? 'only one switch is' : `only ${count} switches are`} set` });
@@ -912,6 +924,13 @@ function beat(n) {
 function lightTest(n, lit) {
     const el = $('switchTest' + n);
     if (el) el.classList.toggle('switch-test-lit', !!lit);
+}
+// The line under it that names what the last press SENT (Ken, November 22 2026: "report
+// which key the switch is sending"), switch or not, so a switch interface sending an
+// unexpected key can be seen and then set. On screen only: never stored or reported.
+function showLastPress(text) {
+    const el = $('switchLastPress');
+    if (el) el.textContent = 'Last press: ' + text;
 }
 
 // ---------------------------------------------------------------- drawing
@@ -1085,10 +1104,19 @@ function install() {
             // Every press is a switch press, never a click - even over the report link.
             guarded('a mouse switch', () => {
                 if (e.type === 'pointerdown' && e.pointerType === 'mouse') {
-                    if (MOUSE[e.button]) rawDown(MOUSE[e.button], 'mouse ' + BUTTON[e.button]);
-                    else note('mouse', { src: 'mouse ' + e.button, did: 'not a switch button' });
+                    if (capture) { lastSetMouse = e.button; endCapture('Mouse' + e.button); return; }
+                    const n = mouseSwitch(e.button);
+                    if (n) rawDown(n, mouseSrc(e.button));
+                    else {
+                        note('mouse', { src: mouseSrc(e.button), did: 'not a switch button' });
+                        showLastPress(`${keyName('Mouse' + e.button)}: not one of your switches`);
+                    }
                 }
-                if (e.type === 'pointerup' && e.pointerType === 'mouse' && MOUSE[e.button]) rawUp(MOUSE[e.button], 'mouse ' + BUTTON[e.button]);
+                if (e.type === 'pointerup' && e.pointerType === 'mouse') {
+                    if (e.button === lastSetMouse) { lastSetMouse = -1; return; }
+                    const n = mouseSwitch(e.button);
+                    if (n) rawUp(n, mouseSrc(e.button));
+                }
             });
         } else {
             // Touch, a pen, or a mouse whose buttons are not switches: direct select, which
@@ -1123,16 +1151,18 @@ function install() {
     window.addEventListener('keydown', (e) => {
         if (capture) {
             e.preventDefault(); e.stopImmediatePropagation();
-            if (e.repeat) return;
-            const c = capture; capture = null;
-            if (e.code !== 'Escape') { lastSetCode = e.code; c.done(e.code); }
-            else c.done(null);
+            if (e.repeat || !e.code) return;
+            if (e.code !== 'Escape') { lastSetCode = e.code; endCapture(e.code); }
+            else endCapture(null);
             return;
         }
         if (!on) return;
-        const n = map[e.code];
+        const n = isMouseCode(e.code) ? 0 : map[e.code];
         if (!n) {
-            if (!e.repeat) note('other key', { src: e.code ? describeOtherKey(e.code) : `a key with no code (${(e.key || '').length > 1 ? e.key : 'a character'})`, did: 'not a switch key' });
+            if (!e.repeat) {
+                note('other key', { src: e.code ? describeOtherKey(e.code) : `a key with no code (${(e.key || '').length > 1 ? e.key : 'a character'})`, did: 'not a switch key' });
+                showLastPress(`${e.code ? keyName(e.code) : 'a key with no name'}: not one of your switches`);
+            }
             return;
         }
         e.preventDefault(); e.stopImmediatePropagation();
@@ -1151,7 +1181,7 @@ function install() {
     window.addEventListener('keyup', (e) => {
         if (e.code && e.code === lastSetCode) { lastSetCode = ''; e.preventDefault(); e.stopImmediatePropagation(); return; }
         if (!on) return;
-        const n = map[e.code];
+        const n = isMouseCode(e.code) ? 0 : map[e.code];
         if (!n) return;
         e.preventDefault(); e.stopImmediatePropagation();
         guarded('a switch release', () => rawUp(n, 'key ' + e.code));
@@ -1223,15 +1253,30 @@ export function init() { configure(); }
 export function isOn() { return on; }
 export function switchCount() { return count; }
 
-/** Wait for the next key and hand it to `done(code)` (null on Escape): setting a switch's key. */
+/*
+ * SETTING A SWITCH BY PRESSING IT. Wait for the next key, or mouse button when mouse
+ * buttons are switches, and hand it to `done(code)`: a key code, 'MouseN', or null when
+ * Escape is pressed or nothing arrives within CAPTURE_MS (a touch user has no Escape).
+ */
+const CAPTURE_MS = 15000;
 export function captureKey(done) {
-    capture = { done };
+    if (capture) clearTimeout(capture.timer);
+    capture = { done, timer: setTimeout(() => endCapture(null), CAPTURE_MS) };
 }
+function endCapture(code) {
+    const c = capture;
+    if (!c) return;
+    capture = null;
+    clearTimeout(c.timer);
+    if (code) showLastPress(`${keyName(code)}: set`);
+    try { c.done(code); } catch (err) { note('failure', { did: 'setting a switch: ' + ((err && err.message) || err) }); }
+}
+export function isCapturing() { return !!capture; }
 export function keyLabel(code) { return keyName(code); }
 
-/** Show which keys each switch answers to. */
+/** Show which keys (and mouse buttons, when they are switches) each switch answers to. */
 export function keysFor(n) {
-    return Object.keys(map).filter((c) => map[c] === n).map(keyName);
+    return Object.keys(map).filter((c) => map[c] === n && (mouseOn || !isMouseCode(c))).map(keyName);
 }
 
 /*
@@ -1246,7 +1291,7 @@ export function describeForReport() {
         const lines = [];
         if (on) {
             lines.push(`Switch access: on, ${count} switch${count === 1 ? '' : 'es'}, ${scan.method === 'auto' ? 'automatic' : scan.method} scanning, acts on ${scan.actOn}`);
-            for (const n of [1, 2, 3].filter((k) => k <= count)) lines.push(`  switch ${n}: ${keysFor(n).join(', ') || '(no keys)'}${mouseOn ? `, mouse ${BUTTON[Object.keys(MOUSE).find((b) => MOUSE[b] === n)]}` : ''}`);
+            for (const n of [1, 2, 3].filter((k) => k <= count)) lines.push(`  switch ${n}: ${keysFor(n).join(', ') || '(no keys)'}`);
             lines.push(`  mouse buttons are switches: ${mouseOn ? 'yes' : 'no'}`);
             lines.push(`  ignore presses shorter than ${scan.minMs} ms; ignore repeats within ${scan.repeatMs} ms`);
             const cur = scanner ? scanner.current() : null;

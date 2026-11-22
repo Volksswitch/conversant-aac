@@ -1133,9 +1133,11 @@ function applySwitchAppSettingsLive(switchesOn) {
 
 function reflectSwitchSettings() {
     const $ = (id) => document.getElementById(id);
-    const count = storage.loadSwitchCount();
-    const scan = storage.loadSwitchScan(count);
-    if ($('switchCountInput')) $('switchCountInput').value = String(count);
+    const count = storage.loadSwitchCount();          // 0 while switch access is off
+    const number = storage.loadSwitchNumber();        // 1-3 either way
+    const scan = storage.loadSwitchScan(number);
+    if ($('switchOnInput')) $('switchOnInput').checked = count > 0;
+    if ($('switchCountInput')) $('switchCountInput').value = String(number);
     const setRadio = (name, v) => {
         const r = document.querySelector(`input[name="${name}"][value="${v}"]`);
         if (r) r.checked = true;
@@ -1174,14 +1176,15 @@ function reflectSwitchSettings() {
         const el = $('switchKeys' + n);
         if (el) el.textContent = switchAccess.keysFor(n).join(', ') || '(none)';
     }
-    // With "None" the whole tab is grayed out; with switches, only the methods that do
-    // not go with this number of switches (grayed out, not hidden, as the prototypes do).
+    // With switch access off the whole tab is grayed out; with switches on, only the
+    // methods that do not go with this number of switches (grayed out, not hidden, as
+    // the prototypes do).
     const panel = document.querySelector('.tab-panel[data-tab="switch"]');
     if (panel) {
-        // "Number of switches" sits on this tab too and must stay usable, or "None"
-        // could never be changed back.
+        // "Use switches" sits on this tab too and must stay usable, or switch access
+        // could never be turned back on.
         panel.querySelectorAll('input, select, button').forEach((el) => {
-            if (el.id !== 'switchCountInput') el.disabled = count === 0;
+            if (el.id !== 'switchOnInput') el.disabled = count === 0;
         });
         if (count) {
             document.querySelectorAll('input[name="switchMethod"]').forEach((r) => {
@@ -1198,15 +1201,29 @@ function wireSwitchSettings() {
         switchAccess.configure();
         reflectSwitchSettings();
     };
+    // Turning switch access on or off keeps the number of switches and the scan settings
+    // (Ken, November 22 2026: on/off separate from the number). The app settings that
+    // suit switches are applied when it goes on and put back when it goes off.
+    const onInput = $('switchOnInput');
+    if (onInput) onInput.onchange = () => {
+        const next = onInput.checked;
+        if (next === (storage.loadSwitchCount() > 0)) return;
+        storage.saveSwitchesOn(next);
+        applySwitchAppSettingsLive(next);
+        switchAccess.configure();
+        reflectSwitchSettings();
+        refreshSwitchOffLink();
+        refreshHelperNote();
+    };
     const countInput = $('switchCountInput');
     if (countInput) countInput.onchange = async () => {
-        const prev = storage.loadSwitchCount();
-        const next = Number(countInput.value) || 0;
+        const prev = storage.loadSwitchNumber();
+        const next = Number(countInput.value) || 1;
         if (next === prev) return;
         // Each number has its own starting values, and choosing a different number puts
         // them back. Changes may have taken a session of trial and error to find, so the
         // red card asks first, but only when something was changed (Design issue 12).
-        if (prev > 0 && changedFromStart(storage.loadSwitchScan(prev), prev)) {
+        if (changedFromStart(storage.loadSwitchScan(prev), prev)) {
             const ok = await confirmDanger({
                 title: 'Put back the starting values?',
                 body: 'Choosing a different number of switches puts back the starting values for it. The changes you made to the switch settings will be lost.',
@@ -1215,12 +1232,10 @@ function wireSwitchSettings() {
             });
             if (!ok) { countInput.value = String(prev); return; }
         }
-        storage.saveSwitchCount(next);
+        storage.saveSwitchNumber(next);
         storage.saveSwitchScan({});
-        if ((prev === 0) !== (next === 0)) applySwitchAppSettingsLive(next > 0);
         switchAccess.configure();
         reflectSwitchSettings();
-        refreshSwitchOffLink();
     };
     const radios = { switchMethod: 'method', switchPattern: 'pattern', switchExit: 'exit', switchNewOpts: 'newOpts' };
     for (const [name, field] of Object.entries(radios)) {
@@ -1253,7 +1268,13 @@ function wireSwitchSettings() {
         const btn = $('switchKeySet' + n);
         if (!btn) continue;
         btn.onclick = () => {
-            if (status) { status.hidden = false; status.textContent = `Press the key switch ${n} sends. Escape cancels.`; }
+            // Any key, or a mouse button when mouse buttons are switches: whatever the
+            // physical switch sends becomes switch n (Ken, November 22 2026).
+            if (status) {
+                status.hidden = false;
+                status.textContent = `Press the switch you want as switch ${n}.`
+                    + ' Escape cancels; after 15 seconds with no press, nothing changes.';
+            }
             switchAccess.captureKey((code) => {
                 if (code) {
                     const keys = storage.loadSwitchKeys();
@@ -1359,10 +1380,9 @@ async function refreshHelperNote() {
  * switch access was on, nothing at all could be done. This is the way out. It shows only
  * while switch access is on; it takes touch even if touch is off (switch-access.js
  * TOUCH_ESCAPES); the scan passes it by, so a stray switch press cannot turn the switches
- * off; and it asks first. Turning switch access off here does what choosing "None" in
+ * off; and it asks first. Turning switch access off here does what unchecking "Use switches" in
  * Settings does: the app settings that suit switches are put back as the user had them.
- * It does not ask about the scan settings, as "None" in Settings can: a helper whose user
- * is locked out needs one question, not two.
+ * The number of switches and the scan settings are kept for when it is turned back on.
  */
 function refreshSwitchOffLink() {
     const btn = document.getElementById('switchOffBtn');
@@ -1380,7 +1400,7 @@ async function turnSwitchAccessOffFromStart() {
         const ok = await switchAccess.withTouch(() => confirmNeutral({
             title: 'Turn switch access off?',
             body: 'Touch will work as usual, and the switches will do nothing. To turn switch access '
-                + 'back on, open Settings, go to the Switch Access tab, and choose the number of switches.',
+                + 'back on, open Settings, go to the Switch Access tab, and check "Use switches".',
             confirmLabel: 'Turn it off',
             cancelLabel: 'Keep it on',
         }));

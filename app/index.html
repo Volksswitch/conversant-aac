@@ -859,10 +859,19 @@
                      switch-access.js. -->
                 <div class="tab-panel" data-tab="switch">
                     <p class="tab-intro">One tap or two (General), the keyboard for typing and what More shows (Express Panel and Keyboard) also apply to switches.</p>
+                    <!-- Switch access ON/OFF and the NUMBER of switches are separate (Ken,
+                         November 22 2026). "Use switches" is never grayed out, or switch
+                         access could not be turned back on or off. -->
+                    <div class="setting-group" data-help="switchOnGroup">
+                        <label>Switch access</label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="switchOnInput">
+                            <span>Use switches</span>
+                        </label>
+                    </div>
                     <div class="setting-group" data-help="switchCount">
                         <label for="switchCountInput">Number of switches</label>
                         <select id="switchCountInput">
-                            <option value="0">None: I use direct select</option>
                             <option value="1">One switch</option>
                             <option value="2">Two switches</option>
                             <option value="3">Three switches</option>
@@ -872,17 +881,17 @@
                         <label>Your switches</label>
                         <div class="setting-item switch-key-row">
                             <span class="switch-key-name">Switch 1: <span id="switchKeys1"></span></span>
-                            <button id="switchKeySet1" type="button">Set a key</button>
+                            <button id="switchKeySet1" type="button" aria-label="Set switch 1">Set</button>
                         </div>
                         <div class="setting-item switch-key-row">
                             <span class="switch-key-name">Switch 2: <span id="switchKeys2"></span></span>
-                            <button id="switchKeySet2" type="button">Set a key</button>
+                            <button id="switchKeySet2" type="button" aria-label="Set switch 2">Set</button>
                         </div>
                         <div class="setting-item switch-key-row">
                             <span class="switch-key-name">Switch 3: <span id="switchKeys3"></span></span>
-                            <button id="switchKeySet3" type="button">Set a key</button>
+                            <button id="switchKeySet3" type="button" aria-label="Set switch 3">Set</button>
                         </div>
-                        <button id="switchKeyReset" type="button">Put back the starting keys</button>
+                        <button id="switchKeyReset" type="button">Put back the starting switches</button>
                         <label class="checkbox-label">
                             <input type="checkbox" id="mouseSwitchesInput">
                             <span>Mouse buttons also act as switches</span>
@@ -892,6 +901,7 @@
                             <span id="switchTest2">Switch 2</span>
                             <span id="switchTest3">Switch 3</span>
                         </div>
+                        <p class="switch-last-press" id="switchLastPress" role="status">Last press: none yet</p>
                         <p class="api-key-status" id="switchKeyStatus" role="status" hidden></p>
                     </div>
                     <div class="setting-group" data-help="switchEveryScreen">

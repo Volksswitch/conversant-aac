@@ -605,6 +605,57 @@ try {
         await pace(800);
     }
     check(!(await onStart()), 'after that, touching Start starts the app');
+
+    // ---- The Switch Access tab: "Use switches" is separate from the number of switches,
+    // and a switch is set by pressing it (Ken, November 22 2026). Switch access is off
+    // here, turned off above with the number left at two.
+    const tab = () => p3.evaluate(async () => {
+        const sa = await import('/js/switch-access.js');
+        const $ = (id) => document.getElementById(id);
+        return { onBox: $('switchOnInput').checked, onDisabled: $('switchOnInput').disabled,
+            countDisabled: $('switchCountInput').disabled, countValue: $('switchCountInput').value,
+            k1: $('switchKeys1').textContent, k2: $('switchKeys2').textContent, k3: $('switchKeys3').textContent,
+            last: $('switchLastPress').textContent, on: sa.isOn(), count: sa.switchCount() };
+    });
+    // The tab's controls are wired when Settings opens.
+    for (let i = 0; i < 2 && !(await p3.$eval('#settingsDialog', (d) => d.open)); i++) { await tapEl(p3, '#settingsBtn'); await pace(600); }
+    check(await p3.$eval('#settingsDialog', (d) => d.open), 'Settings opens by touch with switch access off');
+    let t = await tab();
+    check(!t.onBox && !t.onDisabled && t.countDisabled && t.countValue === '2',
+        'with switch access off, "Use switches" is unchecked and usable, and the number (two) waits grayed out');
+    await p3.evaluate(() => { const b = document.getElementById('switchOnInput'); b.checked = true; b.dispatchEvent(new Event('change')); });
+    await pace(300);
+    t = await tab();
+    check(t.on && t.count === 2 && !t.countDisabled, 'checking "Use switches" turns switch access back on with two switches');
+    await p3.evaluate(() => document.getElementById('switchKeySet1').onclick());
+    await p3.keyboard.press('KeyF');
+    await pace(200);
+    t = await tab();
+    check(t.k1.split(', ').includes('F') &&/F: set/.test(t.last), `pressing F after "Set" makes F switch 1, and the line says so (${t.k1})`);
+    await p3.keyboard.press('KeyF');
+    await pace(150);
+    t = await tab();
+    check(t.last === 'Last press: F: switch 1', `pressing it again shows what it sends and which switch it is (${t.last})`);
+    await p3.keyboard.press('KeyQ');
+    await pace(150);
+    t = await tab();
+    check(t.last === 'Last press: Q: not one of your switches', `a key that is not a switch is named as one (${t.last})`);
+    await p3.evaluate(() => document.getElementById('switchKeySet3').onclick());
+    await p3.mouse.move(5, 5);
+    await p3.mouse.down({ button: 'left' });
+    await p3.mouse.up({ button: 'left' });
+    await pace(200);
+    t = await tab();
+    check(/left mouse button/.test(t.k3) && !/left mouse button/.test(t.k1),
+        `pressing the left mouse button after "Set" makes it switch 3 (switch 1: ${t.k1}; switch 3: ${t.k3})`);
+    await p3.evaluate(() => document.getElementById('switchKeyReset').onclick());
+    await pace(100);
+    t = await tab();
+    check(/left mouse button/.test(t.k1) && !/F/.test(t.k1), 'putting back the starting switches forgets the ones set');
+    await p3.evaluate(() => { const b = document.getElementById('switchOnInput'); b.checked = false; b.dispatchEvent(new Event('change')); });
+    await pace(300);
+    t = await tab();
+    check(!t.on && !t.onDisabled && t.countValue === '2', 'unchecking turns switch access off and keeps the number');
 } finally {
     await browser.close();
     server.kill();
