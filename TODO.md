@@ -81,7 +81,8 @@ the one that quietly waits forever.
 
 ### Switch documents say touch does nothing with switch access on; for now it works
 - **Raised 2026-11-21 (Ken):** "touch does nothing while switch access is on" waits until switch access is finished and reliable, so touch now works alongside the switches, and the start screen has "Switches not working? Turn switch access off" while switch access is on.
-- **Out of date:** the Switch Access Design (section 2.3 "Touch does nothing", and the passages on Settings, "Pause" and a supporter's mouse that rest on it); the Switch Device Test Plan (the overview of what to expect, the Chromebook note, and a step whose expected result is "Nothing happens. Touch does nothing while switch access is on"); and the Switch Access Decisions draft for the therapists, which states the rule as current. The three User Manuals never say touch stops working, so they need nothing for this; their switch paragraph could mention the new link.
+- **Out of date:** the Switch Access Design (section 2.3 "Touch does nothing", and the passages on Settings, "Pause" and a supporter's mouse that rest on it), and the Switch Device Test Plan (the overview of what to expect, the Chromebook note, and a step whose expected result is "Nothing happens. Touch does nothing while switch access is on"). Both are marked "update needed" in DOC-SYNC.md. The three User Manuals never say touch stops working, so they need nothing for this; their switch paragraph could mention the new link.
+- **Done 2026-11-21 (Ken asked):** the Switch Access Decisions draft for the therapists records the interim behavior: touch works for now, "Switches not working?", and the first-launch question hidden for now.
 - **Why not now:** document syncs are run when Ken chooses ("sync docs"); this is the record of what they owe.
 
 ### Documents still say "Number of switches" is on the General tab
