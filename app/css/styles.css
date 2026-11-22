@@ -5397,6 +5397,17 @@ body.conv-bottom     .danger-dialog {
     outline-offset: -5px !important;
     box-shadow: inset 0 0 0 9px var(--scan-hl-inner) !important;
 }
+/* A primed "Set" button on the Switch Access tab, waiting for the switch to be pressed:
+   the same dashed rings as a button waiting for its second press, because it is the same
+   kind of state (Ken, November 22 2026). Not the red fill of a switched-on button like
+   Listen, which means "this stays on". Placed after .scan-hl and more specific, so it
+   shows even while the scan highlight is on the button. Paint only, so nothing moves. */
+.switch-key-row button.switch-set-primed,
+.switch-key-row button.switch-set-primed.scan-hl {
+    outline: 5px dashed var(--scan-hl) !important;
+    outline-offset: -5px !important;
+    box-shadow: inset 0 0 0 9px var(--scan-hl-inner) !important;
+}
 /* The region or row the highlight is inside. */
 .scan-in {
     outline: 2px solid var(--scan-hl) !important;
@@ -5519,13 +5530,7 @@ body.switch-access-on :is(button, summary, select, [role="button"], .settings-ta
 }
 .switch-key-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .switch-key-row .switch-key-name { min-width: 8rem; }
-/* A primed "Set" button, waiting for a switch press (Rule 6: an engaged state shows as
-   selected). Color only, so nothing moves. */
-.switch-key-row button.switch-set-primed {
-    background: var(--scan-hl);
-    color: var(--scan-hl-inner);
-    border-color: var(--scan-hl);
-}
+
 /* What the last press sent (a key, a mouse button), switch or not. */
 .switch-last-press { margin: 0.4rem 0 0; }
 /* The first-launch question: touch, or one, two or three switches. */

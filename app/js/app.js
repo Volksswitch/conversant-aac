@@ -1272,7 +1272,8 @@ function wireSwitchSettings() {
     };
     const status = $('switchKeyStatus');
     // "Set" PRIMES and the switch FIRES (Ken, November 22 2026): a primed "Set" button
-    // shows as selected (Rule 6) and carries "Press switch 1" (or 2, 3) on its edge until
+    // has the dashed rings of a button waiting for its second press, and carries "Press
+    // switch 1" (or 2, 3) on its edge until
     // a switch is pressed, Escape is pressed, or 15 seconds pass.
     const unprime = () => {
         setTagPrimed.hide();
