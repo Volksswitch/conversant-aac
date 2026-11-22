@@ -22,6 +22,12 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.19": [
+    {
+      "for": "computer",
+      "note": "A stray right-click or wheel press no longer gets in the way. The right mouse button no longer opens the browser's menu over Conversant, and pressing the wheel no longer starts the browser's scrolling cursor. Neither did anything for Conversant, and a press by mistake could cover the buttons mid-conversation. In a text box, the right-click menu still works, so you can paste or pick a spelling. Rolling the wheel still scrolls."
+    }
+  ],
   "0.15.17": [
     "You can now delete everything Conversant keeps on a device, for when you decide to stop using it: Settings, About, \"Delete Conversant from this device\". It asks twice before it deletes anything, and offers to save a backup first. If you chose a data folder, it's kept unless you check \"Also delete what Conversant saved in my data folder\"; anything else in that folder is never touched."
   ],

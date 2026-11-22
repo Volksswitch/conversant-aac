@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.15.19
+
 ### On a computer
 
 - **A stray right-click or wheel press no longer gets in the way.** The right mouse button no longer opens the browser's menu over Conversant, and pressing the wheel no longer starts the browser's scrolling cursor. Neither did anything for Conversant, and a press by mistake could cover the buttons mid-conversation. In a text box, the right-click menu still works, so you can paste or pick a spelling. Rolling the wheel still scrolls.
