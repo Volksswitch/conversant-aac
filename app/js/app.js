@@ -65,7 +65,8 @@ const SPEECH_COMPANY = {
     ...Object.fromEntries(Object.entries(TTS_PROVIDERS).map(([id, p]) => [id, p.label])),
 };
 import * as sttAzure from './stt-azure.js';
-import { confirmDanger, confirmNeutral, confirmFolderChoice, showBusy, showNotice, askForText } from './confirm-dialog.js';
+import { confirmDanger, chooseDanger, confirmNeutral, confirmFolderChoice, showBusy, showNotice, askForText } from './confirm-dialog.js';
+import * as uninstall from './uninstall.js';
 import * as singleInstance from './single-instance.js';
 import * as helpMode from './help-mode.js';
 import * as usageSummary from './usage-summary.js';
@@ -7657,6 +7658,8 @@ function handleSettingsTab(tabName) {
     // off disk is the most expensive thing in this panel, and it is pointless on the
     // ten other tabs. Keeps the keyboard available — the note field is typed into.
     if (tabName === 'troubleshooting') { renderTroubleshooting(); return; }
+    // A folder chosen on the General tab since Settings opened shows the checkbox now.
+    if (tabName === 'about') refreshDeleteFolderRow();
     // hideKeyboard (not previewHide) so leaving any tab forcibly drops the keyboard
     // even if a field there still holds stale focus (e.g. an About Me card field whose
     // focusout was suppressed while Settings is open). The layout controls used to
@@ -9032,6 +9035,241 @@ function wireBackupControls() {
     renderBackupList();
 }
 
+// ── Delete everything on this device (Ken, November 22 2026) ────────────────────
+//
+// For someone who has decided to stop using Conversant. Settings > About. It asks
+// twice: the first red card says what goes and what cannot be reached, and offers a
+// backup; the second is the last chance to stop. uninstall.js does the deleting.
+//
+// ⚠ AFTERWARDS THE PAGE IS REPLACED, NEVER RELOADED. A reload is a first launch: it
+// saves fresh settings and a fresh copy of the app, putting back what was just deleted.
+// So the result is drawn in place, and stopAppForDeleting() first switches off the one
+// path that reloads by itself (the update reload, reloadForUpdateIfIdle).
+//
+// ⚠ THE DATA FOLDER THE USER CAN SEE IS KEPT UNLESS THEY CHECK THE BOX. It is their own
+// copy and their backup, it may be kept in OneDrive and shared with another device, and
+// it may hold files that are not the app's. Unchecked each time Settings opens.
+
+let deletingEverything = false;
+
+function wireDeleteEverything() {
+    document.getElementById('deleteFolderTooInput').checked = false;
+    refreshDeleteFolderRow();
+    document.getElementById('deleteEverythingBtn').onclick = handleDeleteEverything;
+}
+
+function refreshDeleteFolderRow() {
+    const row = document.getElementById('deleteFolderTooRow');
+    if (row) row.hidden = !storage.hasVisibleDataFolder();
+}
+
+// What the first card says. Every part that depends on where the data lives is here,
+// so the card never claims a folder goes when it stays, or the reverse.
+function deleteCardText({ onDevice, folderName, alsoFolder, folderAway }) {
+    const parts = ['This deletes your settings and keys, your About Me answers, your people, '
+        + 'places and topics, your Express Panel and practice scenarios, and the copy of the '
+        + 'app kept for working offline.'];
+    if (onDevice) {
+        parts.push('Your saved conversations, backups, sounds and documents go too, because on '
+            + 'this device they’re kept inside the app.');
+    } else if (folderName && alsoFolder) {
+        parts.push(`It also deletes what Conversant saved in your data folder “${folderName}”: `
+            + 'your saved conversations, backups, settings profiles, sounds and documents. '
+            + 'Anything else in that folder is left alone. If OneDrive, Google Drive, iCloud or '
+            + 'Dropbox keeps that folder, Conversant’s files go there too, and on any other '
+            + 'device that uses it.');
+    } else if (folderName) {
+        parts.push(`Your data folder “${folderName}” is kept, with your saved conversations and `
+            + 'backups in it. To delete those too, cancel, then check “Also delete what '
+            + 'Conversant saved in my data folder”.');
+    } else if (folderAway) {
+        parts.push('Your data folder isn’t connected right now, so it’s kept. You can delete it '
+            + 'yourself afterwards.');
+    }
+    parts.push('This can’t remove the app’s icon, files you saved somewhere else, or your keys '
+        + 'at Anthropic or a speech service. Section 11 of the User Manual shows how.');
+    parts.push('If you might use Conversant again, save a backup first.');
+    return parts.join('\n\n');
+}
+
+async function handleDeleteEverything() {
+    if (deletingEverything || exportInProgress) return;
+    // A copy waiting in another window has already read everything, and becomes usable
+    // the moment this one closes - free to save it all back.
+    if (await uninstall.anotherCopyWaiting()) {
+        await showNotice({
+            title: 'Close the other copy first',
+            body: 'Conversant is also open in another window or tab on this device. Close that '
+                + 'one, then try again. Left open, it would put back what this deletes.',
+            buttonLabel: 'OK',
+        });
+        return;
+    }
+    refreshDeleteFolderRow();
+    const onDevice = storage.getStorageBackend() === storage.BACKEND.DEVICE;
+    const visible = storage.hasVisibleDataFolder();
+    const folderName = visible ? storage.getDataFolderName() : null;
+    const alsoFolder = visible && document.getElementById('deleteFolderTooInput').checked;
+    const folderAway = !visible && !onDevice && await folderRememberedButDisconnected();
+    const ctx = { onDevice, folderName, alsoFolder, folderAway };
+
+    const first = await chooseDanger({
+        title: 'Delete everything Conversant keeps on this device?',
+        body: deleteCardText(ctx),
+        altLabel: 'Save a backup first',
+        confirmLabel: 'Continue',
+        cancelLabel: 'Cancel',
+        wide: true,
+    });
+    if (first === 'alt') { await saveBackupBeforeDeleting(); return; }
+    if (first !== 'confirm') return;
+
+    if (!(await confirmDanger({
+        title: 'Are you sure?',
+        body: 'Everything listed on the last screen will be deleted. This can’t be undone.'
+            + (onDevice ? '\n\nThat includes your saved conversations.' : '')
+            + (alsoFolder ? `\n\nThat includes your saved conversations in “${folderName}”.` : ''),
+        confirmLabel: 'Delete everything',
+        cancelLabel: 'Keep everything',
+    }))) return;
+
+    deletingEverything = true;
+    const steps = {
+        folder: 'Deleting what Conversant saved in your data folder…',
+        browser: 'Deleting what Conversant keeps in this browser…',
+        checking: 'Checking that nothing is left…',
+    };
+    const busy = showBusy({ title: 'Deleting everything', body: 'Don’t close Conversant until this finishes.' });
+    let result;
+    try {
+        stopAppForDeleting();
+        const { handle } = await storage.releaseForUninstall();
+        result = await uninstall.deleteEverything({
+            folder: alsoFolder ? handle : null,
+            onStep: (step) => busy.update(steps[step] || ''),
+        });
+    } catch (err) {
+        // Not logged: the log is part of what is being deleted.
+        try { console.error('[uninstall]', err); } catch { /* no console */ }
+        result = { folderFailed: [], left: [{ what: 'other', name: String((err && err.message) || err) }] };
+    } finally {
+        busy.close();
+    }
+    showDeletedPage(result, ctx);
+}
+
+// Everything that could still save something, speak, or reload the page is stopped
+// before anything is deleted.
+function stopAppForDeleting() {
+    window.__aacUpdateReady = false;
+    window.__aacReloadIfIdle = () => {};   // sw-register.js reloads by itself without one
+    if (updateWaitTimer) { clearInterval(updateWaitTimer); updateWaitTimer = null; }
+    generationToken++;                     // an AI reply still on its way is dropped
+    stopExpressAudio({ abort: true });
+    placeholders.stop();
+    tts.cancel();
+    phraseAudio.pause();
+    metrics.setEnabled(false);
+    if (isListening && !practiceMode) { try { stt.stopListening(); } catch { /* already off */ } }
+}
+
+// The backup offered on the first card goes OUT of the app, by the same route as on a
+// tablet, never into the data folder: the folder may be about to be emptied, and on an
+// iPad its backups are kept inside the app, which is about to be emptied too.
+async function saveBackupBeforeDeleting() {
+    if (exportInProgress) return;
+    exportInProgress = true;
+    const busy = showBusy({
+        title: 'Preparing your backup',
+        body: 'Collecting everything on this device. Don’t close the app.',
+    });
+    const onProgress = ({ done, total, label }) => {
+        busy.update(total ? `Collecting ${label} — ${done} of ${total}…` : '');
+    };
+    try {
+        const pkg = await dataTransfer.downloadPackage(APP_VERSION, onProgress);
+        busy.close();
+        await showNotice({
+            title: 'Backup saved',
+            body: 'Your browser is saving it now. Keep it somewhere that isn’t only on this '
+                + 'device.\n\nIt contains:\n\n• ' + dataTransfer.summarize(pkg).join('\n• ')
+                + '\n\nNothing has been deleted. When the backup is safe, tap “Delete everything '
+                + 'on this device” again.',
+            buttonLabel: 'OK',
+        });
+    } catch (err) {
+        storage.logError('export', err.message || String(err));
+        busy.close();
+        await showNotice({
+            title: 'The backup couldn’t be made',
+            body: `${err.message || 'Something went wrong.'}\n\nNothing has been deleted.`,
+            buttonLabel: 'OK',
+        });
+    } finally {
+        busy.close();
+        exportInProgress = false;
+    }
+}
+
+// What could not be deleted, in words a user can act on. One line per kind of thing.
+function describeLeftovers({ folderFailed = [], left = [] }, { folderName }) {
+    const lines = [];
+    if (folderFailed.length) {
+        lines.push(`Some of what Conversant saved in your data folder “${folderName}”.`);
+    }
+    const phrase = (item) => {
+        if (item.what === 'settings') return 'Your settings and keys.';
+        if (item.what === 'offline') return 'The copy of the app kept for working offline.';
+        if (item.what === 'private') return 'Files Conversant keeps inside this browser.';
+        if (item.what === 'database' && item.name === 'conversant-voice-audio') return 'Saved recordings of your paid voice.';
+        if (item.what === 'database' && item.name === 'aac-db') return 'The record of which data folder you chose.';
+        if (item.what === 'database') return 'Other saved data.';
+        return `Something went wrong: ${item.name}`;
+    };
+    for (const item of left) {
+        const line = phrase(item);
+        if (!lines.includes(line)) lines.push(line);
+    }
+    return lines;
+}
+
+function showDeletedPage(result, { onDevice, folderName, alsoFolder, folderAway }) {
+    const missed = describeLeftovers(result || {}, { folderName });
+    const make = (tag, text) => { const el = document.createElement(tag); el.textContent = text; return el; };
+    const list = (items) => { const ul = document.createElement('ul'); ul.append(...items.map((t) => make('li', t))); return ul; };
+
+    const page = document.createElement('main');
+    page.className = 'deleted-page';
+    const h = make('h1', missed.length ? 'Not everything could be deleted'
+        : 'Conversant has been deleted from this device');
+    h.tabIndex = -1;
+    page.append(h);
+
+    if (missed.length) {
+        page.append(make('p', 'These couldn’t be deleted:'), list(missed),
+            make('p', 'Close every Conversant window and tab, then open Conversant again and try '
+                + 'once more. Or finish by hand, following section 11 of the User Manual.'));
+    } else {
+        let said = 'Everything Conversant kept in this browser is gone.';
+        if (onDevice) said += ' That includes your saved conversations and backups.';
+        else if (folderName && alsoFolder) said += ` So is what it saved in your data folder “${folderName}”. `
+            + 'The folder itself, and anything else in it, is still there. Delete it yourself if you don’t need it.';
+        else if (folderName) said += ` Your data folder “${folderName}” was kept. Delete it yourself if you don’t need it.`;
+        else if (folderAway) said += ' Your data folder wasn’t connected, so it was kept. Delete it yourself if you don’t need it.';
+        page.append(make('p', said));
+    }
+
+    page.append(make('p', 'To finish:'), list([
+        'If you installed Conversant, remove its icon. If you opened it in a browser tab, close the tab.',
+        'Delete any backups you saved somewhere else.',
+        'Delete your keys at Anthropic, and at any speech service you signed up for.',
+    ]), make('p', 'Section 11 of the User Manual shows how. If you open Conversant again before '
+        + 'removing it, it starts fresh, as if it were new.'));
+
+    document.body.replaceChildren(page);
+    try { h.focus(); } catch { /* not focusable */ }
+}
+
 async function renderSettingsProfiles() {
     const select = document.getElementById('settingsProfileSelect');
     const loadBtn = document.getElementById('loadSettingsProfileBtn');
@@ -9616,6 +9854,7 @@ function openSettings() {
     };
 
     wireBackupControls();
+    wireDeleteEverything();
 
     document.getElementById('makeStorageDurableBtn').onclick = async (e) => {
         const btn = e.currentTarget;

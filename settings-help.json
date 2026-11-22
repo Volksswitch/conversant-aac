@@ -117,7 +117,8 @@
         "expressContext": "Buttons that describe the conversation: who you are with, where you are, and how you feel. They never speak; they guide the suggestions.",
         "suggestedLayout": "Puts back the layout the app suggests for this screen: where the keyboard sits, its layout, the response options and how big each part is.",
         "optionsArrangementGroup": "How the four response options are laid out: in one row, or two by two with the New 4 button beside or below them.",
-        "screenOrientationGroup": "Keeps the screen upright or sideways when the device is turned, or lets it turn. Not every device allows it; the line underneath says what yours did."
+        "screenOrientationGroup": "Keeps the screen upright or sideways when the device is turned, or lets it turn. Not every device allows it; the line underneath says what yours did.",
+        "deleteEverything": "Deletes everything Conversant keeps on this device, for when you have decided to stop using it. It asks twice before it deletes anything."
     },
     "radioGroups": {
         "switchMethod": "On every screen, how the highlight moves. With one switch it can move by itself or while you hold. With two or three, a switch moves it.",
@@ -274,6 +275,8 @@
         "elevenlabsPartnerVoiceSelect": "Choose the ElevenLabs voice for the person you practice with.",
         "testElevenlabsPartnerVoiceBtn": "Says a few words in the practice partner's ElevenLabs voice.",
         "reviewListRange": "Choose how far back the list goes. It starts at the last week each time, so the list stays short and quick to open.",
-        "suggestedLayoutBtn": "Changes the keyboard position, layout, response options and screen areas to the ones suggested for this screen. Asks first."
+        "suggestedLayoutBtn": "Changes the keyboard position, layout, response options and screen areas to the ones suggested for this screen. Asks first.",
+        "deleteFolderTooInput": "Also deletes the conversations, backups and other files Conversant saved in your data folder. Anything else in that folder is left alone.",
+        "deleteEverythingBtn": "Deletes your settings, your keys and everything else Conversant keeps here. It asks twice first, and offers to save a backup."
     }
 }

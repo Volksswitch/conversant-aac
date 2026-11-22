@@ -1524,6 +1524,23 @@
                         <div id="usageBreakdown" class="setting-hint" hidden></div>
                         <button id="resetUsageBtn" type="button">Reset</button>
                     </div>
+                    <!-- For someone who has decided to stop using the app (Ken, November 22
+                         2026). The button asks twice before anything happens and offers a
+                         backup first; see handleDeleteEverything in app.js. The checkbox
+                         is shown only where there is a data folder the user can see, and
+                         is cleared each time Settings opens, so a check left from earlier
+                         never carries over. A div holds it because the checkbox row's own
+                         display rule would override `hidden`. -->
+                    <div class="setting-group" data-help="deleteEverything">
+                        <label>Delete Conversant from this device</label>
+                        <div id="deleteFolderTooRow" hidden>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="deleteFolderTooInput">
+                                Also delete what Conversant saved in my data folder
+                            </label>
+                        </div>
+                        <button id="deleteEverythingBtn" type="button">Delete everything on this device</button>
+                    </div>
                     <p class="about-license">Open source — Apache License 2.0</p>
                     <p class="about-link"><a href="https://www.volksswitch.org" target="_blank" rel="noopener">Volksswitch.org</a></p>
                 </div>

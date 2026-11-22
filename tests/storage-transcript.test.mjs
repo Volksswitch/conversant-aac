@@ -1108,3 +1108,38 @@ test('logError: a quiet error is recorded and tells the UI not to show the wash'
     assert.equal(seen[1].quiet, false);
     assert.ok(storage.loadErrorLog().some((e) => e.message === 'storage warm-up had still not finished'), 'still in the log');
 });
+
+// "Delete everything on this device" (Ken, November 22 2026). Before anything is deleted
+// the app lets go of its data folder, so that no save landing during or after the delete
+// can put a file back. Kept LAST in this file: from here on the module has no folder.
+test('releasing the data folder for deleting everything hands it over and stops every write', async () => {
+    const root5 = makeDir('root5');
+    Object.defineProperty(globalThis, 'navigator', {
+        value: { storage: { getDirectory: async () => root5 } }, configurable: true, writable: true,
+    });
+    assert.ok(await storage.restoreDataFolder());
+    await storage.startConversationLog();
+    await storage.logPartnerInterim({ rawTranscript: 'said before the delete' });
+
+    const { handle, kind } = await storage.releaseForUninstall();
+    assert.equal(handle, root5, 'the folder that was in use is handed over');
+    assert.equal(kind, storage.BACKEND.DEVICE);
+    assert.equal(storage.hasDataFolder(), false);
+
+    // Whatever was on disk at that moment, nothing more may arrive and nothing may
+    // change: names and contents both. (An error logged by an earlier test can already
+    // be in errors.log, which is why the contents are compared rather than the file's
+    // absence.)
+    const filesOf = (d) => [...d._files].map(([n, rec]) => [n, rec.data]);
+    const snapshot = () => JSON.stringify([filesOf(root5), [...root5._dirs].map(([n, d]) => [n, filesOf(d)])]);
+    const before = snapshot();
+    await storage.writeFile('worldview.json', '{"after":true}');
+    storage.logError('after', 'an error after the release');
+    await storage.logPartnerInterim({ rawTranscript: 'said after the delete' });
+    await storage.startConversationLog();
+    storage.appendMetricsFile({ ev: 'after' });
+    await storage.flushMetricsFile();
+    await new Promise((r) => setTimeout(r, 50));
+    assert.equal(snapshot(), before);
+    assert.ok(!root5._files.has('worldview.json'));
+});

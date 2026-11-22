@@ -3733,3 +3733,29 @@ export function savePlaceholderSettings(initialDelay, subsequentDelay, maxPlaceh
     if (placeholderEaseOff !== undefined) settings.placeholderEaseOff = placeholderEaseOff;
     saveSettings(settings);
 }
+
+/* Everything the app keeps is about to be deleted (uninstall.js, Ken, November 22
+ * 2026). Lets go of the data folder so that nothing more is written to it - every
+ * writer here checks for a folder first - and hands back the folder that was in use,
+ * which the deleting needs. Writes already under way finish first, so none of them
+ * lands after the delete; each wait is capped, so one that never ends cannot hold it
+ * up. The conversation in progress is dropped without being written. */
+export async function releaseForUninstall() {
+    conversationSaving = false;
+    metricsBuffer = [];
+    if (metricsTimer) { try { clearTimeout(metricsTimer); } catch { /* ignore */ } metricsTimer = null; }
+    const handle = dirHandle;
+    const kind = backend;
+    dirHandle = null;
+    backend = BACKEND.NONE;
+    conversationDirHandle = null;
+    primedHandle = null;
+    pendingPermission = null;
+    const capped = (p) => Promise.race([p, new Promise((r) => setTimeout(r, 2000))]);
+    await capped(Promise.allSettled([errorFileChain, logWriteChain]));
+    for (let waited = 0; metricsWriting && waited < 2000; waited += 50) {
+        await new Promise((r) => setTimeout(r, 50));
+    }
+    resetConversationId();
+    return { handle, kind };
+}

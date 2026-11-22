@@ -4754,7 +4754,8 @@ body.conv-side-left  .danger-dialog { left:  calc(var(--app-margin) + var(--dock
    (!) THE PER-DOCK RULES BELOW ARE MORE SPECIFIC THAN `.danger-dialog.has-preview`, so
    the side-dock cases need their own has-preview rules or the dock edge wins and the
    card is misplaced on exactly the layout that has least room. */
-.danger-dialog.has-preview {
+.danger-dialog.has-preview,
+.danger-dialog.wide-card {
     max-width: none;
     /* This one is deliberately stretched to the width between the two edges below, so
        it takes the width back off fit-content. Its HEIGHT still fits its content. */
@@ -4762,10 +4763,12 @@ body.conv-side-left  .danger-dialog { left:  calc(var(--app-margin) + var(--dock
     left: calc(var(--app-margin) + var(--settings-tabs-w));   /* the column's 1px border is inside its width */
     right: var(--app-margin);
 }
-body.conv-side-right .danger-dialog.has-preview {
+body.conv-side-right .danger-dialog.has-preview,
+body.conv-side-right .danger-dialog.wide-card {
     right: calc(var(--app-margin) + var(--dock-w) + var(--dock-sep));
 }
-body.conv-side-left .danger-dialog.has-preview {
+body.conv-side-left .danger-dialog.has-preview,
+body.conv-side-left .danger-dialog.wide-card {
     left: calc(var(--app-margin) + var(--dock-w) + var(--dock-sep) + var(--settings-tabs-w));
 }
 
@@ -4890,6 +4893,7 @@ body.conv-bottom     .danger-dialog {
    out red. Red here would say "this destroys something", which restarting does not. */
 .danger-confirm.neutral-confirm {
     background: var(--accent);
+    border-color: var(--accent);   /* the red edge would undo what the fill says */
     color: var(--accent-ink);
 }
 
@@ -4930,6 +4934,9 @@ body.conv-bottom     .danger-dialog {
 
 .danger-actions {
     display: flex;
+    /* A card can carry three buttons (chooseDanger), which a phone held upright cannot
+       fit on one line; they wrap rather than run off the card. */
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: 0.6rem;
 }
@@ -5595,7 +5602,7 @@ body.switch-access-on :is(button, summary, select, [role="button"], .settings-ta
     #apiKeyPromptBtn:hover,
     #folderReconnectBtn:hover { background: var(--warn-tint); }
     .apikey-continue:hover { background: var(--accent-hover); }
-    .danger-confirm:hover { background: var(--danger-strong); }
+    .danger-confirm:not(.neutral-confirm):hover { background: var(--danger-strong); }
     .danger-cancel:hover { background: var(--surface-sunken); }
     #whatsNewPanel .whatsnew-ok:hover { background: var(--info); }
     .reset-sizing-btn:hover { background: var(--surface-panel); }
@@ -6042,3 +6049,23 @@ body.reviewing .response-card { position: relative; }
 }
 .single-instance-card h2 { margin: 0 0 0.75rem; }
 .single-instance-card p { margin: 0 0 0.75rem; line-height: 1.4; }
+
+/* What is left on screen after "Delete everything on this device" (app.js
+   showDeletedPage). The whole page is replaced, so this is a page of its own: it
+   covers everything and depends on nothing else in the app's layout. */
+.deleted-page {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    overflow: auto;
+    background: var(--surface-page);
+    color: var(--ink);
+    padding: 2rem max(1rem, 8vw);
+    font-size: 1.15rem;
+    line-height: 1.5;
+}
+.deleted-page h1 { font-size: 1.6rem; margin: 0 0 1rem; }
+.deleted-page h1:focus { outline: none; }
+.deleted-page p,
+.deleted-page ul { margin: 0 0 1rem; max-width: 42rem; }
+.deleted-page li { margin-bottom: 0.4rem; }

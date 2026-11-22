@@ -24,20 +24,36 @@ import { rescueFrom } from './keyboard.js';
  * Settings the seeing is done by a preview box on the panel; the launch screen has no
  * panel, and is reached precisely when Settings cannot be, so without this the report
  * could only be sent blind. */
-export function confirmDanger({
+export function confirmDanger(opts = {}) {
+    return dangerCard({ ...opts, altLabel: '' }).then((choice) => choice === 'confirm');
+}
+
+/* The same red card with a second way forward between Cancel and the red button (Ken,
+ * November 22 2026): "Save a backup first", before deleting everything on the device.
+ * Resolves 'confirm', 'alt', or null for Cancel, Escape and the backdrop. Cancel keeps
+ * the focus, as on every red card. `wide` gives a long explanation the width of the
+ * Settings content area, so it fits above the Express Panel without scrolling. */
+export function chooseDanger(opts = {}) {
+    return dangerCard(opts);
+}
+
+function dangerCard({
     title = 'Are you sure?',
     body = 'This cannot be undone.',
     preview = '',
     confirmLabel = 'Delete',
     cancelLabel = 'Cancel',
+    altLabel = '',
+    wide = false,
     over = null
 } = {}) {
     return new Promise((resolve) => {
         const dlg = document.createElement('dialog');
-        // `has-preview` widens the card to the Settings content area (see styles.css).
-        // Only a card showing a report earns that width; a one-sentence confirmation
-        // stretched across the panel puts its buttons far from the question.
-        dlg.className = preview ? 'danger-dialog has-preview' : 'danger-dialog';
+        // `has-preview` and `wide-card` widen the card to the Settings content area (see
+        // styles.css). Only a card showing a report, or a long explanation, earns that
+        // width; a one-sentence confirmation stretched across the panel puts its buttons
+        // far from the question.
+        dlg.className = preview ? 'danger-dialog has-preview' : wide ? 'danger-dialog wide-card' : 'danger-dialog';
 
         const head = document.createElement('div');
         head.className = 'danger-head';
@@ -64,7 +80,15 @@ export function confirmDanger({
         const confirmBtn = document.createElement('button');
         confirmBtn.className = 'danger-confirm';
         confirmBtn.textContent = confirmLabel;
-        actions.append(cancelBtn, confirmBtn);
+        // The other way forward is not destructive, so it takes the accent, as the one
+        // button on a notice card does, rather than the red.
+        let altBtn = null;
+        if (altLabel) {
+            altBtn = document.createElement('button');
+            altBtn.className = 'danger-confirm neutral-confirm';
+            altBtn.textContent = altLabel;
+        }
+        actions.append(cancelBtn, ...(altBtn ? [altBtn] : []), confirmBtn);
 
         // Read-only rather than disabled: a disabled control cannot be scrolled, and
         // a preview the tester cannot scroll through is not a preview.
@@ -89,12 +113,13 @@ export function confirmDanger({
             resolve(val);
         };
 
-        cancelBtn.addEventListener('click', () => done(false));
-        confirmBtn.addEventListener('click', () => done(true));
+        cancelBtn.addEventListener('click', () => done(null));
+        confirmBtn.addEventListener('click', () => done('confirm'));
+        if (altBtn) altBtn.addEventListener('click', () => done('alt'));
         // Escape -> cancel (the safe default).
-        dlg.addEventListener('cancel', (e) => { e.preventDefault(); done(false); });
+        dlg.addEventListener('cancel', (e) => { e.preventDefault(); done(null); });
         // Click on the backdrop (outside the card) -> cancel.
-        dlg.addEventListener('click', (e) => { if (e.target === dlg) done(false); });
+        dlg.addEventListener('click', (e) => { if (e.target === dlg) done(null); });
 
         document.body.append(dlg);
         unplace = placeOver(dlg, over);

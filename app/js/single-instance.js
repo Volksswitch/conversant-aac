@@ -19,7 +19,8 @@
  * Where Web Locks are missing the app simply runs, as it always has.
  */
 
-const LOCK_NAME = 'conversant-aac-single-instance';
+// Exported for uninstall.js, which must not delete while another copy waits on it.
+export const LOCK_NAME = 'conversant-aac-single-instance';
 
 let blocked = false;
 let overlay = null;

@@ -3023,6 +3023,19 @@ The rule for any file a user can hand the app (a backup, a saved profile, a scen
 - **Keep a way back.** A restore saves a copy first (`dataTransfer.saveSafetyCopy`), without conversations, sounds or profiles, because an import only ADDS those. On an iPad the backup list appears once it holds something, since a way back nobody can reach is no way back.
 - **Reports leave by SHAPE, not by name:** in the weekly report every LIST setting becomes a count (`weekly-send.redactSystemInfo`), so a list added later is covered without anyone remembering. The "Words the voice gets wrong" list had been leaving the device every week until this rule existed.
 
+## Delete everything on this device (Ken, November 22 2026), BUILT
+
+Settings > About > "Delete Conversant from this device", for someone who has decided to stop using the app. Two red cards: the first says what goes and what it can't reach, and offers "Save a backup first"; the second is the last chance to stop. `uninstall.js` does the deleting; `handleDeleteEverything` in app.js asks and shows the result. Still to try on the devices, and the manuals' section 11 waits for that: [TODO.md](TODO.md).
+
+- **It clears everything stored at the app's web address** (localStorage, sessionStorage, every database, every cache, the service worker, the browser's private storage), not a list of names, so anything added later is covered too. A local test server shares its address, so other projects' data there goes too.
+- **The data folder the user can see is kept unless they check "Also delete what Conversant saved in my data folder"**, unchecked each time Settings opens: it's their own copy and backup, it may be in OneDrive and shared with another device, and it may hold their own files. When checked, only files with the app's own names go, and an app folder goes only once it's empty. Sounds and documents count only when the app's own lists name them, because on Windows a folder's name matches whatever its capitals, so a Documents\Audio folder of recordings IS the app's "audio" folder. `tests/uninstall.test.mjs` fails if the app starts writing a file at the top of the folder that this doesn't cover.
+- **⚠ AFTERWARDS THE PAGE IS REPLACED, NEVER RELOADED.** A reload is a first launch and saves everything back fresh. The update reload (`reloadForUpdateIfIdle`, and sw-register.js's own fallback) is switched off before anything is deleted.
+- **⚠ NOTHING MAY WRITE ONCE IT STARTS.** The app saves on timers and when the page is hidden, so the browser's localStorage save and database open are replaced with ones that do nothing, and `storage.releaseForUninstall()` lets go of the data folder. A second look after 1.5 seconds deletes anything put back; whatever is still there is named on the result page.
+- **⚠ The service worker goes before the caches**: it saves a copy of every file the page fetches.
+- **A copy of the app waiting in another window stops it** (`navigator.locks.query()` shows it pending): that copy has the user's data loaded and would save it back.
+- **The backup on the first card goes out by download, never into the data folder**, which may be about to be emptied, or on an iPad is inside the app.
+- **Checked end to end by `node scripts/uninstall/browser-check.mjs`** (in real Chrome, run once as an iPad and once as a computer with a folder; it also checks the first card fits above the Express Panel without scrolling, which the first draft did not). It can't reach a real folder on disk (a browser hands one over only through a dialog no program can click), so which folder files go is tested in `tests/uninstall.test.mjs` only.
+
 ---
 
 ## Settings persistence — data folder + per-device profiles (Ken, July 8 2026) — LARGELY SUPERSEDED July 31 2026, kept as the record of why

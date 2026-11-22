@@ -34,7 +34,13 @@ function open() {
                 const db = req.result;
                 if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
             };
-            req.onsuccess = () => resolve(req.result);
+            req.onsuccess = () => {
+                const db = req.result;
+                // Close when another part of the app deletes the database (uninstall.js).
+                // Left open, it would hold the delete until the app was closed.
+                db.onversionchange = () => { try { db.close(); } catch { /* gone */ } dbPromise = null; };
+                resolve(db);
+            };
             req.onerror = () => resolve(null);
             req.onblocked = () => resolve(null);
         } catch { resolve(null); }
