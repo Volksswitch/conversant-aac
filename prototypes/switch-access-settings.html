@@ -974,13 +974,18 @@ const MOUSE_NAMES = { Mouse0: 'left mouse button', Mouse1: 'middle mouse button'
 const isMouseCode = (code) => /^Mouse\d+$/.test(code);
 const switchKeyName = (code) => MOUSE_NAMES[code] || (isMouseCode(code) ? 'mouse button ' + (Number(code.slice(5)) + 1) : null) || code.replace(/^Key/, '').replace(/^Digit/, '').replace(/^Numpad/, 'Keypad ').replace(/^Arrow/, 'Arrow ');
 function buildSwitchKeys() {
+  // A set switch replaces that switch's starting keys (or its starting mouse button, for a
+  // mouse button), as in the app (Ken, November 22 2026).
   SWITCH_KEY = { ...START_KEYS };
-  const mine = Object.values(customKeys);
-  Object.keys(SWITCH_KEY).forEach((c) => { if (mine.includes(c)) delete SWITCH_KEY[c]; });
+  Object.entries(customKeys).forEach(([n, code]) => {
+    Object.keys(START_KEYS).forEach((c) => { if (START_KEYS[c] === Number(n) && isMouseCode(c) === isMouseCode(code)) delete SWITCH_KEY[c]; });
+  });
+  Object.values(customKeys).forEach((c) => { delete SWITCH_KEY[c]; });
   Object.entries(customKeys).forEach(([n, c]) => { SWITCH_KEY[c] = Number(n); });
   [1, 2, 3].forEach((n) => {
     const el = document.getElementById('key' + n); if (!el) return;
-    const codes = Object.keys(SWITCH_KEY).filter((c) => SWITCH_KEY[c] === n && (mouseSwitches || !isMouseCode(c)));
+    const codes = Object.keys(SWITCH_KEY).filter((c) => SWITCH_KEY[c] === n && (mouseSwitches || !isMouseCode(c)))
+      .sort((a, b) => isMouseCode(a) - isMouseCode(b));
     el.textContent = codes.map(switchKeyName).join(', ') || '(none)';
   });
 }
@@ -988,7 +993,7 @@ function keysSummary() { return (mouseSwitches ? 'mouse buttons on; ' : 'mouse b
 let listeningFor = 0;
 document.querySelectorAll('.keyset').forEach((b) => b.addEventListener('click', () => {
   document.querySelectorAll('.keyset').forEach((x) => { x.classList.remove('listening'); x.textContent = 'Set'; });
-  listeningFor = Number(b.dataset.sw); b.classList.add('listening'); b.textContent = 'Press the switch…';
+  listeningFor = Number(b.dataset.sw); b.classList.add('listening'); b.textContent = 'Press switch ' + listeningFor;
 }));
 document.getElementById('keyReset').addEventListener('click', () => {
   customKeys = {}; try { localStorage.removeItem('switchKeys'); } catch (e) {} buildSwitchKeys(); setMouseSwitches(true);

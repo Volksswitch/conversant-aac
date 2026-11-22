@@ -101,14 +101,30 @@ export function isScanObject(v) {
 export const START_KEYS = { Space: 1, Digit1: 1, Numpad1: 1, Enter: 2, NumpadEnter: 2, Digit2: 2, Numpad2: 2, Digit3: 3, Numpad3: 3,
     Mouse0: 1, Mouse2: 2, Mouse1: 3 };
 
-/** key code (or 'MouseN') -> switch number, from the user's set switches. */
+/*
+ * key code (or 'MouseN') -> switch number, from the user's set switches.
+ *
+ * ⚠ A SET SWITCH REPLACES THAT SWITCH'S STARTING KEYS (Ken, November 22 2026: "Once a
+ * switch is set, the associated character should be displayed ... but why display the
+ * other default key values at that point?"). Until then the starting keys stayed beside
+ * a set key, so Space still worked as switch 1 after F was set. Keys and mouse buttons
+ * are replaced separately: setting a key for switch 1 leaves its starting mouse button
+ * (the left button) working, which keeps the November 12 2026 rule that a supporter can
+ * still help with a mouse; the "Mouse buttons also act as switches" box turns those off.
+ * The code set is also taken from any other switch that had it.
+ */
 export function keyMap(custom) {
     const map = { ...START_KEYS };
-    const mine = Object.values(custom || {});
-    for (const c of Object.keys(map)) if (mine.includes(c)) delete map[c];
-    for (const [n, code] of Object.entries(custom || {})) {
-        if ([1, 2, 3].includes(Number(n)) && typeof code === 'string' && code) map[code] = Number(n);
+    const set = Object.entries(custom || {})
+        .filter(([n, code]) => [1, 2, 3].includes(Number(n)) && typeof code === 'string' && code);
+    for (const [n, code] of set) {
+        const mouse = /^Mouse\d+$/.test(code);
+        for (const c of Object.keys(START_KEYS)) {
+            if (START_KEYS[c] === Number(n) && /^Mouse\d+$/.test(c) === mouse) delete map[c];
+        }
     }
+    for (const [, code] of set) delete map[code];
+    for (const [n, code] of set) map[code] = Number(n);
     return map;
 }
 

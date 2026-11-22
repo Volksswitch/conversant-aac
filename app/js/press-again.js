@@ -9,53 +9,68 @@
  * (each color scheme sets them and tests/theme.test.mjs checks their contrast), so
  * nothing moves and a keyguard still fits.
  *
+ * `makeTag` builds another tag with the same look and its own owner, for a different
+ * message: "Press switch 1" on a primed "Set" button on the Switch Access tab (Ken,
+ * November 22 2026). It is separate so the scanner, which hides "Press again" on every
+ * redraw, cannot also hide it.
+ *
  * ⚠ The words may need rethinking for other languages, where the same idea can take far
  * more characters, and for users who do not read (TODO.md).
  */
 
-let tag = null;
-let owner = null;
-let listening = false;
+export function makeTag(id, defaultText) {
+    let tag = null;
+    let owner = null;
+    let listening = false;
 
-function place() {
-    if (!tag || !owner) return;
-    if (!owner.isConnected) { hide(); return; }
-    const r = owner.getBoundingClientRect();
-    const t = tag.getBoundingClientRect();
-    const left = Math.max(2, Math.min(window.innerWidth - t.width - 2, r.left + (r.width - t.width) / 2));
-    // On the button's top edge, half above it; kept on screen for a button at the top.
-    const top = Math.max(2, r.top - t.height * 0.6);
-    tag.style.left = `${left}px`;
-    tag.style.top = `${top}px`;
-}
-
-/** Show the tag on `el`. */
-export function show(el) {
-    if (!el || !el.isConnected) return;
-    if (!tag) {
-        tag = document.createElement('div');
-        tag.id = 'pressAgainTag';
-        tag.setAttribute('role', 'status');
-        tag.textContent = 'Press again';
+    function place() {
+        if (!tag || !owner) return;
+        if (!owner.isConnected) { hide(); return; }
+        const r = owner.getBoundingClientRect();
+        const t = tag.getBoundingClientRect();
+        const left = Math.max(2, Math.min(window.innerWidth - t.width - 2, r.left + (r.width - t.width) / 2));
+        // On the button's top edge, half above it; kept on screen for a button at the top.
+        const top = Math.max(2, r.top - t.height * 0.6);
+        tag.style.left = `${left}px`;
+        tag.style.top = `${top}px`;
     }
-    // In an open dialog's top layer when the button is in one, so the tag shows above it.
-    const host = el.closest('dialog[open]') || document.body;
-    if (tag.parentNode !== host) host.appendChild(tag);
-    owner = el;
-    tag.hidden = false;
-    place();
-    if (!listening) {
-        listening = true;
-        window.addEventListener('scroll', place, true);
-        window.addEventListener('resize', place);
+
+    /** Show the tag on `el`, with `text` or the tag's own words. */
+    function show(el, text = defaultText) {
+        if (!el || !el.isConnected) return;
+        if (!tag) {
+            tag = document.createElement('div');
+            tag.id = id;
+            tag.className = 'button-tag';
+            tag.setAttribute('role', 'status');
+        }
+        tag.textContent = text;
+        // In an open dialog's top layer when the button is in one, so the tag shows above it.
+        const host = el.closest('dialog[open]') || document.body;
+        if (tag.parentNode !== host) host.appendChild(tag);
+        owner = el;
+        tag.hidden = false;
+        place();
+        if (!listening) {
+            listening = true;
+            window.addEventListener('scroll', place, true);
+            window.addEventListener('resize', place);
+        }
     }
+
+    /** Hide the tag; with `el`, only if it is showing on that button. */
+    function hide(el) {
+        if (el && el !== owner) return;
+        owner = null;
+        if (tag) tag.hidden = true;
+    }
+
+    function shownOn() { return tag && !tag.hidden ? owner : null; }
+
+    return { show, hide, shownOn };
 }
 
-/** Hide the tag; with `el`, only if it is showing on that button. */
-export function hide(el) {
-    if (el && el !== owner) return;
-    owner = null;
-    if (tag) tag.hidden = true;
-}
-
-export function shownOn() { return tag && !tag.hidden ? owner : null; }
+const pressAgain = makeTag('pressAgainTag', 'Press again');
+export const show = (el) => pressAgain.show(el);
+export const hide = (el) => pressAgain.hide(el);
+export const shownOn = () => pressAgain.shownOn();

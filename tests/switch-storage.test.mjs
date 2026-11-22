@@ -78,10 +78,12 @@ test('mouse buttons start as switches 1, 2 and 3 and can be set like keys', () =
     assert.equal(keyMap({}).Mouse0, 1);
     assert.equal(keyMap({}).Mouse2, 2);
     assert.equal(keyMap({}).Mouse1, 3);
-    // Right button set as switch 1: it leaves switch 2, and the left button stays switch 1.
+    // Right button set as switch 1: it leaves switch 2 and replaces the left button as
+    // switch 1; switch 1's starting keys stay, since a mouse button replaces only buttons.
     const m = keyMap({ 1: 'Mouse2' });
     assert.equal(m.Mouse2, 1);
-    assert.equal(m.Mouse0, 1);
+    assert.equal(m.Mouse0, undefined);
+    assert.equal(m.Space, 1);
     // A key set as switch 1 that was switch 2 swaps it: Enter is now switch 1.
     assert.equal(keyMap({ 1: 'Enter' }).Enter, 1);
     assert.equal(keyName('Mouse0'), 'left mouse button');

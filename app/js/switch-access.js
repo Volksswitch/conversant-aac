@@ -1183,6 +1183,8 @@ function install() {
     window.addEventListener('blur', (e) => { if (on && e.target === window) releaseAll('the app lost focus'); });
     document.addEventListener('visibilitychange', () => { if (on && document.hidden) releaseAll('the app was hidden'); });
     window.addEventListener('keydown', (e) => {
+        // Setting a switch belongs to the Settings panel: closed, the wait is over.
+        if (capture && !document.getElementById('settingsDialog')?.open) endCapture(null);
         if (capture) {
             e.preventDefault(); e.stopImmediatePropagation();
             if (e.repeat || !e.code) return;
@@ -1313,7 +1315,9 @@ export function keyLabel(code) { return keyName(code); }
 
 /** Show which keys (and mouse buttons, when they are switches) each switch answers to. */
 export function keysFor(n) {
-    return Object.keys(map).filter((c) => map[c] === n && (mouseOn || !isMouseCode(c))).map(keyName);
+    // Keys first, then mouse buttons, so a key you set reads first.
+    return Object.keys(map).filter((c) => map[c] === n && (mouseOn || !isMouseCode(c)))
+        .sort((a, b) => isMouseCode(a) - isMouseCode(b)).map(keyName);
 }
 
 /*

@@ -79,6 +79,7 @@ import * as reviewUI from './review-ui.js';
 import * as tapGuard from './tap-guard.js';
 import * as switchAccess from './switch-access.js';
 import * as mouseExtras from './mouse-extras.js';
+import { makeTag } from './press-again.js';
 import { SWITCH_APP_SETTINGS, changedFromStart, methodsFor } from './switch-settings.js';
 import * as audioSession from './audio-session.js';
 
@@ -1199,6 +1200,7 @@ function reflectSwitchSettings() {
     }
 }
 
+const setTagPrimed = makeTag('switchSetTag', 'Press switch');
 function wireSwitchSettings() {
     const $ = (id) => document.getElementById(id);
     const save = (patch) => {
@@ -1269,6 +1271,13 @@ function wireSwitchSettings() {
         switchAccess.configure();
     };
     const status = $('switchKeyStatus');
+    // "Set" PRIMES and the switch FIRES (Ken, November 22 2026): a primed "Set" button
+    // shows as selected (Rule 6) and carries "Press switch 1" (or 2, 3) on its edge until
+    // a switch is pressed, Escape is pressed, or 15 seconds pass.
+    const unprime = () => {
+        setTagPrimed.hide();
+        for (const k of [1, 2, 3]) $('switchKeySet' + k)?.classList.remove('switch-set-primed');
+    };
     for (const n of [1, 2, 3]) {
         const btn = $('switchKeySet' + n);
         if (!btn) continue;
@@ -1277,10 +1286,13 @@ function wireSwitchSettings() {
             // physical switch sends becomes switch n (Ken, November 22 2026).
             if (status) {
                 status.hidden = false;
-                status.textContent = `Press the switch you want as switch ${n}.`
-                    + ' Escape cancels; after 15 seconds with no press, nothing changes.';
+                status.textContent = 'Escape cancels; after 15 seconds with no press, nothing changes.';
             }
+            unprime();
+            btn.classList.add('switch-set-primed');
+            setTagPrimed.show(btn, `Press switch ${n}`);
             switchAccess.captureKey((code) => {
+                unprime();
                 if (code) {
                     const keys = storage.loadSwitchKeys();
                     for (const k of Object.keys(keys)) if (keys[k] === code) delete keys[k];

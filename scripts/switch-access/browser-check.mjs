@@ -628,10 +628,21 @@ try {
     await p3.evaluate(() => document.querySelector('.settings-tab[data-tab="switch"]').click());
     await pace(200);
     await p3.evaluate(() => document.getElementById('switchKeySet2').onclick());
+    await pace(100);
+    const primed = await p3.evaluate(() => {
+        const tag = document.getElementById('switchSetTag');
+        return { tag: tag && !tag.hidden ? tag.textContent : null,
+            cls: document.getElementById('switchKeySet2').classList.contains('switch-set-primed') };
+    });
+    check(primed.tag === 'Press switch 2' && primed.cls, `a primed "Set" button shows as selected and says "Press switch 2" (${JSON.stringify(primed)})`);
     await p3.keyboard.press('KeyG');
     await pace(200);
     t = await tab();
-    check(t.k2.split(', ').includes('G') && !t.on, `with switch access off, pressing G after "Set" makes G switch 2 (${t.k2})`);
+    check(t.k2.split(', ')[0] === 'G' && !/Enter/.test(t.k2) && !t.on,
+        `with switch access off, pressing G after "Set" makes G switch 2, in place of its starting keys (${t.k2})`);
+    check(await p3.evaluate(() => document.getElementById('switchSetTag').hidden
+        && !document.getElementById('switchKeySet2').classList.contains('switch-set-primed')),
+        'once the switch is set, the button is no longer primed and the tag is gone');
     await p3.keyboard.press('KeyG');
     await pace(150);
     t = await tab();

@@ -43,12 +43,14 @@ test('changes from the starting values are noticed, so the red card can ask firs
     assert.equal(changedFromStart({ speed: 2 }, 0), false);
 });
 
-test('a set key is added for its switch and taken from any other switch', () => {
+test('a set key replaces the starting keys of its switch and is taken from any other switch', () => {
     const m = keyMap({ 1: 'KeyF', 2: 'Digit1' });
     assert.equal(m.KeyF, 1);
-    assert.equal(m.Space, 1);                 // the starting keys stay
+    assert.equal(m.Space, undefined);         // switch 1's starting keys go (Ken, November 22 2026)
     assert.equal(m.Digit1, 2);                // moved from switch 1 to switch 2
-    assert.equal(m.Enter, 2);
+    assert.equal(m.Enter, undefined);         // and switch 2's starting keys go too
+    assert.equal(m.Digit3, 3);                // a switch not set keeps its starting keys
+    assert.equal(m.Mouse0, 1);                // and every switch keeps its mouse button
     assert.equal(keyName('KeyF'), 'F');
     assert.equal(keyName('Numpad2'), 'Keypad 2');
 });

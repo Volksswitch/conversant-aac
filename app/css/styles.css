@@ -5438,7 +5438,7 @@ body.conv-bottom     .danger-dialog {
 /* "Press again": on a button waiting for its second tap or press, for every user
    (press-again.js, Ken, November 13 2026). Drawn over the button in the switch
    highlight's colors, so nothing moves. */
-#pressAgainTag {
+#pressAgainTag, .button-tag {
     position: fixed;
     z-index: 2147483001;
     pointer-events: none;
@@ -5450,7 +5450,7 @@ body.conv-bottom     .danger-dialog {
     font-size: 1rem;
     white-space: nowrap;
 }
-#pressAgainTag[hidden] { display: none; }
+#pressAgainTag[hidden], .button-tag[hidden] { display: none; }
 /* Under switch access the scan highlight is the only marker of where you are. The
    browser's own focus ring (blue) otherwise lands on a button the app focused - the
    Settings button, when Settings closes and focus returns to it - and reads as a
@@ -5519,6 +5519,13 @@ body.switch-access-on :is(button, summary, select, [role="button"], .settings-ta
 }
 .switch-key-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .switch-key-row .switch-key-name { min-width: 8rem; }
+/* A primed "Set" button, waiting for a switch press (Rule 6: an engaged state shows as
+   selected). Color only, so nothing moves. */
+.switch-key-row button.switch-set-primed {
+    background: var(--scan-hl);
+    color: var(--scan-hl-inner);
+    border-color: var(--scan-hl);
+}
 /* What the last press sent (a key, a mouse button), switch or not. */
 .switch-last-press { margin: 0.4rem 0 0; }
 /* The first-launch question: touch, or one, two or three switches. */
