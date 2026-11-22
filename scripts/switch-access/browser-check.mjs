@@ -636,6 +636,40 @@ try {
     await pace(150);
     t = await tab();
     check(t.last === 'Last press: G: switch 2' && !t.on, `with switch access off, a press still shows what it sends (${t.last})`);
+    // The right button's menu and the wheel press are off everywhere except in a text
+    // box (Ken, November 22 2026), switch access on or off.
+    const mouseDefaults = async (x, y) => {
+        await p3.evaluate(() => {
+            window.__mouseSeen = {};
+            window.__mouseRec = (e) => { window.__mouseSeen[e.type + e.button] = e.defaultPrevented; };
+            for (const t of ['contextmenu', 'mousedown']) window.addEventListener(t, window.__mouseRec);
+        });
+        await p3.mouse.move(x, y);
+        await p3.mouse.click(x, y, { button: 'right' });
+        await p3.mouse.down({ button: 'middle' }); await p3.mouse.up({ button: 'middle' });
+        await pace(150);
+        return p3.evaluate(() => {
+            for (const t of ['contextmenu', 'mousedown']) window.removeEventListener(t, window.__mouseRec);
+            return { menu: window.__mouseSeen.contextmenu2, wheel: window.__mouseSeen.mousedown1 };
+        });
+    };
+    let md = await mouseDefaults(640, 300);
+    check(md.menu === true && md.wheel === true, `on the Switch Access tab, the right button's menu and the wheel press are cancelled (${JSON.stringify(md)})`);
+    await p3.evaluate(() => document.querySelector('.settings-tab[data-tab="general"]').click());
+    await pace(200);
+    md = await mouseDefaults(640, 300);
+    check(md.menu === true && md.wheel === true, `on another tab they are cancelled too (${JSON.stringify(md)})`);
+    await p3.evaluate(() => {
+        const box = document.createElement('textarea');
+        box.id = '__testBox';
+        Object.assign(box.style, { position: 'fixed', left: '20px', top: '20px', width: '200px', height: '80px', zIndex: 99999 });
+        (document.querySelector('dialog[open]') || document.body).appendChild(box);
+    });
+    md = await mouseDefaults(100, 60);
+    await p3.evaluate(() => document.getElementById('__testBox').remove());
+    check(md.menu === false && md.wheel === false, `in a text box they still work (${JSON.stringify(md)})`);
+    await p3.evaluate(() => document.querySelector('.settings-tab[data-tab="switch"]').click());
+    await pace(200);
     await p3.evaluate(() => document.getElementById('switchKeyReset').onclick());
     await p3.evaluate(() => { const b = document.getElementById('switchOnInput'); b.checked = true; b.dispatchEvent(new Event('change')); });
     await pace(300);

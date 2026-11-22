@@ -42,6 +42,7 @@ const SHELL = [
   './apple-touch-icon.png',
   './css/styles.css',
   './js/app.js',
+  './js/mouse-extras.js',
   './js/stt.js',
   './js/audio-session.js',
   './js/stt-deepgram.js',

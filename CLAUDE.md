@@ -4480,6 +4480,10 @@ stricter still, so the AI will not put facts about the world into the user's mou
 direction** until the live-model testing below has actually been done — the honest
 position today is that we have not measured it.
 
+## The right mouse button and the wheel press do nothing outside text boxes (Ken, November 22 2026), BUILT
+
+`mouse-extras.js` cancels the browser's own response to a right-click (its menu) and a wheel press (its scroll cursor, opening a link in a new tab) everywhere except in a text box, switch access on or off. Neither did anything for Conversant, and a stray press put a menu over the buttons mid-conversation. Text boxes keep both because the right-click menu's paste and spelling suggestions are useful, mostly to a helper. Only the browser's response is cancelled: the press still reaches the app, so a mouse used as switches is unaffected. Rolling the wheel still scrolls. Checked in `scripts/switch-access/browser-check.mjs`.
+
 ## Switch access - Ken's review of the proposal (November 9 2026), DECIDED in part, nothing built
 
 The proposal is `Documents/Conversant AAC Switch Access Proposal.docx`; the prototype is `prototypes/switch-access.html`. What Ken settled in review:

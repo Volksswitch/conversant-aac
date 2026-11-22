@@ -78,6 +78,7 @@ import { whenIdle as voiceHarvestIdle } from './voice-refresh.js';
 import * as reviewUI from './review-ui.js';
 import * as tapGuard from './tap-guard.js';
 import * as switchAccess from './switch-access.js';
+import * as mouseExtras from './mouse-extras.js';
 import { SWITCH_APP_SETTINGS, changedFromStart, methodsFor } from './switch-settings.js';
 import * as audioSession from './audio-session.js';
 
@@ -1064,6 +1065,7 @@ function initApp() {
     tapGuard.install();
     // Switch access (Switch Access Design, Ken, November 12 2026). Off unless "Number of
     // switches" is one, two or three; with it off the app is exactly as before.
+    mouseExtras.install();   // no right-click menu or wheel-press scrolling outside text boxes
     switchAccess.init();
     if (firstLaunch && askAccessOnFirstLaunch()) showFirstLaunchChoice();
     refreshHelperNote();
