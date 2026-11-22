@@ -47,6 +47,11 @@ the one that quietly waits forever.
   5. **Chromebook:** right-click in the launcher, Uninstall, with "Also delete browsing data".
 - **Why not now:** needs Ken's devices. The manuals reach the website at the next publish; a same-day republish needs `python scripts/wordpress/publish-documents.py --apply --force --only "User Manual"`.
 
+### Switch documents still say touch will be turned off
+- **Raised 2026-11-22.** Ken decided that touch and an ordinary mouse stay available to a supporter while switch access is on ("Ignore my Nov 21 decision"), and asked for the Switch Access Proposal to be updated; it was (section 3.9). Two other switch documents still describe the old plan.
+- **What is wanted:** the Switch Access Design (section 2.3 "Touch does nothing", the decided item on Pause and tap-anywhere, and "A supporter's mouse"), and the SLP draft Switch Access Decisions (the "touch will do nothing" passage, its question to therapists about it, and "Number of switches offers None"). Both should describe touch working alongside the switches, "Use switches" as its own setting, and the settings for each kind of switch interface (Proposal 3.9).
+- **Why not now:** Ken asked for the Proposal only; the other two are his call. The SLP draft also loses a question it was going to ask the therapists, which he may want to replace.
+
 ### "Delete everything on this device": built, still to try on the devices
 - **Built 2026-11-22 (Ken: "add support for complete uninstall to the About tab along with a couple of 'are you sure' checkpoints").** Settings > About > "Delete Conversant from this device". How it works, and why, is in CLAUDE.md under "Delete everything on this device".
 - **Still to do:**
