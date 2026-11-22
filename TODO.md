@@ -37,6 +37,21 @@ the one that quietly waits forever.
 
 ## Open
 
+### Uninstall instructions in the User Manuals: check the steps on real devices
+- **Raised 2026-11-21 (Ken asked for uninstall and clean-up instructions in each User Manual).** Added as section 11, "Uninstalling Conversant AAC", in all three manuals; Glossary and More Information became 12 and 13. The steps come from Google's, Microsoft's and Apple's help pages and from the button wording in Chrome's own source code. None was tried on a device, and the website copies were not republished.
+- **Check on each device, stopping before any last tap that would delete real data:**
+  1. **iPad, Home Screen app:** what the touch-and-hold menu offers for the Conversant icon, and whether deleting it really removes what the app stored. Apple says deleting an app removes its data, but doesn't say so for one added to the Home Screen from Safari. The manual says it does. If it doesn't, the manual is wrong and a user has no other way to clear it (see the next entry).
+  2. **iPad, Safari:** Settings, then Apps (iPadOS 18 and later), Safari, Advanced, Website Data. Is there a search box, and is the entry listed as volksswitch.org, deleted by swiping left?
+  3. **Android:** Chrome's Settings, Site settings, All sites. How the entry is listed (volksswitch.org or conversant.volksswitch.org), and that "Delete & reset" is on its page. Also the Settings app route to uninstall the Home screen app.
+  4. **Windows:** Chrome's app menu reads "Uninstall Conversant AAC" and offers "Also delete data from Chrome"; Edge's uninstall from edge://apps and how its delete-data choice is worded; the Chrome and Edge settings routes to delete one site's data.
+  5. **Chromebook:** right-click in the launcher, Uninstall, with "Also delete browsing data".
+- **Why not now:** needs Ken's devices. The manuals reach the website at the next publish; a same-day republish needs `python scripts/wordpress/publish-documents.py --apply --force --only "User Manual"`.
+
+### Proposal: a "Delete everything on this device" button
+- **Raised 2026-11-21, while writing the uninstall instructions.** The app has no way to delete what it keeps, so users go through browser and device settings, which differ on every platform and change between browser versions. For the iPad's Home Screen app there is no settings route at all: the user deletes the icon and relies on iOS to delete the data with it (unconfirmed, see the entry above).
+- **What is wanted, if Ken agrees:** one button in Settings that, after the red confirmation, deletes everything the app keeps in the browser: settings, keys, the copies of About Me and the rest, the stored voice recordings, the iPad's private storage, and the saved copy of the app. It would leave a data folder the user can see alone; they delete that themselves. The manuals' steps would then be: back up, tap the button, remove the app, delete the data folder.
+- **Why not now:** a new control that deletes data is Ken's decision; not built.
+
 ### Apple Switch Control on the iPad: working well with it
 - **Raised 2026-11-18 (Ken, testing Switch Control with Conversant on the iPad).** Ken expects most switch users to run Conversant inside the switch system they use for every app (Switch Control on an iPad, Switch Access on Android and Chromebooks), so working well with it comes ahead of more work on Conversant's own scanning. Windows has nothing comparable built in, so Conversant's own scanning still matters there.
 - **What was found:** item mode works throughout Conversant. With "Group Items" on, Switch Control splits the Command Bar and Express Panel rows in half, ignoring Conversant's groups (likely a size limit, unconfirmed); with it off, every button is its own stop and there is no speed-up while held, only "Move Repeat" at one fixed speed. Ken: the half rows are the lesser problem.
