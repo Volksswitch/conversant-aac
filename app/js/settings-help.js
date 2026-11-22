@@ -38,7 +38,7 @@ const HELP = {
     "switchKeySet2": "Press this, then press the switch you want as switch two. A key or a mouse button both work.",
     "switchKeySet3": "Press this, then press the switch you want as switch three. A key or a mouse button both work.",
     "switchKeyReset": "Forgets the switches you set and goes back to the starting keys and mouse buttons.",
-    "mouseSwitchesInput": "Lets the left, right and middle mouse buttons act as switches one, two and three. Turn it off if one press counts twice.",
+    "mouseSwitchesInput": "Lets the left, right and middle mouse buttons act as switches one, two and three. Turn it off so a helper can click normally, or if one press counts twice.",
     "switchSpeedInput": "On every screen, how many seconds the highlight waits on each stop before it moves on.",
     "switchTapMsInput": "On every screen, how long you hold a switch before the press counts as a hold rather than a tap.",
     "switchHeldSpeedInput": "On every screen, how fast the highlight moves at most while you hold a switch down.",

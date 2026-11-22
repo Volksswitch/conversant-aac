@@ -13,12 +13,11 @@
  * words" (.ep-imow), the Command Bar (#listenControls), the keyboard's rows (.kbd-row),
  * Settings' tabs and sections, and any confirmation card.
  *
- * TOUCH (Ken, November 12 2026: "commit to the direct select vs switch access decision
- * that the users make"): touch is to do nothing while switch access is on - but not yet.
- * That rule waits until switch access is finished and reliable (Ken, November 21 2026;
- * see BLOCK_TOUCH_WITH_SWITCHES). A mouse's buttons act as switches 1, 2 and 3 unless
- * turned off, which is how a supporter helps. While touch is blocked, the scanner's own
- * presses are let through by a counter, so nothing else can be.
+ * TOUCH WORKS ALONGSIDE THE SWITCHES, FOR GOOD (Ken, November 22 2026, replacing the
+ * November 12 rule that touch does nothing while switch access is on; see
+ * BLOCK_TOUCH_WITH_SWITCHES). A helper touches or clicks while the user scans. A mouse's
+ * buttons act as switches 1, 2 and 3 unless "Mouse buttons also act as switches" is
+ * unchecked; unchecked, the mouse clicks normally too.
  *
  * NOTHING MOVES. The highlight is an outline drawn inside the button and the "Leave"
  * outline is a separate box drawn over the region, so the layout - and the keyguard -
@@ -159,16 +158,17 @@ const SCREEN_NAMES = {
 const screenName = (id) => SCREEN_NAMES[id] || id;
 
 /*
- * TOUCH WORKS ALONGSIDE THE SWITCHES, FOR NOW (Ken, November 21 2026: "That 'rule' has to
- * wait for switch support to be comprehensive and not error prone"). The rule of November
- * 12 - touch does nothing while switch access is on, so the user commits to one way of
- * using the app - is right for the finished feature and wrong while switch access is
- * still being built: when the switches stopped working on his Android tablet, touch was
- * off too and nothing at all could be done. So until switch access is claimed (the
- * Switch Access tab stops saying "in progress"; tests/switch-settings.test.mjs then asks
- * for this to be true), touch, a pen and a mouse whose buttons are not switches work as
- * they do without switches. A mouse whose buttons ARE switches is a set of switches
- * either way. "?block-touch" in the address turns the rule on for testing.
+ * TOUCH WORKS ALONGSIDE THE SWITCHES, AND THAT IS NOW THE DESIGN, NOT A STOPGAP (Ken,
+ * November 22 2026: "Ignore my Nov 21 decision. I've run into too many situations where
+ * having an alternative mode to interact with Conversant was useful"). The November 12
+ * rule - touch does nothing while switch access is on, so the user commits to one way of
+ * using the app - was put off on November 21 because a tablet whose switches stopped
+ * left nothing working, and is now dropped: a support person touching or clicking while
+ * the user scans is a combination worth having, not a risk to remove. So touch, a pen and
+ * a mouse whose buttons are not switches work as they do without switches. A mouse whose
+ * buttons ARE switches is a set of switches. tests/switch-settings.test.mjs fails if this
+ * is set to true. "?block-touch" in the address still turns the old rule on, only so the
+ * code that does it can be tried; nothing a user can reach turns it on.
  */
 const BLOCK_TOUCH_WITH_SWITCHES = false;
 const blockTouch = BLOCK_TOUCH_WITH_SWITCHES || (() => {
