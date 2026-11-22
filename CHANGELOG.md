@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.15.18
+
 ## Version 0.15.17
 
 - **You can now delete everything Conversant keeps on a device**, for when you decide to stop using it: Settings, About, "Delete Conversant from this device". It asks twice before it deletes anything, and offers to save a backup first. If you chose a data folder, it's kept unless you check "Also delete what Conversant saved in my data folder"; anything else in that folder is never touched.
