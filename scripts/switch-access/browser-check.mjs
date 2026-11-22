@@ -621,8 +621,22 @@ try {
     for (let i = 0; i < 2 && !(await p3.$eval('#settingsDialog', (d) => d.open)); i++) { await tapEl(p3, '#settingsBtn'); await pace(600); }
     check(await p3.$eval('#settingsDialog', (d) => d.open), 'Settings opens by touch with switch access off');
     let t = await tab();
-    check(!t.onBox && !t.onDisabled && t.countDisabled && t.countValue === '2',
-        'with switch access off, "Use switches" is unchecked and usable, and the number (two) waits grayed out');
+    check(!t.onBox && !t.onDisabled && !t.countDisabled && t.countValue === '2'
+        && await p3.$eval('#switchKeySet1', (b) => !b.disabled) && await p3.$eval('#switchSpeedInput', (b) => b.disabled),
+        'with switch access off, "Use switches", the number (two) and the Set buttons are usable; the scan settings are grayed out');
+    // Setting up a switch while switch access is off (Ken, November 22 2026).
+    await p3.evaluate(() => document.querySelector('.settings-tab[data-tab="switch"]').click());
+    await pace(200);
+    await p3.evaluate(() => document.getElementById('switchKeySet2').onclick());
+    await p3.keyboard.press('KeyG');
+    await pace(200);
+    t = await tab();
+    check(t.k2.split(', ').includes('G') && !t.on, `with switch access off, pressing G after "Set" makes G switch 2 (${t.k2})`);
+    await p3.keyboard.press('KeyG');
+    await pace(150);
+    t = await tab();
+    check(t.last === 'Last press: G: switch 2' && !t.on, `with switch access off, a press still shows what it sends (${t.last})`);
+    await p3.evaluate(() => document.getElementById('switchKeyReset').onclick());
     await p3.evaluate(() => { const b = document.getElementById('switchOnInput'); b.checked = true; b.dispatchEvent(new Event('change')); });
     await pace(300);
     t = await tab();

@@ -1089,6 +1089,39 @@ export function optionsArrived() {
 
 // ---------------------------------------------------------------- input wiring
 
+/*
+ * SETTING UP SWITCHES WHILE SWITCH ACCESS IS OFF (Ken, November 22 2026: "I should be
+ * able to set the number of switches and select which switch is 1/2/3 without first
+ * choosing to turn switch support on"). While off, nothing is pressed or scanned: a
+ * press only lights the test line and names what it sent, and only while the Switch
+ * Access tab is on screen, so ordinary typing and clicking elsewhere are untouched and
+ * nothing goes into the record of switch presses. "Set" still takes the next key, or
+ * mouse button when mouse buttons are switches.
+ */
+let swallowMouseUntil = 0;
+function switchTabShowing() {
+    const panel = document.querySelector('.tab-panel[data-tab="switch"]');
+    return !!(panel && panel.offsetParent);
+}
+function previewPress(code, down) {
+    if (!code || !switchTabShowing()) return;
+    const n = map[code] && (mouseOn || !isMouseCode(code)) ? map[code] : 0;
+    if (n) lightTest(n, down);
+    if (down) showLastPress(`${keyName(code)}: ${n ? `switch ${n}` : 'not one of your switches'}`);
+}
+function whileOff(e) {
+    if (!fromMouse(e) || !mouseOn) return;
+    const swallow = () => { e.preventDefault(); e.stopImmediatePropagation(); };
+    // The rest of a mouse press that set a switch (its release, the click that follows,
+    // a right button's menu) must not also act on whatever is under the pointer.
+    if (performance.now() < swallowMouseUntil) { swallow(); return; }
+    if (e.type === 'pointerdown' && e.pointerType === 'mouse') {
+        if (capture) { swallow(); swallowMouseUntil = performance.now() + 800; endCapture('Mouse' + e.button); return; }
+        previewPress('Mouse' + e.button, true);
+    }
+    if (e.type === 'pointerup' && e.pointerType === 'mouse') previewPress('Mouse' + e.button, false);
+}
+
 let installed = false;
 function install() {
     if (installed) return;
@@ -1096,7 +1129,8 @@ function install() {
     // While switch access is on, a mouse whose buttons are switches is a set of switches,
     // and - once the rule comes back (blockTouch) - touch does nothing.
     const block = (e) => {
-        if (!on || synthetic) return;
+        if (synthetic) return;
+        if (!on) { whileOff(e); return; }
         const mouse = fromMouse(e);
         const pressStart = e.type === 'pointerdown' || e.type === 'touchstart';
         if (!mouse && pressStart) lastTouchAt = performance.now();
@@ -1156,7 +1190,7 @@ function install() {
             else endCapture(null);
             return;
         }
-        if (!on) return;
+        if (!on) { if (!e.repeat) previewPress(e.code, true); return; }
         const n = isMouseCode(e.code) ? 0 : map[e.code];
         if (!n) {
             if (!e.repeat) {
@@ -1180,7 +1214,7 @@ function install() {
     }, true);
     window.addEventListener('keyup', (e) => {
         if (e.code && e.code === lastSetCode) { lastSetCode = ''; e.preventDefault(); e.stopImmediatePropagation(); return; }
-        if (!on) return;
+        if (!on) { previewPress(e.code, false); return; }
         const n = isMouseCode(e.code) ? 0 : map[e.code];
         if (!n) return;
         e.preventDefault(); e.stopImmediatePropagation();
@@ -1250,6 +1284,8 @@ export function configure() {
 }
 
 export function init() { configure(); }
+/** Listen for presses on the Switch Access tab even while switch access is off. */
+export function listenForSetup() { install(); }
 export function isOn() { return on; }
 export function switchCount() { return count; }
 
@@ -1260,6 +1296,7 @@ export function switchCount() { return count; }
  */
 const CAPTURE_MS = 15000;
 export function captureKey(done) {
+    install();
     if (capture) clearTimeout(capture.timer);
     capture = { done, timer: setTimeout(() => endCapture(null), CAPTURE_MS) };
 }

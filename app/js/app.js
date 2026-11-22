@@ -1176,16 +1176,19 @@ function reflectSwitchSettings() {
         const el = $('switchKeys' + n);
         if (el) el.textContent = switchAccess.keysFor(n).join(', ') || '(none)';
     }
-    // With switch access off the whole tab is grayed out; with switches on, only the
-    // methods that do not go with this number of switches (grayed out, not hidden, as
-    // the prototypes do).
+    // With switch access off the scan settings are grayed out, but "Use switches" and
+    // setting up the switches themselves stay usable (Ken, November 22 2026: the number
+    // of switches and which switch is 1, 2 or 3 can be set before turning switches on).
+    // With switches on, only the methods that do not go with this number of switches
+    // are grayed out (not hidden, as the prototypes do).
     const panel = document.querySelector('.tab-panel[data-tab="switch"]');
     if (panel) {
-        // "Use switches" sits on this tab too and must stay usable, or switch access
-        // could never be turned back on.
+        const setup = new Set(['switchOnInput', 'switchCountInput', 'switchKeySet1', 'switchKeySet2',
+            'switchKeySet3', 'switchKeyReset', 'mouseSwitchesInput']);
         panel.querySelectorAll('input, select, button').forEach((el) => {
-            if (el.id !== 'switchOnInput') el.disabled = count === 0;
+            el.disabled = count === 0 && !setup.has(el.id);
         });
+        switchAccess.listenForSetup();
         if (count) {
             document.querySelectorAll('input[name="switchMethod"]').forEach((r) => {
                 r.disabled = !methodsFor(count).includes(r.value);
