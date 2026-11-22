@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.17": [
+    "You can now delete everything Conversant keeps on a device, for when you decide to stop using it: Settings, About, \"Delete Conversant from this device\". It asks twice before it deletes anything, and offers to save a backup first. If you chose a data folder, it's kept unless you check \"Also delete what Conversant saved in my data folder\"; anything else in that folder is never touched."
+  ],
   "0.15.15": [
     "Changing \"Don't save conversations by default\" in Settings now applies to your very next conversation. Before, the first conversation after the change still followed the old choice. A conversation that is already going keeps its own choice; use the \"Don't save\" button for that one."
   ],
