@@ -1269,6 +1269,7 @@ function wireSwitchSettings() {
     if ($('mouseSwitchesInput')) $('mouseSwitchesInput').onchange = () => {
         storage.saveMouseSwitches($('mouseSwitchesInput').checked);
         switchAccess.configure();
+        reflectSwitchSettings();   // the switch list adds or drops the mouse buttons at once
     };
     const status = $('switchKeyStatus');
     // "Set" PRIMES and the switch FIRES (Ken, November 22 2026): a primed "Set" button

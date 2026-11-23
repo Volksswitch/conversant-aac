@@ -627,6 +627,17 @@ try {
     // Setting up a switch while switch access is off (Ken, November 22 2026).
     await p3.evaluate(() => document.querySelector('.settings-tab[data-tab="switch"]').click());
     await pace(200);
+    // Unchecking "Mouse buttons also act as switches" drops the mouse buttons from the
+    // switch list at once, and checking it puts them back.
+    const toggleMouse = (on) => p3.evaluate((v) => { const b = document.getElementById('mouseSwitchesInput'); b.checked = v; b.dispatchEvent(new Event('change')); }, on);
+    await toggleMouse(false);
+    await pace(100);
+    t = await tab();
+    check(!/mouse button/.test(t.k1 + t.k2 + t.k3), `unchecking the mouse box drops the mouse buttons from the list at once (${t.k1} | ${t.k2} | ${t.k3})`);
+    await toggleMouse(true);
+    await pace(100);
+    t = await tab();
+    check(/left mouse button/.test(t.k1) && /right mouse button/.test(t.k2), `checking it puts them back (${t.k1} | ${t.k2})`);
     await p3.evaluate(() => document.getElementById('switchKeySet2').onclick());
     await pace(100);
     const primed = await p3.evaluate(() => {
