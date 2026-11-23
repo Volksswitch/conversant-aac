@@ -197,7 +197,128 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
     // once more rather than reported (problem 6 of the November 13 2026 findings).
     let interrupted = false;
     let muteNode = null;
+    // The settings the open connection was made with: one opened ahead of the
+    // microphone (prepare) is only used if it was made for the same audio.
+    let wsParams = null;
+    // 'listening' has been reported for this run (see maybeReady).
+    let ready = false;
+
+    /*
+     * ⚠ THE CONNECTION IS OPENED AT THE SAME TIME AS THE MICROPHONE, NOT AFTER IT (Ken's
+     * iPad problem report, November 23 2026: "Listening has a several second delay which
+     * misses the beginning of the statement of the communication partner").
+     *
+     * It used to be made only once the microphone was open and its audio awake, so on an
+     * iPad the steps ran one after another - the listening tone's wait, the switch to
+     * recording, the microphone, and only then the connection - and the Listen button
+     * lit, and the first words came back, only after all of them. The connection does
+     * not touch the iPad's sound, so it now starts first (or during the tone: prepare)
+     * and the two overlap. Nothing is billed for it: Deepgram charges for audio sent,
+     * and KeepAlive holds the connection open until audio flows.
+     *
+     * What this does NOT change: words said before the microphone is open are still
+     * lost, because there is no sound yet to keep. mic-check.js times each step of a
+     * start so a problem report can say how long that takes on the tester's device.
+     */
+    function connect(key, params) {
+        let s;
+        try {
+            s = new WebSocket(`${ENDPOINT}?${params}`, ['token', key]);
+        } catch {
+            return false;
+        }
+        ws = s;
+        wsParams = String(params);
+        s.binaryType = 'arraybuffer';
+        s.onmessage = handleMessage;
+        // A failure fires 'error' AND 'close'; only the close reports (CR-049). A socket
+        // closed on purpose has these detached first (closeSocket), so anything that
+        // arrives here is a real failure, and `s !== ws` ignores one already replaced.
+        s.onerror = () => { if (s === ws) pending = []; };
+        s.onclose = (e) => {
+            if (s !== ws) return;
+            pending = [];
+            // CARRY THE CLOSE CODE. A rejected key, a refused subprotocol and a dropped
+            // connection all arrive here as the same event, and the bare word "closed"
+            // cannot tell them apart - which on a tablet, with no console to fall back
+            // on, is the difference between a diagnosis and a guess. testKey() above has
+            // always reported the code. 1000 is a clean close; anything else is the
+            // interesting case.
+            const code = e && e.code ? e.code : '?';
+            const why = e && e.reason ? `: ${e.reason}` : '';
+            const detail = `closed (code ${code}${why})`;
+            if (running) {
+                // stt.js stops the source when it hears this, which closes the rest.
+                if (onStatus) onStatus('error', detail);
+                return;
+            }
+            closeSocket();
+            if (starting) {
+                // The microphone is still on its way and this start cannot finish
+                // without the connection: give up, and say why, as a failure while
+                // listening would. The microphone is given back when it arrives.
+                wanted = false;
+                if (onStatus) onStatus('error', detail);
+            }
+            // Opened ahead (prepare) with nothing started yet: start() connects again,
+            // and says so if that fails too.
+        };
+        s.onopen = () => {
+            if (s !== ws) return;
+            micCheck.noteConnected();
+            // What arrived during the handshake goes first, in order (CR-006).
+            for (const b of pending) s.send(b);
+            pending = [];
+            if (keepAliveTimer) clearInterval(keepAliveTimer);
+            keepAliveTimer = setInterval(() => {
+                // Only while silent - during speech the audio itself keeps the socket
+                // alive - and before the microphone is in, when nothing else would.
+                if (ws === s && s.readyState === WebSocket.OPEN && !(gate && gate.isOpen())) {
+                    s.send(JSON.stringify({ type: 'KeepAlive' }));
+                }
+            }, KEEPALIVE_MS);
+            maybeReady();
+        };
+        return true;
+    }
+
+    // Close the connection on purpose. Handlers detached first: a stopped source must
+    // report nothing more, and a late open must not start a KeepAlive for it (CR-049).
+    function closeSocket() {
+        if (keepAliveTimer) { clearInterval(keepAliveTimer); keepAliveTimer = null; }
+        pending = [];
+        if (!ws) return;
+        const s = ws;
+        ws = null;
+        wsParams = null;
+        s.onmessage = null; s.onerror = null; s.onclose = null; s.onopen = null;
+        // CloseStream is a courtesy to the service. It does NOT recover the last words:
+        // the socket closes at once, and a browser discards anything that arrives once it
+        // is closing (CR-060). What was on screen is kept by stt.js committing the
+        // unsettled words before it stops the source.
+        try { if (s.readyState === WebSocket.OPEN) s.send(JSON.stringify({ type: 'CloseStream' })); } catch { /* closing */ }
+        try { s.close(1000); } catch { /* already closed */ }
+    }
+
+    /*
+     * Report LISTENING once the microphone is capturing AND the connection is open,
+     * whichever comes second. stt.js documents this contract for a paid backend -
+     * "reports 'listening' once it is actually up, so the button does not claim to be
+     * listening before anything can be heard" - and reporting it before the handshake
+     * completed broke it: the button went red on the tap and black again when the socket
+     * failed, which reads as the button not working rather than as the connection being
+     * refused (Ken, iPad, August 3 2026).
+     */
+    function maybeReady() {
+        if (ready || !running || !ws || ws.readyState !== WebSocket.OPEN) return;
+        ready = true;
+        if (onStatus) onStatus('listening');
+    }
+
+    // Give back what a start that did not finish had taken: the microphone, and the
+    // connection made for it.
     function releaseHalfOpen() {
+        closeSocket();
         try { if (stream) stream.getTracks().forEach((t) => t.stop()); } catch { /* gone */ }
         stream = null;
         audioCtx = null;   // the shared listening context is kept (audio-session.js)
@@ -314,6 +435,33 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
         starting = true;
         wanted = true;
         interrupted = false;
+        ready = false;
+
+        // Starts knowing the room the last run measured (problem 7): see vad.js.
+        gate = vad.createGate({ initialFloor: gate ? gate.levels().floor : null });
+        preRoll = [];
+        pending = [];
+        billedMs = 0;
+        sentSamples = 0;
+        // Tell the app the running total restarted, or its next report reads as a
+        // decrease and that whole first burst is never counted (CR-019).
+        if (onBilled) onBilled(0);
+
+        // CONNECT FIRST, so the handshake runs while the microphone opens (see
+        // connect). The shared listening context already knows the rate the audio
+        // will arrive at, so the settings are known before the microphone is in. A
+        // connection opened ahead (prepare) is used if it was made for this audio.
+        // Shared with testKey, so the Test button cannot pass while this fails.
+        const earlyParams = String(listenParams(audioSession.captureContext().sampleRate));
+        if (ws && wsParams !== earlyParams) closeSocket();
+        if (!ws && !connect(key, earlyParams)) {
+            // Before the microphone was asked for, so there is nothing to give back
+            // (a key with a space inside it does this).
+            starting = false;
+            if (onStatus) onStatus('error', 'connect-failed');
+            return false;
+        }
+
         try {
             // Call processing on, and one retry if an iPad's audio mode was not
             // ready to record - unless this start was cancelled meanwhile; see
@@ -324,8 +472,9 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
             stream = null;
             // Cancelled while waiting: not a microphone failure, and reporting it
             // as one switched listening off with a false error (problem 6).
-            if (!wanted) return false;
+            if (!wanted) { closeSocket(); return false; }
             if (interrupted) return start();
+            closeSocket();
             if (onStatus) onStatus('error', audioSession.micFailure(err));
             return false;
         }
@@ -347,77 +496,23 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
         if (!wanted) { starting = false; releaseHalfOpen(); return false; }
         micCheck.noteStart({ stream, audioCtx });
 
-        // Shared with testKey, so the Test button cannot pass while this fails.
-        const params = listenParams(rate);
-
-        // Starts knowing the room the last run measured (problem 7): see vad.js.
-        gate = vad.createGate({ initialFloor: gate ? gate.levels().floor : null });
-        preRollFrames = Math.max(1, Math.ceil((gate.preRollMs() / 1000) * rate / FRAME_SAMPLES));
-        preRoll = [];
-        pending = [];
-        pendingMax = Math.ceil((10 * rate) / FRAME_SAMPLES);   // about ten seconds
-        billedMs = 0;
-        sentSamples = 0;
-        audioRate = rate;
-        // Tell the app the running total restarted, or its next report reads as a
-        // decrease and that whole first burst is never counted (CR-019).
-        if (onBilled) onBilled(0);
-
-        try {
-            ws = new WebSocket(`${ENDPOINT}?${params}`, ['token', key]);
-        } catch {
+        // The connection is made again if a stop and a new start while the microphone
+        // was opening closed it, and replaced if it was made for a different rate (the
+        // listening context was remade meanwhile).
+        const params = String(listenParams(rate));
+        if (ws && wsParams !== params) closeSocket();
+        if (!ws && !connect(key, params)) {
             starting = false;
-            ws = null;
-            // ⚠ GIVE THE MICROPHONE BACK. It is already open, and stop() returns at
-            // once while nothing is running, so leaving it here kept the microphone
-            // on for the rest of the session (a key with a space inside it does this).
+            // ⚠ GIVE THE MICROPHONE BACK. It is already open, and stop() does nothing
+            // to it while nothing is running, so leaving it here kept the microphone on
+            // for the rest of the session.
             releaseHalfOpen();
             if (onStatus) onStatus('error', 'connect-failed');
             return false;
         }
-        ws.binaryType = 'arraybuffer';
-        ws.onmessage = handleMessage;
-        // A failure fires 'error' AND 'close'. Only the close reports, and only while
-        // running: closing a socket that is still connecting fires 'error' too, and
-        // reporting it turned an ordinary stop into a false failure - red wash, and
-        // the background guard then never reopened listening (CR-049).
-        ws.onerror = () => { pending = []; };
-        ws.onclose = (e) => {
-            pending = [];
-            // CARRY THE CLOSE CODE. A rejected key, a refused subprotocol and a
-            // dropped connection all arrive here as the same event, and the bare
-            // word "closed" cannot tell them apart — which on a tablet, with no
-            // console to fall back on, is the difference between a diagnosis and
-            // a guess. testKey() above has always reported the code; this path
-            // threw it away. 1000 is a clean close; anything else is the
-            // interesting case.
-            if (running && onStatus) {
-                const code = e && e.code ? e.code : '?';
-                const why = e && e.reason ? `: ${e.reason}` : '';
-                onStatus('error', `closed (code ${code}${why})`);
-            }
-        };
-        ws.onopen = () => {
-            // Report LISTENING here, not at the end of start(). stt.js documents
-            // this contract for the paid backend — "reports 'listening' once it is
-            // actually up, so the button does not claim to be listening before
-            // anything can be heard" — and reporting it before the handshake
-            // completed broke it: the button went red on the tap and black again
-            // when the socket failed, which reads as the button not working rather
-            // than as the connection being refused (Ken, iPad, August 3 2026).
-            // What arrived during the handshake goes first, in order (CR-006).
-            micCheck.noteConnected();
-            for (const b of pending) ws.send(b);
-            pending = [];
-            if (onStatus) onStatus('listening');
-            keepAliveTimer = setInterval(() => {
-                // Only while silent — during speech the audio itself keeps the
-                // socket alive.
-                if (ws && ws.readyState === WebSocket.OPEN && !gate.isOpen()) {
-                    ws.send(JSON.stringify({ type: 'KeepAlive' }));
-                }
-            }, KEEPALIVE_MS);
-        };
+        preRollFrames = Math.max(1, Math.ceil((gate.preRollMs() / 1000) * rate / FRAME_SAMPLES));
+        pendingMax = Math.ceil((10 * rate) / FRAME_SAMPLES);   // about ten seconds
+        audioRate = rate;
 
         sourceNode = audioCtx.createMediaStreamSource(stream);
         processor = audioCtx.createScriptProcessor(FRAME_SAMPLES, 1, 1);
@@ -435,38 +530,49 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
         muteNode.gain.value = 0;
         processor.connect(muteNode).connect(audioCtx.destination);
 
-        // `running` still goes true here, so the audio graph captures and the
-        // pre-roll buffer fills while the handshake completes — only the STATUS
-        // moved to ws.onopen above.
+        // `running` goes true here, so the audio graph captures and the pre-roll
+        // buffer fills even if the handshake is still going; frames sent before it
+        // finishes are held (pending) and sent when it opens.
         starting = false;
         running = true;
+        // If the connection is already open, the app is told now; otherwise when it
+        // opens (see maybeReady).
+        maybeReady();
         return true;
+    }
+
+    /*
+     * Open the connection ahead of the microphone. stt.js calls this while the
+     * listening tone plays, when the microphone has to wait for the tone but the
+     * connection need not. The start that follows uses it; a stop, or anything that
+     * cancels the start, closes it.
+     */
+    function prepare() {
+        if (running || starting || ws) return;
+        const key = (getKey() || '').trim();
+        if (!key) return;   // start() says so
+        try {
+            connect(key, String(listenParams(audioSession.captureContext().sampleRate)));
+        } catch { /* start() connects instead */ }
     }
 
     function stop() {
         if (starting) interrupted = true;
         wanted = false;
-        if (!running) return;
+        ready = false;
+        if (!running) {
+            // A start still waiting for the microphone, or a connection opened ahead of
+            // one (prepare), already has its connection: close it, or it stays open,
+            // kept alive, with nothing to send.
+            closeSocket();
+            return;
+        }
         running = false;
         micCheck.noteStop();
         // A span in progress is still counted.
         if (gate && gate.isOpen()) reportBilled();
         if (gate) gate.reset();
-        if (keepAliveTimer) { clearInterval(keepAliveTimer); keepAliveTimer = null; }
-        if (ws) {
-            // Detached first: a stopped source must report nothing more, and a late
-            // onopen must not start a KeepAlive for it (CR-049).
-            ws.onmessage = null; ws.onerror = null; ws.onclose = null; ws.onopen = null;
-            // CloseStream is a courtesy to the service. It does NOT recover the last
-            // words: the socket closes at once, and a browser discards anything that
-            // arrives once it is closing (CR-060). What was on screen is kept by
-            // stt.js committing the unsettled words before it calls stop().
-            try {
-                if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'CloseStream' }));
-            } catch { /* already closing */ }
-            try { ws.close(1000); } catch { /* already closed */ }
-            ws = null;
-        }
+        closeSocket();
         if (processor) { try { processor.disconnect(); } catch { /* gone */ } processor = null; }
         if (muteNode) { try { muteNode.disconnect(); } catch { /* gone */ } muteNode = null; }
         if (sourceNode) { try { sourceNode.disconnect(); } catch { /* gone */ } sourceNode = null; }
@@ -480,6 +586,7 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
     return {
         start,
         stop,
+        prepare,
         // Closing for the app's own speech on an iPad (stt.js). For this service it is
         // the same as a stop: what was on screen is kept by stt.js before it calls this,
         // and the words still on their way when the socket closes are the fraction of a

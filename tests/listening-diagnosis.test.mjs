@@ -141,3 +141,30 @@ test('the problem report puts the checks right after the tester\'s note', async 
     assert.match(text, /Listening service \(azure\): NO KEY - No Azure Speech key is set\./);
     assert.match(text, /AI \(anthropic\): WORKS/);
 });
+
+// --- How soon the microphone started (Ken's iPad report, November 23 2026) ------------
+
+const timed = (soundMs, extra = {}) => ({ at: t0, kind: 'start', mic: soundMs - 80, sound: soundMs, ...extra });
+
+test('a microphone that starts quickly is OK, with the times', () => {
+    const d = run({ mic: baseMic({ startTimes: [timed(400), timed(600), timed(500)] }) });
+    assert.equal(d.problems, 0);
+    const step = d.steps.find((s) => s.name === 'The microphone started quickly');
+    assert.equal(step.status, 'OK');
+    assert.equal(step.says, 'Sound began arriving 0.5 s after listening was asked for, typically (slowest 0.6 s, over 3 starts).');
+});
+
+test('a slow microphone start is named, with what it costs and the tone it included', () => {
+    const d = run({ mic: baseMic({ startTimes: [timed(2900, { tone: 550 }), timed(1200), timed(1100), timed(700)] }) });
+    assert.match(d.verdict, /^HEARING WORKED, BUT: The microphone started quickly - Sound began arriving 1\.2 s after listening was asked for, typically \(slowest 2\.9 s, over 4 starts\)\. 1 of them included a 0\.55 s wait for the listening tone\. Whatever the other person said in that time was not heard\.$/);
+});
+
+test('one very slow start is enough to name it', () => {
+    const d = run({ mic: baseMic({ startTimes: [timed(400), timed(500), timed(2100)] }) });
+    assert.equal(d.steps.find((s) => s.name === 'The microphone started quickly').status, 'PROBLEM');
+});
+
+test('starts with no sound, or already listening, are not timed, and none at all adds no step', () => {
+    const d = run({ mic: baseMic({ startTimes: [{ at: t0, kind: 'resume' }, { at: t0, kind: 'start', already: true }] }) });
+    assert.equal(d.steps.some((s) => s.name === 'The microphone started quickly'), false);
+});

@@ -970,7 +970,12 @@ test('the same holding phrase is never said twice in a row across pauses', async
 
 test('CR-160/161: paid listening is timed; a redrawn Express button keeps its armed state', () => {
     const stt = readFileSync(new URL('../app/js/stt.js', import.meta.url), 'utf8');
-    const os = stt.slice(stt.indexOf('function openSource'));
+    // reallyOpen, not openSource: since November 23 2026 openSource also has a paid-only
+    // block (it starts the timing of each start), and the open itself moved to
+    // reallyOpen when the tone's delayed open was added. The count must still come
+    // before the paid branch returns.
+    const os = stt.slice(stt.indexOf('function reallyOpen'));
+    assert.ok(os.indexOf("noteListen('sessions')") >= 0);
     assert.ok(os.indexOf("noteListen('sessions')") < os.indexOf('if (externalSource)'));
     const tg = readFileSync(new URL('../app/js/tap-guard.js', import.meta.url), 'utf8');
     assert.match(tg, /if \(sameAsArmed\(m\.el\)\) \{ disarm\(\); return; \}/);

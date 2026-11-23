@@ -317,6 +317,7 @@ function reopenAfterSpeech() {
     if (!externalSource || !listeningIntent || suspendedForHidden) return;
     resumingForSpeech = true;
     micCheck.noteReopenAfterSpeech();
+    micCheck.noteAsked({ kind: 'after speech' });
     audioSession.forListening();
     try { externalSource.start(); } catch { resumingForSpeech = false; }
 }
@@ -544,6 +545,8 @@ function afterIngest(heardPartner, sawFinal) {
         heardThisRun = true;
         if (firstHeardMs.length < 50) firstHeardMs.push(Date.now() - openedAt);
     }
+    // The last step of a paid start (mic-check.js); only its first words count.
+    if (heardPartner && externalSource) micCheck.noteStage('words');
     // Only renew the partner's turn (reset the silence checkpoint) when genuine
     // partner content was heard AND the app isn't currently speaking. Pure echo
     // leaves the checkpoint alone (content filter), and any audio captured while we
@@ -611,7 +614,7 @@ function registerVisibilityGuard() {
                 }
             } else if (suspendedForHidden) {
                 suspendedForHidden = false;
-                if (listeningIntent) openSource();
+                if (listeningIntent) openSource(0, 'back');
             }
         });
     }
@@ -644,6 +647,8 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
         const wiring = {
             onText: (text, isFinal) => { afterIngest(ingest(text, isFinal), !!isFinal); },
             onStatus: (status, detail) => {
+                // Timed even when the app is not told (a reopen after speech, below).
+                if (status === 'listening') micCheck.noteStage('listening');
                 if (status === 'error') {
                     pausedForSpeech = resumingForSpeech = false;
                     cancelReopen();
@@ -1057,10 +1062,23 @@ function suspendSource() {
 // overtaken does nothing.
 let openToken = 0;
 
-function openSource(delayMs = 0) {
+function openSource(delayMs = 0, kind = 'start') {
     listeningIntent = true;
     suspendedForHidden = false;   // a deliberate (re)start clears any backgrounded state
     const mine = ++openToken;
+    if (externalSource) {
+        // The clock for each step of this start (mic-check.js) begins here, at the
+        // moment listening was asked for, tone included: that is when the user or the
+        // other person can start talking.
+        micCheck.noteAsked({ kind, toneMs: delayMs });
+        // ⚠ CONNECT WHILE THE TONE PLAYS (Ken's iPad report, November 23 2026). The
+        // microphone has to wait for the tone, but a connection to the service does not
+        // touch the iPad's sound at all, so it can be made during the wait instead of
+        // after it. Only services that keep a connection open offer prepare().
+        if (delayMs > 0 && typeof externalSource.prepare === 'function') {
+            try { externalSource.prepare(); } catch { /* the start connects instead */ }
+        }
+    }
     // ⚠ A DELAYED OPEN, for the listening tone on an iPhone or iPad (see
     // chime.playBeforeListening): the tone has to finish before the microphone takes
     // the sound. The intent is set NOW, so the app counts as listening and a Stop tap
@@ -1105,7 +1123,7 @@ export function startListening({ delayMs = 0 } = {}) {
     hearStats.listenRequests++;
     if (!recognition && !externalSource) { hearStats.noSource++; return; }
     resetTranscript();
-    openSource(delayMs);
+    openSource(delayMs, 'start');
 }
 
 // Reopen the microphone on a turn that is STILL IN PROGRESS, keeping what the
@@ -1126,7 +1144,7 @@ export function startListening({ delayMs = 0 } = {}) {
 export function resumeListening({ delayMs = 0 } = {}) {
     hearStats.listenRequests++;
     if (!recognition && !externalSource) { hearStats.noSource++; return; }
-    openSource(delayMs);
+    openSource(delayMs, 'resume');
 }
 
 export function stopListening() {

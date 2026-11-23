@@ -506,11 +506,19 @@ Safari uses is not published. Ken can live with it.
 - **What is still wanted:** watch the error logs for `sw-update` to see how often it happens and whether it is the first launch after a release or a weak connection. Nothing to do unless Start's own check also starts failing.
 - **Why not now:** needs time and real iPad use to collect.
 
-### How long the app took to hear the first words (please confirm)
+### How long the app took to hear the first words
 - **Raised:** 2026-10-11 - same report.
 - **What:** in all three exchanges, 12 to 17 seconds passed between listening starting and the app first hearing the other person (Deepgram, iPad Home Screen app). The figure includes however long the other person waited before speaking.
-- **What is wanted:** Ken to say whether he answered straight away. If he did, the app was very slow to hear him and that needs investigating.
-- **Why not now:** needs Ken's answer.
+- **Answered 2026-11-23 by Ken's problem report** (iPad 10, iPadOS 27, 0.15.24, Deepgram): "Listening has a several second delay which misses the beginning of the statement of the communication partner." Continued in the next entry.
+
+### Listening on an iPad misses the other person's first words
+- **Raised:** 2026-11-23 - Ken's problem report (iPad 10, iPadOS 27, Home Screen app, 0.15.24, Deepgram hearing).
+- **What the report showed:** the first Listen of the conversation took 2.5 to 3.5 seconds from the tap to "listening", and "1, 2, 3, 4" came back as "234": the "one" was lost. Later starts took under about 1.5 seconds.
+- **Cause:** anything said before the microphone is actually open is lost; the look-back that protects the start of a word only reaches into sound the app already has. On an iPad the steps ran one after another: the listening tone, half a second's wait, the switch to recording, the microphone, and only then the connection to Deepgram. The tone tells the other person to talk before the microphone is ready. After every spoken reply the microphone has to reopen too, because the iPad keeps it closed while the app talks.
+- **Done 2026-11-23 (not yet released or tried on the iPad):** Conversant connects to Deepgram during the tone and while the microphone opens, so the button lights and the first words come back sooner. Every start is now timed in the problem report ("starts" lines under the microphone figures: the tone, the microphone, the first sound, the connection, the Listen button, the first words), and the listening check names a slow start.
+- **What is wanted:** Ken to try the next release on the iPad and send a problem report, testing with ordinary sentences rather than counting (Deepgram joins spoken numbers, "two three four" became "234", and holds them back while it decides how to write them). The "starts" lines will say how long the microphone itself takes after the tone and after each reply.
+- **Then decide (Ken's call):** if the microphone's own time is the big part, options include starting the microphone while the tone is still playing (risk: on the iPhone the tone was held back until the microphone closed, the reason for the wait) or a shorter tone. Nothing can recover words said before the microphone is open.
+- **Why not now:** needs the measured times from the iPad first; every option trades the tone against lost words.
 
 ### Two small faults in the problem report itself
 - **Raised:** 2026-10-11 - same report.

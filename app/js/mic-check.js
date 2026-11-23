@@ -54,6 +54,62 @@ const stats = {
 const LEVEL_BANDS = [0.001, 0.002, 0.004, 0.008, 0.016, 0.032, 0.064];
 let runFrames = null;      // frames in the current run; null when not listening
 
+/*
+ * HOW LONG EACH START TOOK, STEP BY STEP (Ken's iPad problem report, November 23 2026:
+ * "Listening has a several second delay which misses the beginning of the statement of
+ * the communication partner").
+ *
+ * Nothing said before sound starts arriving from the microphone can be kept: the speech
+ * gate's look-back (vad.js) only reaches into sound the app already has. On an iPad
+ * several steps stand between asking to listen and that moment - the listening tone's
+ * wait, the switch to recording, the microphone itself - and the report could not say
+ * how long any of them took, only how long until the first WORDS came back, which also
+ * counts however long the other person waited before speaking.
+ *
+ * So each start records, in ms after listening was asked for (stt.js, noteAsked):
+ *   tone       the wait for the listening tone before the microphone is asked for
+ *   mic        the microphone handed over and the listening audio awake (noteStart)
+ *   sound      the first sound arriving: from here on, what is said is kept
+ *   connected  the service's connection open (Deepgram)
+ *   listening  the app told it is listening (the Listen button lights)
+ *   words      the first of the other person's words back
+ * Timings only, never sound or words, like everything else here.
+ */
+const MAX_STARTS = 12;
+const startLog = [];       // the last MAX_STARTS starts, oldest first
+let currentStart = null;   // the start whose steps are being filled in
+const STAGES = ['tone', 'mic', 'sound', 'connected', 'listening', 'words'];
+
+/** stt.js has asked a paid service to listen: the clock for the steps above starts. */
+export function noteAsked({ kind = 'start', toneMs = 0, at = Date.now() } = {}) {
+    currentStart = { at, kind };
+    if (toneMs > 0) currentStart.tone = toneMs;
+    // Asked while the microphone is already open (the app's view of listening had
+    // drifted): nothing reopens, so there are no steps to time.
+    if (runFrames !== null) currentStart.already = true;
+    startLog.push(currentStart);
+    while (startLog.length > MAX_STARTS) startLog.shift();
+}
+
+/** One step of the current start was reached (the first time only counts). */
+export function noteStage(stage, at = Date.now()) {
+    if (!currentStart || currentStart.already || typeof currentStart[stage] === 'number') return;
+    currentStart[stage] = Math.max(0, at - currentStart.at);
+}
+
+function clockTime(ms) {
+    try { return new Date(ms).toISOString().slice(11, 23); } catch { return '?'; }
+}
+
+function startLine(s) {
+    const steps = STAGES.filter((k) => typeof s[k] === 'number').map((k) => `${k} ${s[k]}`);
+    let what;
+    if (s.already) what = '(already listening)';
+    else if (typeof s.sound !== 'number') what = [...steps, 'no sound'].join(', ');
+    else what = steps.join(', ');
+    return `      ${clockTime(s.at)} ${s.kind.padEnd(12)} ${what}`;
+}
+
 /** Kind of input from the device's name, without keeping the name. */
 export function inputKind(label) {
     const l = String(label || '').toLowerCase();
@@ -78,6 +134,7 @@ export function noteStart({ stream, audioCtx } = {}) {
     closeRun();
     stats.starts++;
     runFrames = 0;
+    noteStage('mic');
     const state = audioCtx && audioCtx.state;
     if (state && state !== 'running') stats.notRunning[state] = (stats.notRunning[state] || 0) + 1;
     try {
@@ -101,7 +158,7 @@ export function noteStart({ stream, audioCtx } = {}) {
 
 /** One frame of audio arrived, at this loudness (RMS, 0-1), with the gate's current levels. */
 export function noteFrame(level, gate) {
-    if (runFrames !== null) runFrames++;
+    if (runFrames !== null && ++runFrames === 1) noteStage('sound');
     stats.frames++;
     if (level > stats.loudest) stats.loudest = level;
     let band = LEVEL_BANDS.findIndex((b) => level < b);
@@ -127,13 +184,16 @@ export function noteSpeech() { stats.speechSpans++; }
 export function noteReopenAfterSpeech() { stats.reopensAfterSpeech++; }
 /** A start that could not finish (Ken's iPad, 0.15.7: the audio never woke). */
 export function noteStuck(where) { stats.stuck[where] = (stats.stuck[where] || 0) + 1; }
-export function noteConnected() { stats.connected++; }
+export function noteConnected() { stats.connected++; noteStage('connected'); }
 export function noteStop() { closeRun(); }
 
 /** One line for the problem report. */
 export function summary() {
     const stuck = Object.entries(stats.stuck).map(([k, n]) => `${k} x${n}`).join(', ');
-    if (!stats.starts) return stuck ? `no paid listening started; stuck: ${stuck}` : 'no paid listening this session';
+    if (!stats.starts) {
+        const head = stuck ? `no paid listening started; stuck: ${stuck}` : 'no paid listening this session';
+        return head + startsBlock();
+    }
     const noSound = stats.runsWithNoSound + (runFrames === 0 ? 1 : 0);
     const notRunning = Object.entries(stats.notRunning).map(([k, n]) => `${k}x${n}`).join(',') || 'none';
     const inputs = Object.entries(stats.inputs).map(([k, n]) => `${k}x${n}`).join(',') || 'unknown';
@@ -146,12 +206,18 @@ export function summary() {
            `loudest=${stats.loudest.toFixed(3)} (speech starts at ${bar.toFixed(3)}) ` +
            `quietRoom=${room} ` +
            `speechDetected=${stats.speechSpans} connected=${stats.connected} ` +
-           `mutedAtStart=${stats.mutedAtStart} input=${inputs}
-` +
-           `    levels: ${levelBands()}
-` +
+           `mutedAtStart=${stats.mutedAtStart} input=${inputs}\n` +
+           `    levels: ${levelBands()}\n` +
            `    settings: ${stats.settings || 'unknown'}` +
-           (stuck ? `\n    stuck: ${stuck}` : '');
+           (stuck ? `\n    stuck: ${stuck}` : '') +
+           startsBlock();
+}
+
+// The steps of each start (see noteAsked), one line per start, oldest first. Times are
+// UTC, like the rest of the report, so a line can be matched to the event list.
+function startsBlock() {
+    if (!startLog.length) return '';
+    return '\n    starts (ms after listening was asked for, UTC):\n' + startLog.map(startLine).join('\n');
 }
 
 /** The same counts as numbers, for listening-diagnosis.js. */
@@ -169,6 +235,9 @@ export function facts() {
         mutedAtStart: stats.mutedAtStart,
         stuck: { ...stats.stuck },
         listeningNow: runFrames !== null,
+        // The steps of each recent start (see noteAsked), for "the microphone started
+        // quickly" in listening-diagnosis.js.
+        startTimes: startLog.map((e) => ({ ...e })),
     };
 }
 
@@ -178,4 +247,6 @@ export function _reset() {
         speechSpans: 0, connected: 0, mutedAtStart: 0, inputs: {}, stuck: {},
         levels: new Array(8).fill(0), gate: null, settings: null });
     runFrames = null;
+    startLog.length = 0;
+    currentStart = null;
 }

@@ -158,6 +158,8 @@ export function diagnoseListening({ chosen, test, recognition, permission, stt =
                 add('Sound arrived from the microphone', 'OK',
                     `Every time${mic.mutedAtStart ? ` (though the device reported the microphone muted ${mic.mutedAtStart} time(s))` : ''}.`);
             }
+            const quick = startedQuickly(mic.startTimes);
+            if (quick) add('The microphone started quickly', quick.status, quick.says);
             const loud = Number(mic.loudest || 0).toFixed(3);
             const bar = Number(mic.speechStartsAt || 0).toFixed(3);
             if (mic.frames && !mic.speechSpans) {
@@ -181,6 +183,40 @@ export function diagnoseListening({ chosen, test, recognition, permission, stt =
     }
 
     return finish(steps, stt, since, false);
+}
+
+/*
+ * HOW SOON SOUND ARRIVED AFTER LISTENING WAS ASKED FOR (Ken's iPad report, November 23
+ * 2026: "Listening has a several second delay which misses the beginning of the
+ * statement of the communication partner"). Nothing said before sound arrives can be
+ * kept, so this time is exactly how much of the other person's opening words is at risk.
+ *
+ * The bars are a judgment, not a measured standard: in conversation the next speaker
+ * usually starts within about half a second of the last one stopping, so the other
+ * person is often already talking when listening restarts after the app has spoken. A
+ * typical start of a second or more, or any start of two seconds or more, loses words
+ * in ordinary use. Each start's own times are in the report's "starts" lines.
+ */
+const SLOW_TYPICAL_MS = 1000;
+const SLOW_ANY_MS = 2000;
+
+function startedQuickly(startTimes) {
+    const timed = (startTimes || []).filter((s) => s && !s.already && typeof s.sound === 'number');
+    if (!timed.length) return null;
+    const ms = timed.map((s) => s.sound).sort((a, b) => a - b);
+    const typical = ms[Math.floor(ms.length / 2)];
+    const slowest = ms[ms.length - 1];
+    const sec = (n) => `${(n / 1000).toFixed(1)} s`;
+    const toned = timed.filter((s) => s.tone > 0);
+    const slow = typical >= SLOW_TYPICAL_MS || slowest >= SLOW_ANY_MS;
+    let says = `Sound began arriving ${sec(typical)} after listening was asked for, typically `
+        + `(slowest ${sec(slowest)}, over ${timed.length} start${timed.length === 1 ? '' : 's'}).`;
+    if (toned.length) {
+        says += ` ${toned.length === timed.length ? 'Each' : `${toned.length} of them`} included `
+            + `a ${(toned[0].tone / 1000).toFixed(2)} s wait for the listening tone.`;
+    }
+    if (slow) says += ' Whatever the other person said in that time was not heard.';
+    return { status: slow ? 'PROBLEM' : 'OK', says };
 }
 
 // 11-12. Words coming back, and whether they were kept. Then the verdict.

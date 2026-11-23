@@ -269,3 +269,137 @@ test('off an iPad the microphone stays open while the app speaks, as before', as
         stt.noteSpokenEnd();
     } finally { stt.stopListening(); }
 });
+
+// ---- Ken's iPad report, November 23 2026: "Listening has a several second delay which
+// misses the beginning of the statement of the communication partner". The connection
+// used to be made only after the microphone was open; it now runs alongside it. --------
+
+// A microphone that arrives only when told to, like an iPad switching to recording.
+function holdMic() {
+    const real = navigator.mediaDevices.getUserMedia;
+    const held = { stopped: 0, asked: 0 };
+    navigator.mediaDevices.getUserMedia = () => {
+        held.asked++;
+        return new Promise((resolve, reject) => {
+            held.release = () => resolve({ getTracks: () => [{ stop: () => held.stopped++ }] });
+            held.refuse = () => { const e = new Error('no'); e.name = 'NotAllowedError'; reject(e); };
+        });
+    };
+    held.restore = () => { navigator.mediaDevices.getUserMedia = real; };
+    return held;
+}
+const settle = () => new Promise((r) => setTimeout(r, 5));
+
+test('the connection is made while the microphone is still opening, not after it', async () => {
+    const held = holdMic();
+    const statuses = [];
+    try {
+        const before = FakeWS.last;
+        source = createSource({ getKey: () => 'k', onText() {}, onStatus: (s) => statuses.push(s), onBilled() {} });
+        const started = source.start();
+        assert.equal(held.asked, 1, 'the microphone has been asked for');
+        assert.notEqual(FakeWS.last, before, 'and the connection is already being made');
+        const ws = FakeWS.last;
+        ws.readyState = FakeWS.OPEN; ws.onopen();      // the handshake wins the race
+        assert.ok(!statuses.includes('listening'), 'not listening until the microphone is in');
+        held.release();
+        assert.equal(await started, true);
+        assert.deepEqual(statuses, ['listening'], 'told once, when the microphone arrived');
+        assert.equal(FakeWS.last, ws, 'on the same connection');
+        speak(3);
+        assert.equal(ws.sent.filter((b) => typeof b !== 'string').length, 3, 'and the sound goes straight out');
+    } finally { held.restore(); }
+});
+
+test('a microphone that wins the race waits for the connection, as before', async () => {
+    const statuses = [];
+    source = createSource({ getKey: () => 'k', onText() {}, onStatus: (s) => statuses.push(s), onBilled() {} });
+    await source.start();
+    assert.deepEqual(statuses, [], 'nothing claimed before the connection is open');
+    const ws = FakeWS.last;
+    ws.readyState = FakeWS.OPEN; ws.onopen();
+    assert.deepEqual(statuses, ['listening']);
+});
+
+test('a connection refused while the microphone opens is one error, and the microphone is given back', async () => {
+    const held = holdMic();
+    const statuses = [];
+    try {
+        source = createSource({ getKey: () => 'k', onText() {}, onStatus: (s, d) => statuses.push(`${s}:${d}`), onBilled() {} });
+        const started = source.start();
+        const ws = FakeWS.last;
+        ws.onerror(); ws.onclose({ code: 1008, reason: 'invalid credentials' });
+        held.release();
+        assert.equal(await started, false);
+        assert.deepEqual(statuses, ['error:closed (code 1008: invalid credentials)']);
+        assert.equal(held.stopped, 1, 'the microphone that arrived late was closed');
+        source = null;
+    } finally { held.restore(); }
+});
+
+test('a stop while the microphone opens closes the connection too', async () => {
+    const held = holdMic();
+    const statuses = [];
+    try {
+        source = createSource({ getKey: () => 'k', onText() {}, onStatus: (s) => statuses.push(s), onBilled() {} });
+        const started = source.start();
+        const ws = FakeWS.last;
+        source.stop();
+        assert.equal(ws.readyState, FakeWS.CLOSED, 'closed at once, not left open and kept alive');
+        assert.equal(ws.onclose, null, 'and it will report nothing');
+        held.release();
+        await started;
+        assert.equal(held.stopped, 1);
+        assert.deepEqual(statuses, []);
+        source = null;
+    } finally { held.restore(); }
+});
+
+test('a stop and a new start while the microphone opens: one microphone, a fresh connection', async () => {
+    const held = holdMic();
+    const statuses = [];
+    try {
+        source = createSource({ getKey: () => 'k', onText() {}, onStatus: (s) => statuses.push(s), onBilled() {} });
+        const first = source.start();
+        const firstWs = FakeWS.last;
+        source.stop();
+        const second = source.start();
+        held.release();
+        assert.equal(await first, true);
+        await second;
+        assert.equal(held.asked, 1, 'the request already out was used');
+        const ws = FakeWS.last;
+        assert.notEqual(ws, firstWs, 'connected again for the start that is wanted');
+        ws.readyState = FakeWS.OPEN; ws.onopen();
+        assert.deepEqual(statuses, ['listening']);
+    } finally { held.restore(); }
+});
+
+test('prepare() connects ahead of the microphone, and the start uses that connection', async () => {
+    const statuses = [];
+    source = createSource({ getKey: () => 'k', onText() {}, onStatus: (s) => statuses.push(s), onBilled() {} });
+    source.prepare();
+    const ws = FakeWS.last;
+    ws.readyState = FakeWS.OPEN; ws.onopen();          // open during the tone
+    assert.deepEqual(statuses, [], 'nothing is listening yet');
+    await source.start();
+    assert.equal(FakeWS.last, ws, 'no second connection');
+    assert.deepEqual(statuses, ['listening'], 'listening the moment the microphone is in');
+});
+
+test('a connection made ahead is closed by a stop, and one that fails is replaced quietly', async () => {
+    const statuses = [];
+    source = createSource({ getKey: () => 'k', onText() {}, onStatus: (s) => statuses.push(s), onBilled() {} });
+    source.prepare();
+    const a = FakeWS.last;
+    source.stop();                                      // Listen off during the tone
+    assert.equal(a.readyState, FakeWS.CLOSED);
+    source.prepare();
+    const b = FakeWS.last;
+    b.onerror(); b.onclose({ code: 1006 });             // dropped before anything started
+    assert.deepEqual(statuses, [], 'not an error: nothing had started');
+    await source.start();
+    assert.notEqual(FakeWS.last, b, 'the start connects again');
+    FakeWS.last.readyState = FakeWS.OPEN; FakeWS.last.onopen();
+    assert.deepEqual(statuses, ['listening']);
+});

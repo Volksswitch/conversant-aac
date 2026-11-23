@@ -66,3 +66,55 @@ test('the report says what the device did to the microphone', () => {
     assert.match(mic.summary(),
         /settings: echoCancellation=on noiseSuppression=off autoGainControl=\? micRate=48000 audioRate=44100/);
 });
+
+// Ken's iPad report, November 23 2026: each start's steps are timed from the moment
+// listening was asked for, because nothing said before sound arrives can be kept.
+test('each start is timed step by step, from the moment listening was asked for', () => {
+    const t = Date.parse('2026-11-23T19:51:43.544Z');
+    mic.noteAsked({ kind: 'start', toneMs: 550, at: t });
+    mic.noteStage('connected', t + 900);
+    mic.noteStage('mic', t + 1800);
+    mic.noteStage('sound', t + 1890);
+    mic.noteStage('listening', t + 1890);
+    mic.noteStage('words', t + 4100);
+    mic.noteStage('words', t + 9000);                  // only the first counts
+    const s = mic.summary();
+    assert.match(s, /starts \(ms after listening was asked for, UTC\):/);
+    assert.match(s, /19:51:43\.544 start {8}tone 550, mic 1800, sound 1890, connected 900, listening 1890, words 4100/);
+    const [entry] = mic.facts().startTimes;
+    assert.deepEqual(entry, { at: t, kind: 'start', tone: 550, connected: 900, mic: 1800, sound: 1890, listening: 1890, words: 4100 });
+});
+
+test('the steps come from the real microphone calls, and a start with no sound says so', () => {
+    mic.noteAsked({ kind: 'after speech' });
+    mic.noteStart({ stream: stream('iPad Microphone'), audioCtx: ctx('running') });
+    mic.noteConnected();
+    mic.noteFrame(0.01);
+    mic.noteFrame(0.02);
+    mic.noteStop();
+    mic.noteAsked({ kind: 'resume' });                 // asked, but nothing arrived
+    const [first, second] = mic.facts().startTimes;
+    assert.equal(first.kind, 'after speech');
+    for (const k of ['mic', 'connected', 'sound']) assert.equal(typeof first[k], 'number', k);
+    assert.equal(second.sound, undefined);
+    assert.match(mic.summary(), /resume {7}no sound/);
+});
+
+test('asking again while the microphone is already open is shown as such, not as a slow start', () => {
+    mic.noteAsked({ kind: 'start' });
+    mic.noteStart({ stream: stream('x'), audioCtx: ctx('running') });
+    mic.noteFrame(0.01);
+    mic.noteAsked({ kind: 'start' });
+    mic.noteStage('listening');
+    const entries = mic.facts().startTimes;
+    assert.equal(entries[1].already, true);
+    assert.equal(entries[1].listening, undefined);
+    assert.match(mic.summary(), /\(already listening\)/);
+});
+
+test('only the last twelve starts are kept', () => {
+    for (let i = 0; i < 15; i++) mic.noteAsked({ kind: 'start', at: 1000 * i });
+    const entries = mic.facts().startTimes;
+    assert.equal(entries.length, 12);
+    assert.equal(entries[0].at, 3000);
+});

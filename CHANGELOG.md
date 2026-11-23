@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **When Deepgram hears the other person, listening is ready a little sooner.** Conversant now connects to Deepgram while the microphone is still opening, instead of waiting until it's open. On an iPad it also connects while the listening tone plays. The Listen button lights up sooner, and the other person's first words appear sooner.
+- **A problem report now says how long the microphone took to start** each time listening was turned on, step by step. Anything the other person says before the microphone is ready can't be heard, so this shows where the time goes on your device.
+
 ## Version 0.15.24
 
 - After you update an iPad from an iPadOS older than 26, the conversation area no longer turns red the first time you open Conversant, and what you had entered is saved properly from then on.
