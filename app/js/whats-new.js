@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.22": [
+    "A problem report now checks the services Conversant depends on. While it's being prepared, the report tests the AI and any service you pay for to hear the other person or to speak for you, and says whether each one answered. That way we know right away whether they were working when you sent it. Nothing is played out loud, and the tests together cost a tiny fraction of a cent. The report also goes through each step of hearing the other person, in order, and says where it stops working."
+  ],
   "0.15.19": [
     {
       "for": "computer",
