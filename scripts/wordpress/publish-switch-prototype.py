@@ -2,11 +2,15 @@
 
     python scripts/wordpress/publish-switch-prototype.py            (shows what it would do)
     python scripts/wordpress/publish-switch-prototype.py --apply    (makes or updates the pages)
+    python scripts/wordpress/publish-switch-prototype.py --apply --only switch-control
+        (only the pages whose address contains that text; the others are left as they are)
 
-Three pages, each linking to the other two:
+Three prototype pages, each linking to the other two:
   prototypes/switch-access.html          -> /conversant-switch-access-prototype/
   prototypes/switch-access-settings.html -> /conversant-switch-access-settings-prototype/
   prototypes/switch-access-composer.html -> /conversant-switch-access-composer-prototype/
+and one test of Apple's Switch Control, not a prototype:
+  prototypes/switch-control-screen-test.html -> /conversant-switch-control-screen-test/
 
 Ken, November 9 2026: "add it to the website", then "publish it" for the Settings one,
 for the speech and language therapists.
@@ -64,8 +68,9 @@ PAGES = [
     {'slug': 'conversant-switch-control-screen-test', 'title': 'Conversant AAC Switch Control Screen Test',
      'file': 'switch-control-screen-test.html', 'height': 900,
      'intro': ('This page tests how Apple’s Switch Control on an iPad notices that a new panel has opened. '
-               'Turn on Switch Control, then open each of the five “Settings” buttons in turn and note whether the '
+               'Turn on Switch Control, then open each of the seven “Settings” buttons in turn and note whether the '
                'highlight moves into the panel at once or keeps going around the buttons behind it. '
+               'Buttons A to E change the page that is showing; F and G load a new page, and F loads this whole page again. '
                'Nothing here is the real app.'),
      'other': []},
 ]
@@ -107,7 +112,16 @@ def publish(pg, apply):
 
 def main():
     apply = '--apply' in sys.argv
-    for pg in PAGES:
+    only = None
+    if '--only' in sys.argv:
+        i = sys.argv.index('--only')
+        if i + 1 >= len(sys.argv):
+            raise SystemExit('--only needs part of a page address, for example: --only switch-control')
+        only = sys.argv[i + 1]
+    chosen = [pg for pg in PAGES if not only or only in pg['slug']]
+    if not chosen:
+        raise SystemExit(f'No page address contains "{only}".')
+    for pg in chosen:
         publish(pg, apply)
 
 
