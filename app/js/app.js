@@ -794,6 +794,7 @@ function initApp() {
         btn.disabled = false;
     });
     document.getElementById('folderSkipBtn').addEventListener('click', dismissFolderNotice);
+    document.getElementById('saveContinueBtn').addEventListener('click', dismissSaveNotice);
     ui.onListenClick(whileComposerClosed(toggleListening));
     ui.onRegenerateClick(handleRegenerate);
     ui.onSpeakClick(handleSpeakComposed);
@@ -2444,7 +2445,7 @@ async function afterFolderNotice() {
     let needed = false;
     try { needed = !storage.hasDataFolder() && await storage.hasRememberedFolder(); }
     catch { needed = false; }
-    if (!needed || !prompt) return afterListeningNotice();
+    if (!needed || !prompt) return afterSaveNotice();
     // Reset: the card is reused, and a failure last time rewrote its wording and hid
     // its button. Without this, one failed reconnect would leave the card permanently
     // stuck on its failure message for the rest of the session.
@@ -2479,6 +2480,29 @@ function keepStartFocus(region) {
 // what it does for a user who has never chosen one.
 function dismissFolderNotice() {
     document.getElementById('folderPrompt').hidden = true;
+    document.getElementById('startBtn').hidden = false;
+    afterSaveNotice();
+}
+
+// Step 3c — the app tested saving and could not (Ken, November 23 2026). Shown at
+// every start until it is fixed, BEFORE anything else, because the person most hurt is
+// the one who opens Settings next and spends an hour entering things: no save button
+// or field in the app reports a failed write, so nothing else would tell them. Skipped
+// when the check passed or never ran (no storage in use, the ordinary no-folder case).
+function afterSaveNotice() {
+    const check = storage.lastSaveCheck();
+    const prompt = document.getElementById('savePrompt');
+    if (!check || check.ok || !prompt) return afterListeningNotice();
+    document.getElementById('savePromptText').textContent =
+        saveCheckMessage(check, !storage.supportsUserChosenFolder());
+    document.getElementById('startBtn').hidden = true;   // the card carries its own control
+    document.getElementById('whatsNewPanel').hidden = true;
+    prompt.hidden = false;
+    keepStartFocus(prompt);
+}
+
+function dismissSaveNotice() {
+    document.getElementById('savePrompt').hidden = true;
     document.getElementById('startBtn').hidden = false;
     afterListeningNotice();
 }
@@ -2528,6 +2552,7 @@ function finishStart() {
     document.getElementById('startBtn').hidden = false;   // restore for any later start screen
     document.getElementById('apiKeyPrompt').hidden = true;
     document.getElementById('folderPrompt').hidden = true;
+    document.getElementById('savePrompt').hidden = true;
     // Focus left behind on the page itself counts too: closing "What's new" removes
     // the button that had it (CR-122).
     const focusInStart = !document.activeElement || document.activeElement === document.body
@@ -8005,17 +8030,24 @@ function updateFolderDisplay() {
 }
 
 // What to tell the user when the save check failed. Plain words, and what to do.
+//
+// ⚠ BE EXACT ABOUT WHAT IS LOST, which is less than it sounds. Settings live in the
+// browser's own storage, and About Me, people, places, topics, the Express Panel, the
+// Commands phrases and practice scenarios each keep a browser copy too, so all of that
+// survives. What needs files: conversations, sound buttons and documents. Saying
+// "nothing is saved" would send somebody to redo work that was kept.
 function saveCheckMessage(check, deviceMode) {
+    const kept = 'Your settings, About Me, people, places and Express Panel are still kept. ' +
+        "What isn't saved: your conversations, and you can't add sound buttons or documents.";
     if (check.reason === 'browser-cannot-write') {
         if (platform.isIOS()) {
             const ver = platform.osVersion();
-            return `Conversant can't save your information on this iPad. This version of iPadOS${ver ? ` (${ver})` : ''} ` +
-                "doesn't let it save files. Update the iPad in its Settings app, under General → Software Update, " +
-                "then open Conversant again. Until then, your conversations aren't saved, and the rest of what " +
-                'you enter may not be kept.';
+            return `Conversant can't save files on this iPad, because this version of iPadOS${ver ? ` (${ver})` : ''} ` +
+                `doesn't allow it. ${kept} To fix it, update the iPad in its Settings app, under ` +
+                'General → Software Update, then open Conversant again.';
         }
-        return "Conversant can't save your information in this browser. Try the latest version of Chrome or Edge. " +
-            "Until then, your conversations aren't saved, and the rest of what you enter may not be kept.";
+        return `Conversant can't save files in this browser. ${kept} ` +
+            'To fix it, use the latest version of Chrome or Edge.';
     }
     return deviceMode
         ? "Conversant couldn't save a test file on this device just now, so your information may not be kept. " +

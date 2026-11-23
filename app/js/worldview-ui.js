@@ -376,7 +376,10 @@ function renderHome() {
     contentEl.append(el('p', { class: 'wv-intro', text:
         'Answer as many or as few as you like, whenever you like. Nothing here is required, and you can change or remove any answer later.' }));
 
-    if (!storage.hasDataFolder()) renderFolderPrompt();
+    // Only where a folder can be chosen. An iPad whose storage cannot be written has
+    // no folder either, and a "Choose data folder" button there leads nowhere; the
+    // start screen and Settings say what is wrong instead.
+    if (!storage.hasDataFolder() && storage.supportsUserChosenFolder()) renderFolderPrompt();
 
     renderGaps();
 

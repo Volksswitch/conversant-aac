@@ -92,6 +92,14 @@
                             <button id="folderReconnectBtn" type="button">Reconnect my folder</button>
                         </div>
                     </div>
+                    <!-- Shown when the app tested saving and could not (Ken, November 23
+                         2026): somebody should know before putting work in. -->
+                    <div id="savePrompt" hidden>
+                        <p class="apikey-prompt-title" id="savePromptText"></p>
+                        <div class="apikey-prompt-actions">
+                            <button id="saveContinueBtn" type="button">Continue</button>
+                        </div>
+                    </div>
                     <!-- Shown when no API key is set. Informational — the app works
                          without one. -->
                     <div id="apiKeyPrompt" hidden>

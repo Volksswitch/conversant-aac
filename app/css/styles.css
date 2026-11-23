@@ -3722,6 +3722,7 @@ dialog select {
    hidden (v0.5.2), so this is how the user is told a key is missing. Amber
    "action needed" accent; informational (they can still Start without a key). */
 #apiKeyPrompt,
+#savePrompt,
 #folderPrompt {
     flex: 0 0 auto;
     max-width: 34rem;
@@ -3733,6 +3734,7 @@ dialog select {
     text-align: center;
 }
 #apiKeyPrompt[hidden],
+#savePrompt[hidden],
 #folderPrompt[hidden] { display: none; }
 
 /* Shares the API-key notice's card so the pre-start screens look like one thing
