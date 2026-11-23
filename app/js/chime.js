@@ -32,6 +32,43 @@ export function setEnabled(on) { enabled = !!on; }
 export function isEnabled() { return enabled; }
 export function setOncePerConversation(on) { oncePerConversation = !!on; }
 
+/*
+ * ⚠ WITH A PAID HEARING SERVICE ON AN iPHONE OR iPAD, THE TONE PLAYS WHEN LISTENING IS
+ * ACTUALLY ON (Ken, November 23 2026: "the chime conveys the sense that the system is
+ * ready but it hasn't started getting ready. By sounding the chime only when the system
+ * is ready to record, that may address the sense that the system is too slow and forces
+ * the communication partner to repeat themselves").
+ *
+ * From November 8 the tone played at the Listen tap and the microphone was asked for
+ * 550 ms later (playBeforeListening, below). So the tone told the other person to go
+ * ahead while the iPad was still switching to recording and opening the microphone, and
+ * their first words were lost (Ken's 0.15.24 report: "1, 2, 3, 4" came back "234").
+ *
+ * With a paid service the app captures the sound itself, through one listening audio
+ * context (audio-session.js) that is running whenever the microphone is. So the tone now
+ * plays on THAT context, when the app is told it is listening - the moment the Listen
+ * button lights - and the microphone no longer waits for it.
+ *
+ * ⚠ WHY ON THE LISTENING AUDIO AND NOT THE TONE'S OWN: the tone's own context is what
+ * the November 8 iPhone held back while the microphone was on, letting it out over the
+ * user's next reply. Whether the listening audio avoids that is NOT yet measured on a
+ * device - try it on the iPad, and if the tone comes out late, put paid hearing back on
+ * the tone-first order. The device's own listening (an iPad in Safari) keeps tone-first:
+ * the app has no listening audio of its own there to play the tone through.
+ */
+export function playsBeforeMicrophone({ ios, paidHearing } = {}) {
+    return !!ios && !paidHearing;
+}
+
+// Where the tone plays: a function that returns an audio context to play it on instead
+// of the tone's own (the listening audio, see above), or null. Set by app.js, which knows
+// the device and the hearing service; this module stays free of both.
+let contextFor = null;
+export function setContextProvider(fn) { contextFor = typeof fn === 'function' ? fn : null; }
+
+/** For tests only: forget the tone's own audio, so the next tone makes it again. */
+export function _resetAudioForTest() { ctx = null; }
+
 // Called when a conversation starts or ends, so the next one chimes again.
 export function resetConversation() { playedThisConversation = false; handledAtOpen = false; }
 
@@ -48,9 +85,14 @@ export function playListenChime() {
     // ready stayed silent and then skipped the tone for the rest of the conversation,
     // so the other person never heard it (CR-273).
     try {
+        // The listening audio when app.js says to play on it (see setContextProvider). A
+        // provider that fails falls back to the tone's own audio rather than to silence.
+        let target = null;
+        try { target = contextFor ? contextFor() : null; } catch { target = null; }
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) { playedThisConversation = true; return true; }   // policy allowed it; no audio here
-        ctx = ctx || new AudioCtx();
+        if (!target && !AudioCtx) { playedThisConversation = true; return true; }   // policy allowed it; no audio here
+        if (!target) ctx = ctx || new AudioCtx();
+        const out = target || ctx;
         // NEVER schedule into a context that isn't running. WebKit starts a context
         // suspended unless it was created during a user gesture, and this call is
         // NOT one: it comes from the recognizer's async 'start' event, which fires
@@ -62,26 +104,28 @@ export function playListenChime() {
         // the next chime works, but stay silent now rather than firing a tone
         // attached to an unrelated button press. unlock() below is what normally
         // makes the context running before any of this.
-        if (ctx.state !== 'running') {
-            ctx.resume().catch(() => { /* needs a gesture — unlock() supplies one */ });
+        if (out.state !== 'running') {
+            out.resume().catch(() => { /* needs a gesture — unlock() supplies one */ });
             return true;
         }
-        const t = ctx.currentTime;
-        playNote(t,        660, 0.20);  // E5
-        playNote(t + 0.17, 880, 0.26);  // A5
+        const t = out.currentTime;
+        playNote(out, t,        660, 0.20);  // E5
+        playNote(out, t + 0.17, 880, 0.26);  // A5
         playedThisConversation = true;
         lastSounded = true;
     } catch { /* audio unavailable — silent, never blocks capture */ }
     return true;
 }
 
-// ⚠ ON AN iPHONE OR iPAD THE TONE MUST FINISH BEFORE THE MICROPHONE OPENS (Ken's
-// iPhone, November 8 2026). Played the moment listening began, the tone was held back
-// by the device while the microphone had the sound, and came out when the microphone
-// closed - which is the instant the user taps a response option, so it played over the
-// first words of every reply. So on those devices the app plays the tone at the Listen
-// tap and opens the microphone CHIME_MS later. Everywhere else nothing changes: the
-// tone still plays when listening begins.
+// ⚠ ON AN iPHONE OR iPAD USING ITS OWN LISTENING, THE TONE FINISHES BEFORE THE
+// MICROPHONE OPENS (Ken's iPhone, November 8 2026). Played the moment listening began,
+// the tone was held back by the device while the microphone had the sound, and came out
+// when the microphone closed - which is the instant the user taps a response option, so
+// it played over the first words of every reply. So there the app plays the tone at the
+// Listen tap and opens the microphone CHIME_MS later. Since November 23 2026 a paid
+// hearing service does not use this: it plays the tone on the listening audio once
+// listening is on (see playsBeforeMicrophone above). Everywhere else nothing changes:
+// the tone still plays when listening begins.
 export const CHIME_MS = 550;   // the two notes end at about 0.45 s, plus a margin
 let lastSounded = false;
 let handledAtOpen = false;
@@ -124,9 +168,9 @@ export function unlock() {
 // it's still too quiet in the field.
 const PEAK = 0.7;
 
-function playNote(start, freq, dur) {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+function playNote(audio, start, freq, dur) {
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
     // Triangle carries better than a pure sine through small tablet speakers
     // (a little more harmonic content) while staying a soft, pleasant tone.
     osc.type = 'triangle';
@@ -138,7 +182,7 @@ function playNote(start, freq, dur) {
     gain.gain.exponentialRampToValueAtTime(PEAK, start + 0.02);
     gain.gain.setValueAtTime(PEAK, start + Math.max(0.03, dur - 0.07));
     gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
-    osc.connect(gain).connect(ctx.destination);
+    osc.connect(gain).connect(audio.destination);
     osc.start(start);
     osc.stop(start + dur + 0.02);
 }

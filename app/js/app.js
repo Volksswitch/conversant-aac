@@ -667,6 +667,13 @@ function initApp() {
     // With auto-resume on, the mic restarts every exchange — chime only at the
     // start of the conversation rather than on each one (Ken).
     chime.setOncePerConversation(storage.loadAutoRelisten());
+    // With a paid hearing service on an iPhone or iPad, the tone plays on the listening
+    // audio, which is running whenever the microphone is: the tone's own audio is what
+    // the device held back while the microphone was on (see chime.playsBeforeMicrophone).
+    // Asked at each tone, so a change of hearing service in Settings takes effect at once.
+    chime.setContextProvider(() => (platform.isIOS() && stt.currentSource() !== 'browser')
+        ? audioSession.captureContext()
+        : null);
 
     // Wire up capture wherever there is a recognizer to wire — including the
     // platforms platform.js measured as delivering nothing. That is the whole
@@ -2672,12 +2679,20 @@ function resumePartnerCapture() {
     stt.resumeListening({ delayMs: toneBeforeMic() });
 }
 
-// On an iPhone or iPad the listening tone is played BEFORE the microphone opens, and
-// the microphone waits for it (see chime.playBeforeListening): played afterwards, the
-// device held the tone back and let it out over the user's next reply. Everywhere else
-// this returns 0 and the tone plays when listening begins, exactly as before.
+// On an iPhone or iPad using its own listening, the tone is played BEFORE the microphone
+// opens, and the microphone waits for it (see chime.playBeforeListening): played
+// afterwards, the device held the tone back and let it out over the user's next reply.
+// With a paid hearing service it is not: the microphone opens at once and the tone plays
+// on the listening audio when the Listen button lights, so it means "listening now"
+// rather than "about to start getting ready" (Ken, November 23 2026; see
+// chime.playsBeforeMicrophone). Everywhere else this returns 0 and the tone plays when
+// listening begins, exactly as before.
 function toneBeforeMic() {
-    return platform.isIOS() ? chime.playBeforeListening() : 0;
+    const tonesFirst = chime.playsBeforeMicrophone({
+        ios: platform.isIOS(),
+        paidHearing: stt.currentSource() !== 'browser',
+    });
+    return tonesFirst ? chime.playBeforeListening() : 0;
 }
 
 // Begin a new partner-capture session with a cleared transcript and options.

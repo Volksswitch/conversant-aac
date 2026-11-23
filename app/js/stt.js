@@ -1071,17 +1071,19 @@ function openSource(delayMs = 0, kind = 'start') {
         // moment listening was asked for, tone included: that is when the user or the
         // other person can start talking.
         micCheck.noteAsked({ kind, toneMs: delayMs });
-        // ⚠ CONNECT WHILE THE TONE PLAYS (Ken's iPad report, November 23 2026). The
-        // microphone has to wait for the tone, but a connection to the service does not
-        // touch the iPad's sound at all, so it can be made during the wait instead of
-        // after it. Only services that keep a connection open offer prepare().
+        // CONNECT DURING ANY WAIT (Ken's iPad report, November 23 2026): a connection to
+        // the service does not touch the device's sound, so a delayed open makes it
+        // during the wait instead of after it. Only services that keep a connection open
+        // offer prepare(). Since the same day a paid service on an iPhone or iPad no
+        // longer waits for the tone (chime.playsBeforeMicrophone), so nothing passes a
+        // delay with one today; this keeps any future wait from costing a connection.
         if (delayMs > 0 && typeof externalSource.prepare === 'function') {
             try { externalSource.prepare(); } catch { /* the start connects instead */ }
         }
     }
-    // ⚠ A DELAYED OPEN, for the listening tone on an iPhone or iPad (see
-    // chime.playBeforeListening): the tone has to finish before the microphone takes
-    // the sound. The intent is set NOW, so the app counts as listening and a Stop tap
+    // ⚠ A DELAYED OPEN, for the listening tone on an iPhone or iPad using its own
+    // listening (see chime.playBeforeListening): the tone has to finish before the
+    // microphone takes the sound. The intent is set NOW, so the app counts as listening and a Stop tap
     // during the wait cancels the open rather than starting a second one. The built-in
     // recognizer reports 'listening' now too, exactly as it did when it opened at once;
     // a paid source still reports it itself once it is really up.

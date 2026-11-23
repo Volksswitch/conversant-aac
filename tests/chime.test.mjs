@@ -18,6 +18,7 @@ beforeEach(() => {
     chime.setEnabled(true);
     chime.setOncePerConversation(false);
     chime.resetConversation();
+    chime.setContextProvider(null);
 });
 
 test('auto-resume OFF: every capture start chimes', () => {
@@ -129,4 +130,60 @@ test('the before-the-mic step obeys the once-per-conversation rule', () => {
     chime.setOncePerConversation(true);
     chime.onCaptureStarted();            // the conversation's one tone
     assert.equal(chime.playBeforeListening(), 0, 'no tone, so no wait before the mic');
+});
+
+// Ken, November 23 2026: with a paid hearing service on an iPhone or iPad the tone plays
+// when listening is on, on the listening audio, instead of before the microphone opens.
+test('only an iPhone or iPad using its own listening plays the tone before the microphone', () => {
+    assert.equal(chime.playsBeforeMicrophone({ ios: true, paidHearing: false }), true);
+    assert.equal(chime.playsBeforeMicrophone({ ios: true, paidHearing: true }), false);
+    assert.equal(chime.playsBeforeMicrophone({ ios: false, paidHearing: false }), false);
+    assert.equal(chime.playsBeforeMicrophone({ ios: false, paidHearing: true }), false);
+    assert.equal(chime.playsBeforeMicrophone(), false);
+});
+
+function fakeAudio(state = 'running') {
+    const a = {
+        state, currentTime: 0, destination: {}, oscillators: 0,
+        resume() { return Promise.resolve(); },
+        createOscillator() { a.oscillators++; return { type: '', frequency: { value: 0 }, connect(n) { return n; }, start() {}, stop() {} }; },
+        createGain() { return { gain: { value: 0, setValueAtTime() {}, exponentialRampToValueAtTime() {} }, connect(n) { return n; } }; },
+    };
+    return a;
+}
+
+test('the tone plays on the audio app.js gives it', () => {
+    const listening = fakeAudio();
+    chime.setContextProvider(() => listening);
+    assert.equal(chime.onCaptureStarted(), true);
+    assert.equal(listening.oscillators, 2, 'both notes on the listening audio');
+});
+
+test('given no audio, or a provider that fails, the tone uses its own audio rather than going silent', () => {
+    const saved = globalThis.window.AudioContext;
+    try {
+        const providers = { 'no audio': () => null, 'a failing provider': () => { throw new Error('no listening audio'); } };
+        for (const [what, provider] of Object.entries(providers)) {
+            const own = fakeAudio();
+            globalThis.window.AudioContext = function () { return own; };
+            chime._resetAudioForTest();
+            chime.setContextProvider(provider);
+            assert.equal(chime.playListenChime(), true, what);
+            assert.equal(own.oscillators, 2, `${what}: played on its own audio`);
+        }
+    } finally {
+        globalThis.window.AudioContext = saved;
+        chime._resetAudioForTest();
+    }
+});
+
+test('listening audio that is not running gets no tone, and the conversation keeps its tone (CR-273)', () => {
+    chime.setOncePerConversation(true);
+    const listening = fakeAudio('suspended');
+    chime.setContextProvider(() => listening);
+    chime.onCaptureStarted();
+    assert.equal(listening.oscillators, 0, 'nothing queued on audio that is not running');
+    listening.state = 'running';
+    chime.onCaptureStarted();
+    assert.equal(listening.oscillators, 2, 'the next start plays it');
 });

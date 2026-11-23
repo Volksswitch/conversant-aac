@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+### On an iPad
+
+- **When a paid service hears the other person, the listening tone now plays once Conversant is actually listening.** It used to play just before the microphone started to open, so someone who began talking at the tone could lose their first words. The tone may sound a little tinny now, because the microphone is already on when it plays. With an iPad or iPhone's own listening in Safari, nothing changes.
+
 ## Version 0.15.25
 
 - **When Deepgram hears the other person, listening is ready a little sooner.** Conversant now connects to Deepgram while the microphone is still opening, instead of waiting until it's open. On an iPad it also connects while the listening tone plays. The Listen button lights up sooner, and the other person's first words appear sooner.

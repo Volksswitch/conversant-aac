@@ -31,11 +31,22 @@ globalThis.WebSocket = FakeWS;
 // which is what an iPad does when it will not wake audio outside a tap. `gains`
 // collects every silent gain a source makes, so a test can see whether it was
 // disconnected again.
-export const audioCtl = { hangResume: false, made: 0, gains: [] };
+// `instances` and each context's `oscillators` count say which audio the listening tone
+// was played on (chime.js plays it with two oscillators).
+export const audioCtl = { hangResume: false, made: 0, gains: [], instances: [] };
 export let processor = null;
 export function makeAudioContextClass() {
     return class FakeAudioContext {
-        constructor() { this.state = 'running'; this.sampleRate = 48000; this.destination = {}; this.currentTime = 0; audioCtl.made++; }
+        constructor() {
+            this.state = 'running'; this.sampleRate = 48000; this.destination = {}; this.currentTime = 0;
+            this.oscillators = 0;
+            audioCtl.made++;
+            audioCtl.instances.push(this);
+        }
+        createOscillator() {
+            this.oscillators++;
+            return { type: '', frequency: { value: 0 }, connect: (n) => n, start() {}, stop() {} };
+        }
         resume() {
             if (audioCtl.hangResume) return new Promise(() => {});
             this.state = 'running';
@@ -44,7 +55,8 @@ export function makeAudioContextClass() {
         createMediaStreamSource() { return { connect() {}, disconnect() {} }; }
         createScriptProcessor() { processor = { connect: (n) => n, disconnect() {} }; return processor; }
         createGain() {
-            const g = { gain: { value: 1 }, connected: false, connect(n) { this.connected = true; return n; }, disconnect() { this.connected = false; } };
+            const g = { gain: { value: 1, setValueAtTime() {}, exponentialRampToValueAtTime() {} },
+                connected: false, connect(n) { this.connected = true; return n; }, disconnect() { this.connected = false; } };
             audioCtl.gains.push(g);
             return g;
         }
