@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **A problem report now checks your listening service.** If you pay for a service to hear the other person, the report tests it while it's being prepared and says whether it answered. That way we know right away whether the service was working when you sent it. The test hears nothing and costs a tiny fraction of a cent.
+
 ## Version 0.15.21
 
 ## Version 0.15.20

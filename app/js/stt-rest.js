@@ -118,6 +118,29 @@ export async function transcribeClip(provider, key, wavBlob, {
 }
 
 /**
+ * Check a key by making THE REQUEST LISTEN MAKES, with half a second of silence.
+ *
+ * The same reasoning as stt-azure.js testKey: a cheaper check (listing models, say)
+ * can pass while the transcription request itself is refused, and a check that misses
+ * the failing path sends people looking in the wrong place. Silence transcribes to
+ * nothing and bills a fraction of a cent. Used by the problem report, which tests the
+ * hearing service rather than trusting that it worked once.
+ */
+export async function testKey(provider, key, { model, fetchImpl = fetch, timeoutMs = REQUEST_TIMEOUT_MS } = {}) {
+    if (!provider) return { ok: false, message: 'Unknown transcription service.' };
+    if (!key) return { ok: false, message: `No ${provider.label} key is set.` };
+    const silence = new Blob([encodeWav(new Int16Array(TARGET_RATE / 2), TARGET_RATE)], { type: 'audio/wav' });
+    try {
+        await transcribeClip(provider, key, silence, { model, fetchImpl, timeoutMs });
+        return { ok: true, message: `✓ Your ${provider.label} key is working` };
+    } catch (err) {
+        if (err && err.name === 'AbortError') return { ok: false, message: '✗ The transcription service did not answer in time.' };
+        if (err && err.status) return { ok: false, message: `✗ ${err.message}` };
+        return { ok: false, message: "✗ Couldn't reach the transcription service — check your internet connection." };
+    }
+}
+
+/**
  * Removes the labels a service writes for sounds that are not speech - "[Music]",
  * "(keyboard clicking)", music notes. Written into the conversation they read as the
  * other person having said them (Ken, October 6 2026). A clip that was nothing but

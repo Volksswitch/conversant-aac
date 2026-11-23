@@ -776,6 +776,48 @@ export function currentSource() {
 }
 
 /*
+ * Test a hearing service the way Listen uses it, for the problem report (Ken, November
+ * 22 2026: test it at the moment of the report, so we know a problem with the service
+ * is not in effect right now, rather than trusting that it was tested once).
+ *
+ * `readers` are the same key readers stt.init is handed, so the test uses exactly the
+ * key, region and model Listen would. Each service's own test exercises the request the
+ * app really makes, never a cheaper proxy, and none of them transcribes anything: a
+ * socket opened and closed (Deepgram), or half a second of silence (the others).
+ *
+ * Returns { service, result, message, ms } where result is 'ok', 'failed', 'no key'
+ * or 'not needed' (the device's own recognition: there is nothing to test). The
+ * message never contains a key. Never throws.
+ */
+export async function testHearingService(source, readers = initOpts || {}, { timeoutMs = 10000 } = {}) {
+    const service = normalizeSource(source);
+    const started = Date.now();
+    const done = (result, message) => ({ service, result, message, ms: Date.now() - started });
+    if (service === 'browser') return done('not needed', "This device's own recognition - there is no key to test.");
+    const read = (fn, ...a) => { try { return (fn && fn(...a)) || ''; } catch { return ''; } };
+    try {
+        let res;
+        if (service === 'deepgram') {
+            const key = read(readers.getDeepgramKey).trim();
+            if (!key) return done('no key', 'No Deepgram key is set.');
+            res = await deepgram.testKey(key, timeoutMs);
+        } else if (service === 'azure') {
+            const key = read(readers.getAzureKey).trim();
+            if (!key) return done('no key', 'No Azure Speech key is set.');
+            res = await azure.testKey(key, read(readers.getAzureRegion), timeoutMs);
+        } else {
+            const provider = STT_PROVIDERS[service];
+            const key = read(readers.getRestKey, service).trim();
+            if (!key) return done('no key', `No ${provider.label} key is set.`);
+            res = await sttRest.testKey(provider, key, { model: read(readers.getRestModel, service), timeoutMs });
+        }
+        return done(res && res.ok ? 'ok' : 'failed', (res && res.message) || '(no answer)');
+    } catch (err) {
+        return done('failed', `The test itself failed: ${(err && err.message) || err}`);
+    }
+}
+
+/*
  * Switch the hearing service without restarting the app.
  *
  * ⚠ WHY THIS EXISTS. init() built the capture source ONCE at startup, so changing the
