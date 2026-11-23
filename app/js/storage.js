@@ -142,11 +142,67 @@ export function supportsUserChosenFolder() {
     return supportsFolderPicker();
 }
 
+/*
+ * CAN THE APP ACTUALLY SAVE? (Ken, November 23 2026.)
+ *
+ * ⚠ ON AN iPAD RUNNING iPadOS 18.4 IT COULD NOT, AND SETTINGS SAID THE DATA WAS SAFE.
+ * Safari there offers the browser's private storage but not the way of writing into a
+ * file (createWritable), so every save created an EMPTY file and then failed. The next
+ * launch found nine empty files, reported each as damaged, and turned the conversation
+ * pane red - while Settings > Where Your Data Is Kept said "Your data is safe on this
+ * device", because that line only ever asked whether the browser had promised not to
+ * erase the storage, never whether anything could be written into it.
+ *
+ * So checkCanSave() writes a small file, reads it back and deletes it. It runs on the
+ * device's storage BEFORE that storage is adopted, so a browser that cannot write never
+ * gets a root and never leaves empty files behind (the app then works as it does with
+ * no folder chosen), and again whenever a folder is connected or chosen. Its answer is
+ * what Settings and the problem report show. A promise not to erase is worth nothing
+ * if nothing was saved. It asks the real file it made whether it can be written,
+ * rather than asking the browser in general, so the answer is about this storage.
+ */
+const SAVE_CHECK_FILE = '.conversant-save-check';
+let saveCheck = null;   // { ok, reason, detail, at } - null until a check has run
+
+/** The last save check: null if none has run, else { ok, reason, detail, at }.
+ * reason is 'ok', 'browser-cannot-write', 'write-failed' or 'read-back-differed'. */
+export function lastSaveCheck() { return saveCheck; }
+
+function noteSaveCheck(ok, reason, detail = '') {
+    saveCheck = { ok, reason, detail: asciiForLog(String(detail || '')).slice(0, 160), at: new Date().toISOString() };
+    return saveCheck;
+}
+
+export async function checkCanSave(root = dirHandle) {
+    if (!root) return saveCheck;   // nothing to check; keep any earlier finding
+    const probe = `save check ${Date.now()}`;
+    try {
+        const fh = await root.getFileHandle(SAVE_CHECK_FILE, { create: true });
+        if (typeof fh.createWritable !== 'function') {
+            return noteSaveCheck(false, 'browser-cannot-write', 'createWritable is not available');
+        }
+        const w = await fh.createWritable();
+        await w.write(probe);
+        await w.close();
+        const back = await (await fh.getFile()).text();
+        if (back !== probe) return noteSaveCheck(false, 'read-back-differed', `wrote ${probe.length} characters, read ${back.length}`);
+        return noteSaveCheck(true, 'ok');
+    } catch (err) {
+        return noteSaveCheck(false, 'write-failed', `${(err && err.name) || 'Error'}: ${(err && err.message) || ''}`);
+    } finally {
+        try { await root.removeEntry(SAVE_CHECK_FILE); } catch { /* already gone, or never made */ }
+    }
+}
+
 // Adopt the browser's private per-origin filesystem as the data folder.
 async function useDeviceStorage() {
     if (!supportsDeviceStorage()) return false;
     try {
         const root = await navigator.storage.getDirectory();
+        // A browser that cannot write a file is not given a root at all: adopting one
+        // only fills it with empty files that read back as damaged on the next launch.
+        const check = await checkCanSave(root);
+        if (check && check.reason === 'browser-cannot-write') return false;
         setRoot(root, BACKEND.DEVICE);
         await ensureDataSubfolders();
         return true;
@@ -339,6 +395,7 @@ async function restoreDataFolderInner() {
                 setRoot(stored, BACKEND.FOLDER);
                 await ensureDataSubfolders();
                 noteFolder('connected');
+                await checkCanSave();
                 return true;
             }
             noteFolder('not-granted:' + perm);
@@ -365,6 +422,7 @@ export async function pickDataFolder() {
         primedHandle = handle;                  // so the next Start can ask about THIS folder
         setRoot(handle, BACKEND.FOLDER);
         await ensureDataSubfolders();
+        await checkCanSave();
         return dirHandle;
     }
     // Called on a platform with no picker: adopt device storage rather than

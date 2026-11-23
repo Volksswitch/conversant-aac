@@ -239,9 +239,38 @@ export function speechConfig() {
 }
 
 // One-line description for diagnostics and bug reports.
+/*
+ * The operating system's version, as far as the browser says (Ken, November 23 2026),
+ * or '' when it does not.
+ *
+ * On an iPad Safari claims to be a Mac and its "Mac OS X 10_15_7" is a fixed lie, but
+ * its own "Version/18.4" follows iPadOS, so that is what is read (18.4.1 shows as 18.4).
+ * A Home Screen app reports the same Safari user agent. The Chrome and Edge wrappers on
+ * an iPhone carry "OS 18_4" instead. Android says its version plainly. Windows and
+ * macOS report fixed numbers in every modern browser, so nothing is claimed there.
+ *
+ * Why it matters: an iPad on iPadOS 18.4 could not save files at all, and the problem
+ * report could not say which iPadOS it was on.
+ */
+export function osVersion() {
+    const s = String(ua || '');
+    if (isAndroid()) {
+        const m = s.match(/\bAndroid (\d+(?:\.\d+)*)/);
+        return m ? m[1] : '';
+    }
+    if (isIOS()) {
+        const os = s.match(/\bOS (\d+)_(\d+)(?:_(\d+))?\b/);
+        if (os && !/Mac OS X/.test(os[0])) return [os[1], os[2], os[3]].filter(Boolean).join('.');
+        const v = s.match(/\bVersion\/(\d+(?:\.\d+)*)/);
+        return v ? v[1] : '';
+    }
+    return '';
+}
+
 export function describe() {
     const bits = [];
-    bits.push(isIOS() ? 'iPadOS/iOS' : isAndroid() ? 'Android' : 'desktop');
+    const ver = osVersion();
+    bits.push((isIOS() ? 'iPadOS/iOS' : isAndroid() ? 'Android' : 'desktop') + (ver ? ' ' + ver : ''));
     const shell = iosBrowserShell();
     if (shell) bits.push(shell + ' (WebKit wrapper)');
     else if (isIOS()) bits.push('Safari');

@@ -8004,6 +8004,27 @@ function updateFolderDisplay() {
     updateStorageDurability(deviceMode);
 }
 
+// What to tell the user when the save check failed. Plain words, and what to do.
+function saveCheckMessage(check, deviceMode) {
+    if (check.reason === 'browser-cannot-write') {
+        if (platform.isIOS()) {
+            const ver = platform.osVersion();
+            return `Conversant can't save your information on this iPad. This version of iPadOS${ver ? ` (${ver})` : ''} ` +
+                "doesn't let it save files. Update the iPad in its Settings app, under General → Software Update, " +
+                "then open Conversant again. Until then, your conversations aren't saved, and the rest of what " +
+                'you enter may not be kept.';
+        }
+        return "Conversant can't save your information in this browser. Try the latest version of Chrome or Edge. " +
+            "Until then, your conversations aren't saved, and the rest of what you enter may not be kept.";
+    }
+    return deviceMode
+        ? "Conversant couldn't save a test file on this device just now, so your information may not be kept. " +
+          'Close Conversant completely and open it again. If this message comes back, send a problem report.'
+        : "Conversant couldn't save a test file in your data folder just now, so your information may not be kept. " +
+          'Check that the folder still exists and that you can save files in it, then choose it again. ' +
+          'If this message comes back, send a problem report.';
+}
+
 // Report whether the browser has promised to keep this data. Only shown where it
 // can actually be in doubt (device storage): measured on an iPad July 30 2026,
 // persistence is granted to a Home Screen app and REFUSED in a browser tab, and a
@@ -8012,11 +8033,25 @@ function updateFolderDisplay() {
 async function updateStorageDurability(deviceMode) {
     const row = document.getElementById('storageDurabilityRow');
     if (!row) return;
+    const statusEl = document.getElementById('storageDurabilityStatus');
+    const btn = document.getElementById('makeStorageDurableBtn');
+
+    // ⚠ CAN IT SAVE AT ALL comes first (Ken, November 23 2026). This line used to say
+    // "Your data is safe on this device" on an iPad that could not write a single file,
+    // because it only asked whether the browser had promised not to erase the storage.
+    // A failed save check is shown everywhere, folder or not, and nothing after it is.
+    const check = storage.lastSaveCheck();
+    if (check && !check.ok) {
+        row.hidden = false;
+        statusEl.textContent = saveCheckMessage(check, deviceMode);
+        statusEl.className = 'setting-hint storage-warn';
+        if (btn) btn.hidden = true;
+        return;
+    }
+
     row.hidden = !deviceMode;
     if (!deviceMode) return;
 
-    const statusEl = document.getElementById('storageDurabilityStatus');
-    const btn = document.getElementById('makeStorageDurableBtn');
     const status = await storage.getStorageStatus();
     const room = status.quotaMB ? ` About ${status.quotaMB.toLocaleString()} MB of room.` : '';
 

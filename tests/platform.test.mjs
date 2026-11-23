@@ -270,3 +270,20 @@ test('a tablet turned sideways is the same screen', async () => {
     assert.equal(p.compareDevice({ os: 'android', shell: 'tab', screen: '800x1280' }, here).sameScreen, true);
     assert.equal(p.compareDevice({ os: 'android', shell: 'tab', screen: '1366x768' }, here).sameScreen, false);
 });
+
+/* The OS version, for problem reports (Ken, November 23 2026): an iPad on iPadOS 18.4
+ * could not save files, and the report could not say which iPadOS it was on. */
+test('the iPadOS version is read from Safari, which otherwise claims to be a Mac', async () => {
+    const ipad184 = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.4 Mobile/15E148 Safari/604.1';
+    const p = await loadPlatform({ ua: ipad184, touch: true });
+    assert.equal(p.osVersion(), '18.4', 'not the fixed "10_15_7"');
+    assert.match(p.describe(), /^iPadOS\/iOS 18\.4 · Safari/);
+    assert.equal((await loadPlatform({ ua: UA.iosSafari, touch: true })).osVersion(), '26.6');
+    assert.equal((await loadPlatform({ ua: UA.iosChrome, touch: true })).osVersion(), '26.0', 'a wrapper says OS 26_0');
+});
+
+test('Android says its version; Windows and a Mac claim none', async () => {
+    assert.equal((await loadPlatform({ ua: UA.androidTablet })).osVersion(), '14');
+    assert.equal((await loadPlatform({ ua: UA.windowsEdge })).osVersion(), '');
+    assert.equal((await loadPlatform({ ua: UA.mac })).osVersion(), '', 'a real Mac is not read as an iPad');
+});

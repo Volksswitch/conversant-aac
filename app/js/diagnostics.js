@@ -51,6 +51,14 @@ async function storageInfo() {
     // folder is one of the few things that changes what every other number here
     // means, and until this existed the answer had to be guessed at from symptoms.
     try { info.reconnect = storage.folderReconnectTrace() || '(nothing recorded)'; } catch { /* ignore */ }
+    // Can the app actually save? Run fresh here, because the answer at start-up may be
+    // an hour old, and a report about lost information turns on it.
+    try {
+        const check = (await storage.checkCanSave()) || storage.lastSaveCheck();
+        info.canSave = check
+            ? (check.ok ? 'yes (a test file was written and read back)' : `NO - ${check.reason}${check.detail ? ': ' + check.detail : ''}`)
+            : 'not checked (no storage in use)';
+    } catch { /* ignore */ }
     try {
         if (navigator.storage && navigator.storage.persisted) info.persisted = await navigator.storage.persisted();
         if (navigator.storage && navigator.storage.estimate) {

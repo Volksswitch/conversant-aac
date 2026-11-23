@@ -40,6 +40,9 @@ export const APP_FILES = [
     'practice-scenarios.json', 'control-phrases.json', 'placeholders.json',
     'express-panel.json', 'voice.json',
     'errors.log', 'metrics.log', 'Screen Openings.txt',
+    // Written and deleted at once to check the app can save; listed in case a crash
+    // in between left it behind.
+    '.conversant-save-check',
 ];
 const MONTHLY_METRICS = /^metrics-\d{4}-\d{2}\.log$/;
 
