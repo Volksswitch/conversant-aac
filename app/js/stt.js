@@ -93,6 +93,40 @@ const listenStats = {
 };
 function noteListen(key) { listenStats[key] = (listenStats[key] || 0) + 1; }
 
+/*
+ * THE STEPS OF HEARING, COUNTED, so a problem report can say where hearing breaks
+ * (Ken, November 22 2026, with a beta tester whose device could not hear anyone). The
+ * counts already kept said what the microphone and the service did; these add the two
+ * ends: whether Listen was ever asked for, and whether words came back - and if they
+ * did, whether the app threw them away as its own voice. Counts only, never words.
+ * They cover THIS SESSION, since the app was opened, which the report says.
+ */
+const sessionStartedAt = Date.now();
+const hearStats = {
+    listenRequests: 0,    // startListening / resumeListening calls
+    noSource: 0,          // ...of those, with nothing set up to listen (init never ran)
+    sourceErrors: {},     // errors that ended a listening run, by kind
+    deliveries: 0,        // pieces of text the recognizer or service sent
+    echoDropped: 0,       // ...of those, taken to be the app's own voice and dropped
+    partnerHeard: 0,      // ...of those, kept as the other person's words
+};
+
+/** The counts above plus what is listening now, for listening-diagnosis.js. */
+export function listeningFacts() {
+    return {
+        sessionStartedAt,
+        backend,
+        listeningNow: listeningIntent,
+        sessions: listenStats.sessions,
+        recognizerErrors: { ...listenStats.errors },
+        backgrounded: listenStats.backgrounded,
+        heardAfterReturn: listenStats.resultsAfterReturn,
+        runsThatHeard: firstHeardMs.length,
+        ...hearStats,
+        sourceErrors: { ...hearStats.sourceErrors },
+    };
+}
+
 // How long from opening the microphone to the FIRST thing heard, per listening run.
 // Ken's question - "the microphone is slow to turn on" - and it is not answerable by
 // eye, because the delay is partly the recognizer starting and partly the person not
@@ -486,9 +520,11 @@ function commitSegment(transcript) {
  * `ingest` returns whether genuine (non-echo) partner content was heard.
  */
 function ingest(transcript, isFinal) {
+    if (String(transcript || '').trim()) hearStats.deliveries++;
     // Drop our own TTS echo (a placeholder/response/prompt) — it must not
     // accumulate or renew the partner's turn. Only unique partner content gets through.
-    if (isEcho(transcript, isFinal)) return false;
+    if (isEcho(transcript, isFinal)) { hearStats.echoDropped++; return false; }
+    if (String(transcript || '').trim()) hearStats.partnerHeard++;
     if (speechActive() && novelWordCount(transcript) >= 2) heardDuringSpeech = true;
     if (isFinal) {
         commitSegment(transcript);
@@ -967,6 +1003,10 @@ function clearSilenceTimer() {
 // it: clear the intent so nothing restarts into the same failure (a tight loop when
 // offline, since both backends are network services). The user re-taps to try again.
 function handleSourceError(detail) {
+    {
+        const kind = String(detail || 'unknown').slice(0, 60);
+        hearStats.sourceErrors[kind] = (hearStats.sourceErrors[kind] || 0) + 1;
+    }
     listeningIntent = false;
     pausedForSpeech = resumingForSpeech = false;
     cancelReopen();
@@ -1062,7 +1102,8 @@ function reallyOpen(alreadyReported) {
 // Begin a NEW partner turn: whatever was captured before is gone. `delayMs` holds the
 // microphone back that long (the listening tone on an iPhone or iPad).
 export function startListening({ delayMs = 0 } = {}) {
-    if (!recognition && !externalSource) return;
+    hearStats.listenRequests++;
+    if (!recognition && !externalSource) { hearStats.noSource++; return; }
     resetTranscript();
     openSource(delayMs);
 }
@@ -1083,7 +1124,8 @@ export function startListening({ delayMs = 0 } = {}) {
 // toggle. Each of those paths already calls resetTranscript() explicitly, so they
 // are unaffected by this split.
 export function resumeListening({ delayMs = 0 } = {}) {
-    if (!recognition && !externalSource) return;
+    hearStats.listenRequests++;
+    if (!recognition && !externalSource) { hearStats.noSource++; return; }
     openSource(delayMs);
 }
 

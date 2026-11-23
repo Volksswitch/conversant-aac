@@ -9408,7 +9408,12 @@ function transcriptLineBody(ex) {
     // Only a real user turn prints as one. A kind of entry added later and not taught
     // to this function shows by its own name rather than as the user saying nothing.
     if (ex.role && ex.role !== 'user') return `  [${ex.role}]`;
-    return `  user: ${ex.selectedText || ''}`;
+    // The paid voice failed on this one and the device's voice said it instead. Saved
+    // per turn all along; shown so a report says which sentences it happened to (Ken,
+    // November 22 2026).
+    // (provider reads 'browser' on these turns - it names what spoke, not what failed.)
+    const fell = ex.tts && ex.tts.fellBack ? "   [said in this device's voice - the paid voice failed]" : '';
+    return `  user: ${ex.selectedText || ''}${fell}`;
 }
 
 // Build the full bug report: for each conversation that had errors, its transcript

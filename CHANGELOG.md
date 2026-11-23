@@ -26,7 +26,7 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-- **A problem report now checks the services Conversant depends on.** While it's being prepared, the report tests the AI and any service you pay for to hear the other person or to speak for you, and says whether each one answered. That way we know right away whether they were working when you sent it. Nothing is played out loud, and the tests together cost a tiny fraction of a cent.
+- **A problem report now checks the services Conversant depends on.** While it's being prepared, the report tests the AI and any service you pay for to hear the other person or to speak for you, and says whether each one answered. That way we know right away whether they were working when you sent it. Nothing is played out loud, and the tests together cost a tiny fraction of a cent. The report also goes through each step of hearing the other person, in order, and says where it stops working.
 
 ## Version 0.15.21
 

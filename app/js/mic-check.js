@@ -154,6 +154,24 @@ export function summary() {
            (stuck ? `\n    stuck: ${stuck}` : '');
 }
 
+/** The same counts as numbers, for listening-diagnosis.js. */
+export function facts() {
+    return {
+        starts: stats.starts,
+        reopensAfterSpeech: stats.reopensAfterSpeech,
+        notRunning: { ...stats.notRunning },
+        startsWithNoSound: stats.runsWithNoSound + (runFrames === 0 ? 1 : 0),
+        frames: stats.frames,
+        loudest: stats.loudest,
+        speechStartsAt: stats.gate ? stats.gate.open : GATE.openLevel,
+        speechSpans: stats.speechSpans,
+        connected: stats.connected,
+        mutedAtStart: stats.mutedAtStart,
+        stuck: { ...stats.stuck },
+        listeningNow: runFrames !== null,
+    };
+}
+
 /** For tests only. */
 export function _reset() {
     Object.assign(stats, { starts: 0, reopensAfterSpeech: 0, notRunning: {}, runsWithNoSound: 0, frames: 0, loudest: 0,

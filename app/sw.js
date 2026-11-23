@@ -126,6 +126,7 @@ const SHELL = [
   './js/switch-access.js',
   './js/usage-summary.js',
   './js/diagnostics.js',
+  './js/listening-diagnosis.js',
   './js/weekly-send.js',
   './js/metrics.js',
   './js/uninstall.js',

@@ -35,6 +35,7 @@ import * as expressPanel from './express-panel.js';
 import * as expressItems from './express-items.js';
 import * as controlPhrases from './control-phrases.js';
 import * as voiceProfile from './voice.js';
+import { diagnoseListening, formatDiagnosis } from './listening-diagnosis.js';
 
 // Key redaction lives in storage.reportableSettings(), NOT here: that module owns
 // the keys, so the raw bundle is never handed to this one and no future caller can
@@ -226,6 +227,27 @@ export async function countSettingsProfiles() {
     try { return (await storage.listSettingsProfiles()).length; } catch { return 0; }
 }
 
+// One line per service check for the top of the report.
+function checkLine(name, t) {
+    if (!t) return `  ${name}: not checked`;
+    const what = t.service || t.provider || '';
+    const RESULT = { ok: 'WORKS', failed: 'FAILED', 'no key': 'NO KEY', 'not needed': 'not needed' };
+    return `  ${name}${what ? ` (${what})` : ''}: ${RESULT[t.result] || t.result} - ${t.message}`;
+}
+
+// Whether the browser lets Conversant use the microphone: 'granted', 'denied',
+// 'prompt' or 'unknown'. Not every browser can be asked, and none may hold up a report.
+async function microphonePermission() {
+    try {
+        if (!navigator.permissions || !navigator.permissions.query) return 'unknown';
+        const st = await Promise.race([
+            navigator.permissions.query({ name: 'microphone' }),
+            new Promise((resolve) => setTimeout(() => resolve(null), 2000)),
+        ]);
+        return (st && st.state) || 'unknown';
+    } catch { return 'unknown'; }
+}
+
 function block(title, obj, indent = '  ') {
     const lines = [title];
     const walk = (o, pad) => {
@@ -285,6 +307,17 @@ export async function buildProblemReport({ note, appVersion, buildId, conversati
         info.suggestions = info.suggestions || {};
         info.suggestions.test = shown(aiTest, { model: aiTest.model || '(unknown)' });
     }
+    let listeningText = '(not available)';
+    try {
+        listeningText = formatDiagnosis(diagnoseListening({
+            chosen: storage.loadSttProvider(),
+            test: hearingTest,
+            recognition: info.speech.recognition,
+            permission: await microphonePermission(),
+            stt: stt.listeningFacts(),
+            mic: micCheck.facts(),
+        }));
+    } catch (e) { listeningText = `(could not be worked out: ${e && e.message ? e.message : e})`; }
     const trimmed = (note || '').trim();
     return [
         'CONVERSANT AAC — PROBLEM REPORT',
@@ -294,7 +327,17 @@ export async function buildProblemReport({ note, appVersion, buildId, conversati
         'WHAT HAPPENED (in the tester\'s words)',
         trimmed ? trimmed.split('\n').map(l => '  ' + l).join('\n') : '  (nothing written)',
         '',
-        // Second, because it is what the note is about (Ken, October 8 2026).
+        // Straight after the note, because a report about the app not hearing, not
+        // speaking or not suggesting is answered here first (Ken, November 22 2026).
+        '════════ SERVICE CHECKS (run as this report was prepared) ════════',
+        checkLine('AI', aiTest),
+        checkLine('Listening service', hearingTest),
+        checkLine('Voice', voiceTest),
+        '',
+        '════════ LISTENING CHECK ════════',
+        listeningText,
+        '',
+        // Next, because it is what the note is about (Ken, October 8 2026).
         '════════ THE CONVERSATION THIS REPORT IS ABOUT ════════',
         conversationText || '(none)',
         '',
