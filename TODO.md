@@ -70,6 +70,7 @@ the one that quietly waits forever.
   2. **The Settings title is a Switch Control target** because the app parks the cursor on it (`#settingsHeader` has tabindex -1, focused in `openSettings`). Fix with item 1: park the cursor on a real button.
   3. **Check the 0.15.14 key-row grouping** (Settings > General > API Key): does Switch Control now offer Paste, Clear and Test? If the box and buttons come up as one group, small groups are kept and only large ones split.
   4. **The iPad User Manual's switch section** should say when to use Switch Control and when Conversant's own scanning (the latter for speed-up while held and for Conversant's own grouping).
+  5. **Repeat the November 18 tests on iPadOS 27** (Ken, 2026-11-23, updating his iPad mini to 27.2.1): the five-way test page, whether Group Items still splits the rows, whether plain text is still a stop, and whether Move Repeat speeds up. If 27 fixes the lag, item 1 may not need an Apple report.
 - **Decided (Ken, 2026-11-18):** keyboard (Tab) and screen-reader order are low priority; useless stops for switch users are not. One order shared by Switch Control, Tab and screen readers; change the page order only for a specific order Ken wants.
 - **The full record of what was measured** is in CLAUDE.md, "Apple Switch Control with Conversant".
 - **Why not now:** waiting on Ken's tests of items 1 and 3.
