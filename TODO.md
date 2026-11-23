@@ -37,6 +37,14 @@ the one that quietly waits forever.
 
 ## Open
 
+### iPads below iPadOS 26 can't save: documents, iPadOS 27, and a possible fix
+- **Raised 2026-11-23 (Ken's iPad mini 6 on iPadOS 18.4.1; his problem reports).** Safari before 26 can't write files the way Conversant does, in a tab or a Home Screen app (Ken tried both). 0.15.23 detects it, stops using the storage, and warns at Start and in Settings. Details in CLAUDE.md, iPad section.
+- **Still to do:**
+  1. **Documents:** state "iPadOS 26 or later" as a requirement in the iPad User Manual (What You Need), the Beta Test Plan, the Product Overview and the Speech Provider Guide's device notes where relevant, and describe the new start-screen warning in the iPad manual. Possibly a Known Issues entry for iPads that can't update (the 7th-generation iPad and older).
+  2. **iPadOS 27:** Ken's mini is updating to 27.2.1, which nobody has measured. Check: no "can't save" warning at Start; a problem report shows "canSave: yes" and "iPadOS/iOS 27.2"; Listen, the paid voice Test, and holding phrases behave as on 26.
+  3. **Saving on iPadOS 18 (not built):** Safari 18 can write through `createSyncAccessHandle` inside a Worker. A real change to every save path.
+- **Why not now:** documents wait for "sync docs" (Ken's timing); 27 needs Ken's device; the Worker path is only worth building if real testers are stuck below 26.
+
 ### Uninstall instructions in the User Manuals: check the steps on real devices
 - **Raised 2026-11-21 (Ken asked for uninstall and clean-up instructions in each User Manual).** Added as section 11, "Uninstalling Conversant AAC", in all three manuals; Glossary and More Information became 12 and 13. The steps come from Google's, Microsoft's and Apple's help pages and from the button wording in Chrome's own source code. None was tried on a device, and the website copies were not republished.
 - **Check on each device, stopping before any last tap that would delete real data:**
