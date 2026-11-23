@@ -287,12 +287,57 @@ export function unlockAudio() {
 
 const SAMPLE_PHRASE = 'This is how I will sound during our conversation.';
 
-export function testAuraVoice(key, model, phrase = SAMPLE_PHRASE) {
-    return backendFor('deepgram').test(key, model, phrase);
+/*
+ * A time limit on the Settings voice Test (Ken, November 23 2026).
+ *
+ * ⚠ THE TEST HAD NONE. It waited for the voice to finish speaking, so a service that
+ * never answered left "Speaking…" on screen for good, with nothing saying what had
+ * happened or what to do. Seen on an iPad mini, where the problem report's own check
+ * of the same service timed out at 15 seconds while the Test button just sat there.
+ *
+ * So the Test gets the same 15 seconds, and when they run out it stops the attempt
+ * (so a late answer cannot start talking after the user has been told it failed) and
+ * says so in plain words, with steps to try. It names the SERVICE, not "the voice",
+ * because the next step is often that service's own status page.
+ */
+export const VOICE_TEST_LIMIT_MS = 15000;
+
+const SERVICE_NAMES = { deepgram: 'Deepgram', azure: 'Azure' };
+function serviceName(service) {
+    return SERVICE_NAMES[service] || (TTS_PROVIDERS[service] && TTS_PROVIDERS[service].label) || 'The voice service';
 }
 
-export function testAzureVoice(key, region, model, phrase = SAMPLE_PHRASE) {
-    return backendFor('azure').test(key, region, model, phrase);
+export function voiceTestTimeoutMessage(service, limitMs = VOICE_TEST_LIMIT_MS) {
+    const name = serviceName(service);
+    const secs = Math.round(limitMs / 1000);
+    return `✗ ${name}'s voice service didn't answer within ${secs} seconds. Things to try:\n`
+        + '1. Check that this device is connected to the internet.\n'
+        + '2. Tap Test again. A first try after the app opens sometimes stalls.\n'
+        + '3. Close Conversant completely, open it again, and tap Test.\n'
+        + `4. If it still fails, ${name} may be having trouble. Try again later, or send a problem report.`;
+}
+
+export async function withTestLimit(service, run, limitMs = VOICE_TEST_LIMIT_MS) {
+    let timer;
+    const limit = new Promise((resolve) => { timer = setTimeout(() => resolve(null), limitMs); });
+    const attempt = Promise.resolve()
+        .then(run)
+        .catch((err) => ({ ok: false, message: `✗ ${(err && err.message) || 'The voice could not be used.'}` }));
+    const res = await Promise.race([attempt, limit]);
+    clearTimeout(timer);
+    if (res) return res;
+    // Stop the attempt, so an answer that arrives later is not spoken after the user
+    // has been told the test failed.
+    try { const b = backendFor(service); if (b) b.cancel(); } catch { /* nothing to stop */ }
+    return { ok: false, timedOut: true, message: voiceTestTimeoutMessage(service, limitMs) };
+}
+
+export function testAuraVoice(key, model, phrase = SAMPLE_PHRASE, limitMs) {
+    return withTestLimit('deepgram', () => backendFor('deepgram').test(key, model, phrase), limitMs);
+}
+
+export function testAzureVoice(key, region, model, phrase = SAMPLE_PHRASE, limitMs) {
+    return withTestLimit('azure', () => backendFor('azure').test(key, region, model, phrase), limitMs);
 }
 
 /*
@@ -304,10 +349,10 @@ export function testAzureVoice(key, region, model, phrase = SAMPLE_PHRASE) {
  * merely checking the key, because a rejected key, an unknown voice, an unknown model
  * and a blocked audio context all fail differently.
  */
-export function testRestVoice(name, key, model, voice, phrase = SAMPLE_PHRASE) {
+export function testRestVoice(name, key, model, voice, phrase = SAMPLE_PHRASE, limitMs) {
     const backend = backendFor(name);
     if (!backend) return Promise.resolve({ ok: false, message: '✗ Unknown voice service.' });
-    return backend.test(key, model, voice, phrase);
+    return withTestLimit(name, () => backend.test(key, model, voice, phrase), limitMs);
 }
 
 /** Every paid voice service the app can use, for the Settings pickers. */

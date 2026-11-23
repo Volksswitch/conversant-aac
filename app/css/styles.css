@@ -3711,6 +3711,7 @@ dialog select {
     margin: 0.45rem 0 0;
     font-size: 0.9rem;
     line-height: 1.35;
+    white-space: pre-line;   /* a message may carry numbered steps on their own lines */
 }
 .api-key-status[hidden] { display: none; }
 .api-key-status.warn { color: var(--danger); }

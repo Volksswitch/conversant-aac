@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Testing a paid voice in Settings no longer waits forever. If the voice service hasn't answered within 15 seconds, the Test stops, says so, and lists a few things to try.
+
 ## Version 0.15.22
 
 - **A problem report now checks the services Conversant depends on.** While it's being prepared, the report tests the AI and any service you pay for to hear the other person or to speak for you, and says whether each one answered. That way we know right away whether they were working when you sent it. Nothing is played out loud, and the tests together cost a tiny fraction of a cent. The report also goes through each step of hearing the other person, in order, and says where it stops working.

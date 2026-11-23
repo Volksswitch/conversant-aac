@@ -220,3 +220,32 @@ test('the time limit is generous: about twice normal speaking time', () => {
     // A 60-character sentence takes about 4 seconds to say.
     assert.ok(tts.stuckLimitMs('x'.repeat(60)) >= 8000);
 });
+
+/* The Settings voice Test has a time limit (Ken, November 23 2026). Before it, a
+ * service that never answered left "Speaking…" on screen for good. */
+test('a voice Test that never answers stops at the limit and says what to do', async () => {
+    // A test run that never settles, standing in for a service that never answers.
+    const started = Date.now();
+    const res = await tts.withTestLimit('elevenlabs', () => new Promise(() => {}), 60);
+    assert.ok(Date.now() - started < 2000, 'it gave up at the limit');
+    assert.equal(res.ok, false);
+    assert.equal(res.timedOut, true);
+    assert.match(res.message, /ElevenLabs's voice service didn't answer within/);
+    assert.match(res.message, /1\. .*internet/);
+});
+
+test('a voice Test that answers in time is passed through unchanged', async () => {
+    const ok = { ok: true, message: 'fine' };
+    assert.deepEqual(await tts.withTestLimit('deepgram', async () => ok, 5000), ok);
+    const failed = await tts.withTestLimit('deepgram', async () => { throw new Error('rejected'); }, 5000);
+    assert.equal(failed.ok, false);
+    assert.equal(failed.timedOut, undefined);
+    assert.match(failed.message, /rejected/);
+});
+
+test('the timeout message names the service and gives the seconds', () => {
+    const m = tts.voiceTestTimeoutMessage('deepgram');
+    assert.match(m, /^✗ Deepgram's voice service didn't answer within 15 seconds\./);
+    assert.match(m, /problem report/);
+    assert.match(tts.voiceTestTimeoutMessage('azure', 9000), /Azure's .* within 9 seconds/);
+});
