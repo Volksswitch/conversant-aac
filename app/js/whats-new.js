@@ -22,6 +22,11 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.23": [
+    "If Conversant can't save files on your device, it now tells you right after you press Start, every time until it's fixed, and Settings says so too, under \"Where Your Data Is Kept\" (or \"Data Folder\" on a computer). It says what is still kept, what isn't, and how to fix it. Before, it could say your data was safe when nothing was being saved.",
+    "On an iPad whose iPadOS is too old to let Conversant save files, the conversation area no longer turns red every time the app opens. Updating iPadOS is still needed for your information to be saved.",
+    "Testing a paid voice in Settings no longer waits forever. If the voice service hasn't answered within 15 seconds, the Test stops, says so, and lists a few things to try."
+  ],
   "0.15.22": [
     "A problem report now checks the services Conversant depends on. While it's being prepared, the report tests the AI and any service you pay for to hear the other person or to speak for you, and says whether each one answered. That way we know right away whether they were working when you sent it. Nothing is played out loud, and the tests together cost a tiny fraction of a cent. The report also goes through each step of hearing the other person, in order, and says where it stops working."
   ],

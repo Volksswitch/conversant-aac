@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.15.23
+
 - If Conversant can't save files on your device, it now tells you right after you press Start, every time until it's fixed, and Settings says so too, under "Where Your Data Is Kept" (or "Data Folder" on a computer). It says what is still kept, what isn't, and how to fix it. Before, it could say your data was safe when nothing was being saved.
 - On an iPad whose iPadOS is too old to let Conversant save files, the conversation area no longer turns red every time the app opens. Updating iPadOS is still needed for your information to be saved.
 - Testing a paid voice in Settings no longer waits forever. If the voice service hasn't answered within 15 seconds, the Test stops, says so, and lists a few things to try.
