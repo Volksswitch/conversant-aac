@@ -511,6 +511,15 @@ export async function readPortableFile(filename) {
         logError('data folder', `${filename} could not be read, so it was left as it is`);
         return { state: 'unreadable', data: null };
     }
+    // ⚠ AN EMPTY FILE IN THE DEVICE'S OWN STORAGE IS A SAVE THAT NEVER HAPPENED (Ken's
+    // iPad mini, November 23 2026). On iPadOS 18 every save created the file and then
+    // failed to write it, leaving nine empty files; after the update to 27 the app could
+    // save again but still read those, reported each as damaged and washed the transcript
+    // red, and "left it as it is" meant the browser copy was never written back. Treated
+    // as missing, the sync writes the browser copy into it, which is the real data.
+    // ONLY on the device's own storage: a 0-byte file in a OneDrive folder may be one
+    // still downloading (CR-097), and replacing that would lose the real file.
+    if (text === '' && backend === BACKEND.DEVICE) return { state: 'missing', data: null };
     try {
         return { state: 'ok', data: JSON.parse(text) };
     } catch {

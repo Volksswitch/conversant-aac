@@ -240,29 +240,30 @@ export function speechConfig() {
 
 // One-line description for diagnostics and bug reports.
 /*
- * The operating system's version, as far as the browser says (Ken, November 23 2026),
- * or '' when it does not.
+ * The operating system's version, as far as it can honestly be told (Ken, November 23
+ * 2026), or '' when it cannot.
  *
- * On an iPad Safari claims to be a Mac and its "Mac OS X 10_15_7" is a fixed lie, but
- * its own "Version/18.4" follows iPadOS, so that is what is read (18.4.1 shows as 18.4).
- * A Home Screen app reports the same Safari user agent. The Chrome and Edge wrappers on
- * an iPhone carry "OS 18_4" instead. Android says its version plainly. Windows and
- * macOS report fixed numbers in every modern browser, so nothing is claimed there.
- *
- * Why it matters: an iPad on iPadOS 18.4 could not save files at all, and the problem
- * report could not say which iPadOS it was on.
+ * ⚠ ON AN iPAD OR iPHONE THE NUMBER IN THE USER AGENT IS NOT THE VERSION. Apple froze it
+ * from iOS 26 on, so old websites that compare numbers keep working: Ken's iPad mini on
+ * iPadOS 27 reported "18.7". A first version of this read that number and the problem
+ * report said "iPadOS 18.7" for a device on 27. So on Apple devices the answer comes from
+ * what Safari can DO: the way of writing a file Conversant needs arrived in iPadOS 26, so
+ * its presence says "26 or later" and its absence "before 26". That is the one dividing
+ * line the app depends on. Android says its version plainly. Windows and macOS report
+ * fixed numbers in every modern browser, so nothing is claimed there.
  */
 export function osVersion() {
-    const s = String(ua || '');
     if (isAndroid()) {
-        const m = s.match(/\bAndroid (\d+(?:\.\d+)*)/);
+        const m = String(ua || '').match(/\bAndroid (\d+(?:\.\d+)*)/);
         return m ? m[1] : '';
     }
     if (isIOS()) {
-        const os = s.match(/\bOS (\d+)_(\d+)(?:_(\d+))?\b/);
-        if (os && !/Mac OS X/.test(os[0])) return [os[1], os[2], os[3]].filter(Boolean).join('.');
-        const v = s.match(/\bVersion\/(\d+(?:\.\d+)*)/);
-        return v ? v[1] : '';
+        try {
+            const Handle = globalThis.FileSystemFileHandle;
+            if (typeof Handle !== 'function') return '';
+            return typeof Handle.prototype.createWritable === 'function'
+                ? '26 or later' : 'before 26';
+        } catch { return ''; }
     }
     return '';
 }

@@ -8041,9 +8041,10 @@ function saveCheckMessage(check, deviceMode) {
         "What isn't saved: your conversations, and you can't add sound buttons or documents.";
     if (check.reason === 'browser-cannot-write') {
         if (platform.isIOS()) {
-            const ver = platform.osVersion();
-            return `Conversant can't save files on this iPad, because this version of iPadOS${ver ? ` (${ver})` : ''} ` +
-                `doesn't allow it. ${kept} To fix it, update the iPad in its Settings app, under ` +
+            // No version number: Safari reports a frozen one (Ken's iPad on 27 said 18.7).
+            // What is known for certain is that saving arrived in iPadOS 26.
+            return "Conversant can't save files on this iPad, because its version of iPadOS is older than 26. " +
+                `${kept} To fix it, update the iPad in its Settings app, under ` +
                 'General → Software Update, then open Conversant again.';
         }
         return `Conversant can't save files in this browser. ${kept} ` +

@@ -8,6 +8,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 function makeDir({ canWrite = true } = {}) {
     const files = new Map();
@@ -100,4 +101,23 @@ test('a write that fails is reported, with what went wrong', async () => {
     assert.equal(check.ok, false);
     assert.equal(check.reason, 'write-failed');
     assert.match(check.detail, /QuotaExceededError: The disk is full/);
+});
+
+test('an empty file left by a failed save counts as missing, so the browser copy is written back', async () => {
+    // Ken's iPad mini: nine empty files from iPadOS 18, read after the update to 27.
+    const root = makeDir({ canWrite: true });
+    const storage = await loadWith(root);
+    await storage.restoreDataFolder();
+    await root.getFileHandle('worldview.json', { create: true });   // empty, as iPadOS 18 left it
+    const got = await storage.readPortableFile('worldview.json');
+    assert.equal(got.state, 'missing');
+    // A file with damaged contents is still left alone: only EMPTY means never saved.
+    await storage.writeFile('places.json', '{"half');
+    assert.equal((await storage.readPortableFile('places.json')).state, 'unreadable');
+});
+
+test('only the device storage treats an empty file as missing, never a user folder', () => {
+    // A 0-byte file in a OneDrive folder may still be downloading (CR-097).
+    const src = readFileSync(new URL('../app/js/storage.js', import.meta.url), 'utf8');
+    assert.match(src, /text === '' && backend === BACKEND\.DEVICE/);
 });

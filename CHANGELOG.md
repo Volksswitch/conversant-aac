@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- After you update an iPad from an iPadOS older than 26, the conversation area no longer turns red the first time you open Conversant, and what you had entered is saved properly from then on.
+
 ## Version 0.15.23
 
 - If Conversant can't save files on your device, it now tells you right after you press Start, every time until it's fixed, and Settings says so too, under "Where Your Data Is Kept" (or "Data Folder" on a computer). It says what is still kept, what isn't, and how to fix it. Before, it could say your data was safe when nothing was being saved.

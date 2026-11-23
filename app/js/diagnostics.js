@@ -99,6 +99,9 @@ export async function collectSystemInfo({ appVersion = '?', buildId = '?' } = {}
     // block with it, including info.speech.recognition, the one field a "it can't
     // hear me" report turns on.
     try { info.platform = { summary: platform.describe() }; } catch { info.platform = { error: 'unavailable' }; }
+    // The browser's own description, as sent. Its numbers are not to be trusted on Apple
+    // devices (they are frozen), but the rest of it says which browser and wrapper.
+    try { info.platform.userAgent = String(navigator.userAgent || '').slice(0, 300); } catch { /* ignore */ }
     try {
         info.platform.standalone = platform.isStandalone();
         info.platform.iosShell = platform.iosBrowserShell();
