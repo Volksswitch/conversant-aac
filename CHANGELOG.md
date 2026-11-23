@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.15.24
+
 - After you update an iPad from an iPadOS older than 26, the conversation area no longer turns red the first time you open Conversant, and what you had entered is saved properly from then on.
 
 ## Version 0.15.23

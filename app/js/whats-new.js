@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.24": [
+    "After you update an iPad from an iPadOS older than 26, the conversation area no longer turns red the first time you open Conversant, and what you had entered is saved properly from then on."
+  ],
   "0.15.23": [
     "If Conversant can't save files on your device, it now tells you right after you press Start, every time until it's fixed, and Settings says so too, under \"Where Your Data Is Kept\" (or \"Data Folder\" on a computer). It says what is still kept, what isn't, and how to fix it. Before, it could say your data was safe when nothing was being saved.",
     "On an iPad whose iPadOS is too old to let Conversant save files, the conversation area no longer turns red every time the app opens. Updating iPadOS is still needed for your information to be saved.",
