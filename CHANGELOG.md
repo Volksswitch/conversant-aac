@@ -26,7 +26,7 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-- **A problem report now checks your listening service.** If you pay for a service to hear the other person, the report tests it while it's being prepared and says whether it answered. That way we know right away whether the service was working when you sent it. The test hears nothing and costs a tiny fraction of a cent.
+- **A problem report now checks the services Conversant depends on.** While it's being prepared, the report tests the AI and any service you pay for to hear the other person or to speak for you, and says whether each one answered. That way we know right away whether they were working when you sent it. Nothing is played out loud, and the tests together cost a tiny fraction of a cent.
 
 ## Version 0.15.21
 

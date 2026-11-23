@@ -8391,6 +8391,10 @@ async function buildProblemReportText({ note = null, about = null } = {}) {
     // "no key" is then the finding.
     const hearingTestRun = stt.testHearingService(storage.loadSttProvider(), sttInitOptions('builtin'))
         .catch(() => null);
+    // And the voice and the AI, the same way (Ken, November 22 2026). The voice is asked
+    // for one word and nothing is played; the AI is asked for one word.
+    const voiceTestRun = tts.testPaidVoice().catch(() => null);
+    const aiTestRun = llm.testSuggestions().catch(() => null);
     const logs = await readLogsOnce();
     let usageText = '';
     try { usageText = await buildUsageText(logs); }
@@ -8402,9 +8406,11 @@ async function buildProblemReportText({ note = null, about = null } = {}) {
     catch (e) { conversationText = `(could not read it: ${e && e.message ? e.message : e})`; }
     let switchText = '';
     try { switchText = switchAccess.describeForReport(); } catch { switchText = ''; }
-    const hearingTest = await hearingTestRun;
+    const [hearingTest, voiceTest, aiTest] = await Promise.all([hearingTestRun, voiceTestRun, aiTestRun]);
     return diagnostics.buildProblemReport({
         hearingTest,
+        voiceTest,
+        aiTest,
         note: note != null ? note : (noteEl ? noteEl.value : ''),
         appVersion: APP_VERSION,
         buildId: BUILD_ID,
@@ -8602,8 +8608,8 @@ const REPORT_DISCLOSURE =
     + 'and the errors it recorded, along with what was said in any conversation those errors happened in. '
     + 'A conversation you marked "Don\u2019t save" has no transcript here, though an error '
     + 'from it may still be listed. If you use switches, it also lists your recent switch '
-    + 'presses and what each one did. If you pay for a service to hear the other person, '
-    + 'the report also says whether it answered a test just now. Your API keys are never included.';
+    + 'presses and what each one did. It also says whether the AI, and any service you pay '
+    + 'for to hear or to speak, answered a test just now. Your API keys are never included.';
 
 
 /* Send the problem report back over the same path the weekly report uses (Ken,

@@ -267,18 +267,23 @@ export function formatSystemInfo(info) {
  * `errorReport` and `usageText` are passed in rather than gathered here so this
  * module stays free of app.js's conversation state; app.js owns the SEC-2 decision
  * about whether a live private transcript may be included. */
-export async function buildProblemReport({ note, appVersion, buildId, conversationText = '', errorReport = '', usageText = '', recentEvents = '', switchText = '', hearingTest = null }) {
+export async function buildProblemReport({ note, appVersion, buildId, conversationText = '', errorReport = '', usageText = '', recentEvents = '', switchText = '', hearingTest = null, voiceTest = null, aiTest = null }) {
     const info = await collectSystemInfo({ appVersion, buildId });
-    // The hearing service tested as the report was built (stt.testHearingService). Only
-    // here, not in collectSystemInfo, because that also feeds the weekly report, which
-    // runs by itself and must not contact a paid service the user did not ask about.
-    if (hearingTest) {
-        info.speech.hearingTest = {
-            service: hearingTest.service,
-            result: hearingTest.result,
-            message: hearingTest.message,
-            seconds: hearingTest.ms != null ? Math.round(hearingTest.ms / 100) / 10 : null,
-        };
+    // The services tested as the report was built (stt.testHearingService,
+    // tts.testPaidVoice, llm.testSuggestions). Only here, not in collectSystemInfo,
+    // because that also feeds the weekly report, which runs by itself and must not
+    // contact a paid service the user did not ask about.
+    const shown = (t, extra = {}) => ({
+        ...extra,
+        result: t.result,
+        message: t.message,
+        seconds: t.ms != null ? Math.round(t.ms / 100) / 10 : null,
+    });
+    if (hearingTest) info.speech.hearingTest = shown(hearingTest, { service: hearingTest.service });
+    if (voiceTest) info.speech.voiceTest = shown(voiceTest, { service: voiceTest.service, voice: voiceTest.voice || '(none)' });
+    if (aiTest) {
+        info.suggestions = info.suggestions || {};
+        info.suggestions.test = shown(aiTest, { model: aiTest.model || '(unknown)' });
     }
     const trimmed = (note || '').trim();
     return [

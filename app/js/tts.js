@@ -110,6 +110,43 @@ export async function prepare(text) {
     } catch { /* fetched when said instead */ }
 }
 
+/*
+ * Test the paid voice in use WITHOUT A SOUND, for the problem report (Ken, November 22
+ * 2026). The Settings voice Test speaks, which a report must not do: it is prepared
+ * while somebody may be mid-conversation. So this asks the service for one short word
+ * through the same fetch-without-playing step that gets phrases ready ahead of time,
+ * using the key, voice and model the app would speak with right now. That exercises
+ * everything the spoken test does except the speaker itself.
+ *
+ * Returns { service, voice, result, message, ms }, result being 'ok', 'failed',
+ * 'no key' or 'not needed' (the device's own voice). Never throws, never contains a key.
+ */
+export async function testPaidVoice({ phrase = 'Test.', timeoutMs = 15000 } = {}) {
+    const service = provider;
+    const voice = isPaid(service) ? (models[service] || null) : null;
+    const started = Date.now();
+    const done = (result, message) => ({ service, voice, result, message, ms: Date.now() - started });
+    if (!isPaid(service)) return done('not needed', "This device's own voice - there is no key to test.");
+    let key = '';
+    try { key = String((keyReaders[service] ? keyReaders[service]() : getKey()) || '').trim(); } catch { key = ''; }
+    if (!key) return done('no key', 'No key is set for this voice service.');
+    const scrub = (m) => String(m || '').split(key).join('<key removed>');
+    let timer;
+    try {
+        const backend = backendFor(service);
+        const bytes = await Promise.race([
+            backend.fetchForStore(phrase, voice),
+            new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('The voice service did not answer in time.')), timeoutMs); }),
+        ]);
+        if (!bytes || !bytes.byteLength) return done('failed', 'The voice service sent back no audio.');
+        return done('ok', `✓ The voice answered (${bytes.byteLength} bytes of audio)`);
+    } catch (err) {
+        return done('failed', `✗ ${scrub((err && err.message) || 'The voice could not be used.')}`);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 /** The words exactly as the voice is given them, after any "How to say it" respelling. */
 export function spokenForm(text) { return pronounce(text); }
 

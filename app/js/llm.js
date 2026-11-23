@@ -278,6 +278,45 @@ export async function testApiKey(key) {
     return p.testKey(key ?? apiKey);
 }
 
+/*
+ * Ask the AI for one word, for the problem report (Ken, November 22 2026: check the AI
+ * as well as the speech services before a report goes, so we know whether it is
+ * working right now). A real request through ask(), with the model the suggestions
+ * use, rather than the free key check: the key check lists models and so passes while
+ * the request that matters is refused - an empty credit balance, a model the account
+ * cannot use, a service outage. About 20 tokens, a tiny fraction of a cent, and counted
+ * in the spend like anything else.
+ *
+ * Returns { provider, model, result, message, ms }, result 'ok', 'failed' or 'no key'.
+ * Never throws, never contains a key.
+ */
+export async function testSuggestions({ timeoutMs = 15000 } = {}) {
+    const started = Date.now();
+    let info = { id: '?', model: null };
+    try { info = providerInfo(); } catch { /* reported as unknown */ }
+    const done = (result, message) => ({ provider: info.id, model: info.model, result, message, ms: Date.now() - started });
+    const p = provider.active();
+    const key = String(apiKey || '').trim();
+    if (p.needsKey !== false && !key) return done('no key', 'No AI key is set.');
+    const scrub = (m) => (key ? String(m || '').split(key).join('<key removed>') : String(m || ''));
+    let timer;
+    try {
+        await Promise.race([
+            askDetailed({
+                system: 'This is a connection check. Reply with the single word: ready',
+                messages: [{ role: 'user', content: 'Are you there?' }],
+                maxTokens: 10,
+            }),
+            new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('The AI did not answer in time.')), timeoutMs); }),
+        ]);
+        return done('ok', '✓ The AI answered');
+    } catch (err) {
+        return done('failed', `✗ ${scrub((err && err.message) || 'The AI could not be reached.')}`);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 /** Which provider is answering, for the About screen and problem reports. */
 export function providerInfo() {
     const p = provider.active();
