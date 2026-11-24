@@ -228,3 +228,13 @@ Everything except the ending is shared, so the two can't drift apart. Each has a
 - **The AI's words are real.** The first run with `--capture` sends every request to the real AI and saves its exact answers, and how long each took, in `scripts/video/demo/demo-ai-recording.json`. Every later run replays them, so the video comes out the same each time. A run that no longer lines up with the recording stops and says to record again.
 
 **When Conversant changes:** run the command above. If it stops and asks for a new recording (the prompt, Marc's data or the steps changed), add `--capture`, then **watch the result**. The AI may word things differently, and a tap that looks for an answer by its words falls back to a fixed position if nothing fits. Recording costs a few cents of AI use. Speech already made is reused, so ElevenLabs is only charged for lines whose words changed.
+
+## The ATIA video (November 24 2026)
+
+A ten-minute video made to play inside Ken's ATIA 2027 talk, in place of the live demo and the Part 2 detail slides. It shows how Conversant gives an authentic voice in real-time conversation with any partner, chapter by chapter through five principles from conversation analysis: turn-taking, adjacency pairs and preference, repair, recipient design, and openings and closings. Each chapter names the principle on a card, says what it changed in Conversant, and shows it in a real exchange. Two scenes: a coffee shop where Marc has never met the barista, and Pulp Comics with Ramon.
+
+**To make it:** `node scripts/video/render-video.mjs scripts/video/demo/conversant-atia.mjs` writes `Videos/ATIA/Conversant AAC at ATIA 2027.mp4`. Same voices, Marc data and recorded-AI arrangement as the demonstration video; its own recording is `scripts/video/demo/atia-ai-recording.json`.
+
+**The deck:** `python scripts/video/demo/build-atia-deck.py <original deck> <new deck> <video> <poster.png> scripts/video/demo/atia-chapters.txt` makes the talk's version that carries the video (a new slide after 22 on what the article missed, the video on slide 27, slides 28 to 38 hidden, conversation-analysis notes on slides 13 and 16, and the sources on the references slide). The chapter times in `atia-chapters.txt` must be updated by hand when the video changes. The result lives in the presentation's `ATIA 2027 with Conversant Video` folder.
+
+**After re-recording, check two lines by watching:** the "same question" comparison (the narration describes what the two sets actually share and differ in) and the weekend question (the narration says the AI already knew Marc's usual weekend). Both describe this recording's answers.

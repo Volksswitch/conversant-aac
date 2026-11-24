@@ -807,6 +807,10 @@ async function main() {
       // A title card can still act on the app behind it (end a conversation, set
       // something up) before or after it is shown.
       if (step.before && !script.pictures) await step.before(page);
+      // A card may be worked out at the moment (the ATIA video's timeline carries
+      // the real wait from an earlier exchange). It is settled once, here, so the
+      // signature below records what was actually shown.
+      if (typeof step.card === 'function') step.card = await step.card(page);
       await framer.card(step.card, shot);
       if (step.after && !script.pictures) await step.after(page);
     } else {

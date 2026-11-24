@@ -1,0 +1,576 @@
+{
+  "note": "Real AI answers recorded by render-video.mjs --capture. Do not edit by hand.",
+  "recorded": "2026-11-24T15:47:19.850Z",
+  "answers": [
+    {
+      "kind": "response options",
+      "ms": 3704,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011ChN1r4QeaoHW7cEv1NRoy",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"A venti iced black tea, unsweetened, please.\",\"hint\":\"usual order\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Not just yet, I need another minute to decide.\",\"hint\":\"need a minute\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"What's good today? Anything new on the menu?\",\"hint\":\"ask what's new\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, could you say that again?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 585,
+          "cache_creation_input_tokens": 17139,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 17139,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 272,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"A venti iced black tea, unsweetened, please.\",\"hint\":\"usual order\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Not just yet, I need another minute to decide.\",\"hint\":\"need a minute\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"What's good today? Anything new on the menu?\",\"hint\":\"ask what's new\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, could you say that again?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 2393,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011ChN1sK3kGP5gNUFsXBAsg",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[\"cake pops\",\"croissants\",\"breakfast sandwiches\"],\"offered_range\":null,\"responses\":[{\"slot\":\"CHOICE\",\"text\":\"A cake pop, please.\",\"hint\":\"cake pop\"},{\"slot\":\"CHOICE\",\"text\":\"A croissant, please.\",\"hint\":\"croissant\"},{\"slot\":\"CHOICE\",\"text\":\"A breakfast sandwich, please.\",\"hint\":\"sandwich\"},{\"slot\":\"CHOICE_OTHER\",\"text\":\"No thanks, just the tea.\",\"hint\":\"just tea\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 661,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17139,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 253,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[\"cake pops\",\"croissants\",\"breakfast sandwiches\"],\"offered_range\":null,\"responses\":[{\"slot\":\"CHOICE\",\"text\":\"A cake pop, please.\",\"hint\":\"cake pop\"},{\"slot\":\"CHOICE\",\"text\":\"A croissant, please.\",\"hint\":\"croissant\"},{\"slot\":\"CHOICE\",\"text\":\"A breakfast sandwich, please.\",\"hint\":\"sandwich\"},{\"slot\":\"CHOICE_OTHER\",\"text\":\"No thanks, just the tea.\",\"hint\":\"just tea\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 4510,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011ChN1tHSnKYDaJmBi4VKmp",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Marc, with a C, please.\",\"hint\":\"Marc with a C\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Not Mark with a K, please. It's Marc, with a C.\",\"hint\":\"correct the spelling\"},{\"slot\":\"INITIATIVE\",\"text\":\"Marc, with a C. Everybody writes Mark, so I'll check the cup.\",\"hint\":\"light joke\",\"format\":\"expansion\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, what name did you ask for?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 680,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17139,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 286,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Marc, with a C, please.\",\"hint\":\"Marc with a C\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Not Mark with a K, please. It's Marc, with a C.\",\"hint\":\"correct the spelling\"},{\"slot\":\"INITIATIVE\",\"text\":\"Marc, with a C. Everybody writes Mark, so I'll check the cup.\",\"hint\":\"light joke\",\"format\":\"expansion\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, what name did you ask for?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 2412,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011ChN1uZnKYsmD19uMAxGT1",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Pretty good, thanks. How's yours?\",\"hint\":\"pretty good\",\"account\":false},{\"slot\":\"DISPREFERRED\",\"text\":\"Kind of slow, honestly. I'm ready for the weekend.\",\"hint\":\"kind of slow\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Better now that I'm getting caffeine. How's your shift going?\",\"hint\":\"ask back\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, could you say that again?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 718,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17139,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 287,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Pretty good, thanks. How's yours?\",\"hint\":\"pretty good\",\"account\":false},{\"slot\":\"DISPREFERRED\",\"text\":\"Kind of slow, honestly. I'm ready for the weekend.\",\"hint\":\"kind of slow\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Better now that I'm getting caffeine. How's your shift going?\",\"hint\":\"ask back\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, could you say that again?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 3206,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011ChN1vhB6Kxqu6Ze2PPNKM",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"CLOSING\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Thanks, you too.\",\"hint\":\"thanks, you too\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Sorry, could you hand it to me? The counter's a bit high for me.\",\"hint\":\"hand it to me\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Thanks. Any chance you could hand it over when it's ready?\",\"hint\":\"ask to hand over\",\"format\":\"counter-offer\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, where was that again?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 773,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17139,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 285,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"CLOSING\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Thanks, you too.\",\"hint\":\"thanks, you too\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Sorry, could you hand it to me? The counter's a bit high for me.\",\"hint\":\"hand it to me\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Thanks. Any chance you could hand it over when it's ready?\",\"hint\":\"ask to hand over\",\"format\":\"counter-offer\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, where was that again?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 3543,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011ChN21VKqf1TAiyxX6995x",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Pretty good, thanks. How's yours?\",\"hint\":\"pretty good\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Kind of slow, honestly. Saturday has to get better from here.\",\"hint\":\"slow day\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Better now that I'm here. Anything in for me?\",\"hint\":\"anything in?\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, say that again?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 816,
+          "cache_creation_input_tokens": 17265,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 17265,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 276,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Pretty good, thanks. How's yours?\",\"hint\":\"pretty good\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Kind of slow, honestly. Saturday has to get better from here.\",\"hint\":\"slow day\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Better now that I'm here. Anything in for me?\",\"hint\":\"anything in?\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, say that again?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 3678,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011ChN22hBkvLJ6wKBF5YUgX",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"STATEMENT\",\"turn_status\":\"INCOMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Yeah? What about him?\",\"hint\":\"what about him\",\"account\":false},{\"slot\":\"DISPREFERRED\",\"text\":\"Hold that thought, I want to hear it, but let me finish this first.\",\"hint\":\"hold on\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Is there a new issue out with his work in it?\",\"hint\":\"new issue?\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, which artist do you mean?\",\"hint\":\"which artist\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 868,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 278,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"STATEMENT\",\"turn_status\":\"INCOMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Yeah? What about him?\",\"hint\":\"what about him\",\"account\":false},{\"slot\":\"DISPREFERRED\",\"text\":\"Hold that thought, I want to hear it, but let me finish this first.\",\"hint\":\"hold on\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Is there a new issue out with his work in it?\",\"hint\":\"new issue?\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, which artist do you mean?\",\"hint\":\"which artist\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 3701,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011ChN23VDCeF996JZvdzBhB",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"INVITATION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Yes, I'm in. Count me in for Saturday.\",\"hint\":\"yes, I'm in\"},{\"slot\":\"DISPREFERRED\",\"text\":\"I'd love to, but I'm not sure I can make noon. I'll let you know.\",\"hint\":\"maybe, can't commit\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Sure, if I can get a signed issue. Can you set one aside on my pull list?\",\"hint\":\"ask to hold one\",\"format\":\"counter-offer\"},{\"slot\":\"REPAIR\",\"text\":\"Wait, who's the artist?\",\"hint\":\"which artist?\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 935,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 310,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"INVITATION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Yes, I'm in. Count me in for Saturday.\",\"hint\":\"yes, I'm in\"},{\"slot\":\"DISPREFERRED\",\"text\":\"I'd love to, but I'm not sure I can make noon. I'll let you know.\",\"hint\":\"maybe, can't commit\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Sure, if I can get a signed issue. Can you set one aside on my pull list?\",\"hint\":\"ask to hold one\",\"format\":\"counter-offer\"},{\"slot\":\"REPAIR\",\"text\":\"Wait, who's the artist?\",\"hint\":\"which artist?\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 2979,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011ChN25pHDqZ49MfVZc5TQR",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[\"regular cover\",\"variant\"],\"offered_range\":null,\"responses\":[{\"slot\":\"CHOICE\",\"text\":\"The regular cover, same as always.\",\"hint\":\"regular\"},{\"slot\":\"CHOICE\",\"text\":\"The variant, please.\",\"hint\":\"variant\"},{\"slot\":\"CHOICE_ASK\",\"text\":\"What's the variant look like?\",\"hint\":\"ask about it\"},{\"slot\":\"CHOICE_REPAIR\",\"text\":\"Sorry, which two did you say?\",\"hint\":\"say again\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 961,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 241,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[\"regular cover\",\"variant\"],\"offered_range\":null,\"responses\":[{\"slot\":\"CHOICE\",\"text\":\"The regular cover, same as always.\",\"hint\":\"regular\"},{\"slot\":\"CHOICE\",\"text\":\"The variant, please.\",\"hint\":\"variant\"},{\"slot\":\"CHOICE_ASK\",\"text\":\"What's the variant look like?\",\"hint\":\"ask about it\"},{\"slot\":\"CHOICE_REPAIR\",\"text\":\"Sorry, which two did you say?\",\"hint\":\"say again\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 2216,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011ChN27Gvt4unsjnY6DHFji",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"OTHER\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":true,\"offered_options\":[],\"offered_range\":null,\"responses\":[],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 960,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 89,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"OTHER\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":true,\"offered_options\":[],\"offered_range\":null,\"responses\":[],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "other",
+      "ms": 2017,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011ChN27RU6CyftqWdwT8hdv",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"rephrase\": \"Variant cover, thanks.\", \"expand\": \"The variant cover, please. I'd like that one for my pull list.\", \"guessed\": false}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 7100,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 54,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"rephrase\": \"Variant cover, thanks.\", \"expand\": \"The variant cover, please. I'd like that one for my pull list.\", \"guessed\": false}"
+    },
+    {
+      "kind": "response options",
+      "ms": 3176,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011ChN29vfpXbyzxK2Vs68Tc",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"No, I missed it. Who won?\",\"hint\":\"missed it\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Not yet, I'm scared to look. Did we lose?\",\"hint\":\"scared to look\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Don't spoil it yet. Did you watch it?\",\"hint\":\"ask back\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, which game?\",\"hint\":\"which game\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 1008,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 268,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"No, I missed it. Who won?\",\"hint\":\"missed it\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Not yet, I'm scared to look. Did we lose?\",\"hint\":\"scared to look\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Don't spoil it yet. Did you watch it?\",\"hint\":\"ask back\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, which game?\",\"hint\":\"which game\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 4454,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011ChN2B8yGJiTVSdJVcZCwq",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Gaming with Devon and Tyler tonight, then Sunday dinner at Abuela's.\",\"hint\":\"gaming, Abuela's\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Not much, honestly. I'm pretty wiped, so probably keeping it low-key.\",\"hint\":\"low-key weekend\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Reading this new Spider-Man, for starters. What are you doing?\",\"hint\":\"ask him back\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, the rest of the weekend, what about it?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 1041,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 323,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Gaming with Devon and Tyler tonight, then Sunday dinner at Abuela's.\",\"hint\":\"gaming, Abuela's\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Not much, honestly. I'm pretty wiped, so probably keeping it low-key.\",\"hint\":\"low-key weekend\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Reading this new Spider-Man, for starters. What are you doing?\",\"hint\":\"ask him back\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, the rest of the weekend, what about it?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 3420,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011ChN2C8bUFcCS3iKQCYqb3",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Sunday dinner at Abuela's. Enchiladas.\",\"hint\":\"Abuela's dinner\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Not much, honestly. Just taking it easy this weekend.\",\"hint\":\"taking it easy\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Sunday dinner at Abuela's. What about you, Ramon?\",\"hint\":\"ask him back\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, the rest of the weekend?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 1266,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 298,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Sunday dinner at Abuela's. Enchiladas.\",\"hint\":\"Abuela's dinner\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Not much, honestly. Just taking it easy this weekend.\",\"hint\":\"taking it easy\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Sunday dinner at Abuela's. What about you, Ramon?\",\"hint\":\"ask him back\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, the rest of the weekend?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 2973,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011ChN2DiAbq4WQBmAczQDEV",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"CLOSING\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"See you then, Ramon.\",\"hint\":\"see you\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Wait, I might come to that signing after all. Save me a spot?\",\"hint\":\"one more thing\"},{\"slot\":\"INITIATIVE\",\"text\":\"Hold my Spider-Man till then?\",\"hint\":\"hold my comic\",\"format\":\"counter-offer\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, what was that?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 1101,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 265,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"CLOSING\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"See you then, Ramon.\",\"hint\":\"see you\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Wait, I might come to that signing after all. Save me a spot?\",\"hint\":\"one more thing\"},{\"slot\":\"INITIATIVE\",\"text\":\"Hold my Spider-Man till then?\",\"hint\":\"hold my comic\",\"format\":\"counter-offer\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, what was that?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    }
+  ]
+}
