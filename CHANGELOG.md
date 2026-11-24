@@ -26,7 +26,7 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-- **Conversant no longer gets stuck on the Start screen when your data folder is slow to answer.** Before, a slow folder could leave Start, and the "send a report" link, doing nothing at all. Now Start carries on after a few seconds and the app uses its own copy of your settings. If starting takes more than a second, the button says "Starting…", and the report link says "Preparing the report" as soon as you tap it.
+- **Conversant no longer gets stuck on the Start screen when the browser won't answer about your data folder.** After a recent Chrome update, Start and the "send a report" link could both do nothing at all. Now Start carries on after a few seconds and offers to let Conversant back into your folder. If that doesn't work, carry on and choose the folder again in Settings. If starting takes more than a second, the button says "Starting…", and the report link says "Preparing the report" as soon as you tap it.
 
 ### On an iPad
 

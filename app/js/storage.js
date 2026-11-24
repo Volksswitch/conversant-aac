@@ -271,7 +271,42 @@ async function useDeviceStorage() {
 // not survive a browser restart, so this prompt appears at nearly every session
 // start — without this flag a slow (i.e. normal) answer logs a false error.
 let permissionPromptOpen = false;
-export function isAwaitingPermission() { return permissionPromptOpen; }
+export function isAwaitingPermission() { return permissionPromptOpen && !permissionUnanswered; }
+
+/*
+ * Chrome 158 stopped answering about Ken's remembered folder (November 24 2026). On his
+ * PC queryPermission AND requestPermission on the stored handle never settled - no
+ * answer, no error, no permission box - while the folder itself opened instantly in
+ * Windows and the browser's own storage worked. Start waited on that answer with no
+ * limit, and so did the launch-screen report link, so both looked dead.
+ *
+ * queryPermission is a question the browser answers at once from what it already
+ * knows; it shows nothing to the user. So no answer within a few seconds means the
+ * browser cannot answer, not that somebody is reading a dialog. When that happens the
+ * folder is treated as not available this session: the request from the Start tap is
+ * no longer waited for (it would never come), and isAwaitingPermission() stops holding
+ * the start-up deadline open. Start then carries on and offers the reconnect card,
+ * whose way out ("choose the folder again in Settings") gives Chrome a fresh handle.
+ */
+const PERMISSION_QUERY_LIMIT_MS = 3000;
+let permissionUnanswered = false;
+async function queryPermissionWithin(handle, why) {
+    let t;
+    const limit = new Promise((resolve) => { t = setTimeout(() => resolve('no-answer'), PERMISSION_QUERY_LIMIT_MS); });
+    let perm;
+    try { perm = await Promise.race([handle.queryPermission({ mode: 'readwrite' }), limit]); }
+    finally { clearTimeout(t); }
+    if (perm === 'no-answer') {
+        if (!permissionUnanswered) {
+            try { logError('folder', `the browser did not answer whether the data folder may be used (${why})`, null, { quiet: true }); } catch { /* best-effort */ }
+        }
+        permissionUnanswered = true;
+        noteFolder('query-no-answer:' + why);
+    } else {
+        permissionUnanswered = false;
+    }
+    return perm;
+}
 
 // Is a folder REMEMBERED, whether or not we currently have permission to read it?
 // The two are different questions and the difference is the whole point of the
@@ -315,7 +350,7 @@ const priming = (async () => {
 export async function folderWillAsk() {
     try { await priming; } catch { /* decide on what we have */ }
     if (!primedHandle || typeof primedHandle.queryPermission !== 'function') return false;
-    try { return (await primedHandle.queryPermission({ mode: 'readwrite' })) === 'prompt'; }
+    try { return (await queryPermissionWithin(primedHandle, 'will-ask')) === 'prompt'; }
     catch { return false; }
 }
 
@@ -395,7 +430,7 @@ export async function folderReadableWithoutPrompt() {
     try {
         const stored = await idbGet(DIR_HANDLE_KEY);
         if (!stored) return false;
-        return (await stored.queryPermission({ mode: 'readwrite' })) === 'granted';
+        return (await queryPermissionWithin(stored, 'report')) === 'granted';
     } catch { return false; }
 }
 
@@ -416,7 +451,16 @@ async function restoreDataFolderInner() {
         try { stored = await idbGet(DIR_HANDLE_KEY); } catch { /* IDB unavailable */ }
         if (!stored) return false;
         try {
-            let perm = await stored.queryPermission({ mode: 'readwrite' });
+            let perm = await queryPermissionWithin(stored, 'restore');
+            // The browser cannot answer about this folder at all (Chrome 158 on Ken's
+            // PC, November 24 2026). Waiting for the Start tap's request, or asking
+            // again, would wait forever too, so stop here: the handle is kept, and the
+            // reconnect card offers the way out.
+            if (perm === 'no-answer') {
+                permissionPromptOpen = false;
+                pendingPermission = null;
+                return false;
+            }
             // A request already started from the Start tap: wait for the user's
             // answer, then ask queryPermission again rather than trusting what the
             // request returned. queryPermission is the authoritative check and it is
@@ -427,7 +471,7 @@ async function restoreDataFolderInner() {
                 try { await pendingPermission; } catch { noteFolder('restore:tap-request-rejected'); }
                 pendingPermission = null;
                 try {
-                    perm = await stored.queryPermission({ mode: 'readwrite' });
+                    perm = await queryPermissionWithin(stored, 'requery');
                     noteFolder('restore:requery:' + perm);
                 } catch { /* keep the earlier answer */ }
             }
@@ -471,6 +515,7 @@ async function restoreDataFolderInner() {
 export async function pickDataFolder() {
     if (supportsFolderPicker()) {
         const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        permissionUnanswered = false;   // a freshly chosen folder is a fresh question
         await idbPut(DIR_HANDLE_KEY, handle);   // permissions attach to this handle
         primedHandle = handle;                  // so the next Start can ask about THIS folder
         setRoot(handle, BACKEND.FOLDER);
