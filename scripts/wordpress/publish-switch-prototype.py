@@ -66,7 +66,9 @@ PAGES = [
     # Not a prototype of Conversant's own scanning: a test of how Apple's Switch Control
     # notices a screen change (Ken, November 18 2026). Best opened on an iPad.
     {'slug': 'conversant-switch-control-screen-test', 'title': 'Conversant AAC Switch Control Screen Test',
-     'file': 'switch-control-screen-test.html', 'height': 900,
+     # 1000, not 900: test H measured 898 tall at the site's 702 px width (November 23
+     # 2026), and a frame that scrolls would put a second scrolling box around H's.
+     'file': 'switch-control-screen-test.html', 'height': 1000,
      'intro': ('This page tests how Apple’s Switch Control on an iPad notices that a new panel has opened. '
                'Turn on Switch Control, then open each of the seven “Settings” buttons in turn and note whether the '
                'highlight moves into the panel at once or keeps going around the buttons behind it. '
