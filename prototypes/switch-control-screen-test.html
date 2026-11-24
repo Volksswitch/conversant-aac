@@ -40,7 +40,7 @@
        view, drawn where they would be (over the Express Panel below), without scrolling
        them into view. H copies that: Conversant's fifteen tabs, built as the app builds
        them (divs with role="tab" and one tab stop), in a box that scrolls, with rows of
-       buttons right below it. A readout at the foot, hidden from Switch Control, shows
+       buttons right below it. A readout beside the box, hidden from Switch Control, shows
        what the page is told as the highlight moves: keyboard focus, a choice, the box
        scrolling. If focus never moves with the highlight, a page cannot follow it. The
        checkbox hides tabs not fully in view from Switch Control (aria-hidden), one
@@ -99,11 +99,15 @@
   .h-tab { flex-shrink: 0; min-height: 56px; display: flex; align-items: center; padding: 6px 10px;
            border: 2px solid var(--edge); border-radius: 8px; background: var(--page); cursor: pointer; }
   .h-tab[aria-selected="true"] { background: var(--accent); color: #fff; }
-  .h-side { display: flex; flex-direction: column; gap: 6px; width: 160px; }
+  /* Everything H reports sits beside the box, not under it, so the box, the buttons below
+     it and the readout fit on one iPad screen (the readout under the rows ran past the
+     bottom of a 1180 x 746 Safari window). */
+  .h-side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .h-scroll { display: grid; grid-template-columns: repeat(2, minmax(0, 160px)); gap: 6px; }
   .h-rows { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-top: 6px; }
-  .h-check { display: flex; align-items: center; gap: 10px; min-height: 56px; margin-top: 10px; }
-  .h-check input { width: 28px; height: 28px; margin: 0; }
-  .h-report { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--edge);
+  .h-check { display: flex; align-items: center; gap: 10px; min-height: 56px; }
+  .h-check input { width: 28px; height: 28px; margin: 0; flex-shrink: 0; }
+  .h-report { padding-top: 6px; border-top: 1px solid var(--edge);
               white-space: pre-line; font-size: .95rem; }
   /* The page's keyboard focus, in a color Switch Control's blue highlight never uses, so
      a recording shows whether focus follows the highlight. */
@@ -158,8 +162,8 @@
       <p class="note">The tabs are in a box that scrolls, like Conversant's Settings tabs, and
         the buttons below it stand in for the Express Panel. Scroll the page so the box and
         the buttons are on screen. Then move the highlight down the tabs: does it go onto
-        tabs hidden below the box, and does the box scroll to show them? The lines at the
-        bottom show what this page is told. A red outline marks the page's keyboard focus.</p>
+        tabs hidden below the box, and does the box scroll to show them? The lines beside
+        the box show what this page is told. A red outline marks the page's keyboard focus.</p>
     </div>
     <button type="button" id="hBack">Back</button>
   </div>
@@ -167,8 +171,12 @@
     <div class="h-tabs" id="hTabs" role="tablist" aria-orientation="vertical"
          aria-label="Settings tabs"></div>
     <div class="h-side">
-      <button type="button" id="hUp">Scroll up</button>
-      <button type="button" id="hDown">Scroll down</button>
+      <div class="h-scroll">
+        <button type="button" id="hUp">Scroll up</button>
+        <button type="button" id="hDown">Scroll down</button>
+      </div>
+      <label class="h-check"><input type="checkbox" id="hHide"> Hide tabs that are not fully in view</label>
+      <div class="h-report" id="hReport" aria-hidden="true"></div>
     </div>
   </div>
   <div class="h-rows" aria-label="Phrases">
@@ -179,8 +187,6 @@
     <button type="button">Thank you</button><button type="button">Sorry</button>
     <button type="button">Mom</button><button type="button">Devon</button>
   </div>
-  <label class="h-check"><input type="checkbox" id="hHide"> Hide tabs that are not fully in view</label>
-  <div class="h-report" id="hReport" aria-hidden="true"></div>
   <div class="ver">@@PROTO_VERSION@@</div>
 </div>
 
