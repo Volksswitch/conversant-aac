@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **Conversant no longer gets stuck on the Start screen when your data folder is slow to answer.** Before, a slow folder could leave Start, and the "send a report" link, doing nothing at all. Now Start carries on after a few seconds and the app uses its own copy of your settings. If starting takes more than a second, the button says "Starting…", and the report link says "Preparing the report" as soon as you tap it.
+
 ### On an iPad
 
 - **When a paid service hears the other person, the listening tone now plays once Conversant is actually listening.** It used to play just before the microphone started to open, so someone who began talking at the tone could lose their first words. The tone may sound a little tinny now, because the microphone is already on when it plays. With an iPad or iPhone's own listening in Safari, nothing changes.

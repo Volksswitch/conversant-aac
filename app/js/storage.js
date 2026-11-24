@@ -24,9 +24,34 @@ let conversationDirHandle = null;
 // to this small database's layout - with no "blocked" handling, a look-up would then
 // hang instead of failing. A request to change the layout closes this one.
 let dbPromise = null;
+
+// Every look-up in this small database has a time limit (Ken, November 24 2026). The
+// installed app on his PC sat on the Start screen with Start AND the launch-screen
+// report link both dead and nothing on screen: both read the remembered folder from
+// here before doing anything visible, and a database that never answers (neither
+// success nor error) left them waiting forever. Past the limit the caller's own catch
+// runs, which already means "carry on without the folder", so the app starts on its
+// cached copy instead of not at all. The slow answer, if it ever arrives, is dropped.
+const IDB_LIMIT_MS = 4000;
+let idbTimeoutNoted = false;
+function idbWithin(promise, what) {
+    let t;
+    const limit = new Promise((_, reject) => {
+        t = setTimeout(() => {
+            try { noteFolder('idb-timeout:' + what); } catch { /* trace is best-effort */ }
+            if (!idbTimeoutNoted) {
+                idbTimeoutNoted = true;
+                try { logError('storage', `browser database did not answer (${what}) within ${IDB_LIMIT_MS}ms`, null, { quiet: true }); } catch { /* best-effort */ }
+            }
+            reject(new Error(`IndexedDB ${what} did not answer`));
+        }, IDB_LIMIT_MS);
+    });
+    return Promise.race([promise, limit]).finally(() => clearTimeout(t));
+}
+
 function idbOpen() {
     if (!dbPromise) {
-        dbPromise = new Promise((resolve, reject) => {
+        const opening = new Promise((resolve, reject) => {
             const req = indexedDB.open(IDB_NAME, 1);
             req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
             req.onsuccess = () => {
@@ -38,38 +63,46 @@ function idbOpen() {
             req.onerror = () => { dbPromise = null; reject(req.error); };
             req.onblocked = () => { dbPromise = null; reject(new Error('IndexedDB open blocked')); };
         });
+        // A timed-out open is forgotten, so the next look-up tries again rather than
+        // waiting on the same stuck request.
+        dbPromise = idbWithin(opening, 'open').catch((err) => { dbPromise = null; throw err; });
     }
     return dbPromise;
 }
 
+// onabort as well as onerror: an aborted transaction reports through neither the
+// request's error nor its success, and would otherwise leave the caller waiting.
 async function idbGet(key) {
     const db = await idbOpen();
-    return new Promise((resolve, reject) => {
+    return idbWithin(new Promise((resolve, reject) => {
         const tx = db.transaction(IDB_STORE, 'readonly');
         const req = tx.objectStore(IDB_STORE).get(key);
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);
-    });
+        tx.onabort = () => reject(tx.error || new Error('IndexedDB read aborted'));
+    }), 'read');
 }
 
 async function idbPut(key, value) {
     const db = await idbOpen();
-    return new Promise((resolve, reject) => {
+    return idbWithin(new Promise((resolve, reject) => {
         const tx = db.transaction(IDB_STORE, 'readwrite');
         tx.objectStore(IDB_STORE).put(value, key);
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
-    });
+        tx.onabort = () => reject(tx.error || new Error('IndexedDB write aborted'));
+    }), 'write');
 }
 
 async function idbDelete(key) {
     const db = await idbOpen();
-    return new Promise((resolve, reject) => {
+    return idbWithin(new Promise((resolve, reject) => {
         const tx = db.transaction(IDB_STORE, 'readwrite');
         tx.objectStore(IDB_STORE).delete(key);
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
-    });
+        tx.onabort = () => reject(tx.error || new Error('IndexedDB delete aborted'));
+    }), 'delete');
 }
 
 // --- Storage backend (Ken, July 30 2026) ---
@@ -171,6 +204,26 @@ export function lastSaveCheck() { return saveCheck; }
 function noteSaveCheck(ok, reason, detail = '') {
     saveCheck = { ok, reason, detail: asciiForLog(String(detail || '')).slice(0, 160), at: new Date().toISOString() };
     return saveCheck;
+}
+
+/* The save check with a time limit, for the paths that reconnect a folder at Start or
+ * when one is chosen (Ken, November 24 2026). It writes, reads and deletes a file in
+ * the user's folder, and a folder in OneDrive or Google Drive can take a long time to
+ * answer, or not answer at all. Past the limit the caller carries on and the check
+ * finishes in the background: the answer is left as "not known yet" rather than
+ * "cannot save", because a slow folder is not a broken one and the start screen must
+ * not raise the could-not-save card on a guess. */
+const SAVE_CHECK_LIMIT_MS = 5000;
+async function checkCanSaveWithin(root = dirHandle) {
+    let t;
+    const limit = new Promise((resolve) => { t = setTimeout(() => resolve('timed-out'), SAVE_CHECK_LIMIT_MS); });
+    const result = await Promise.race([checkCanSave(root), limit]).finally(() => clearTimeout(t));
+    if (result === 'timed-out') {
+        noteFolder('save-check-slow');
+        try { logError('storage', `save check had not finished after ${SAVE_CHECK_LIMIT_MS}ms`, null, { quiet: true }); } catch { /* best-effort */ }
+        return saveCheck;
+    }
+    return result;
 }
 
 export async function checkCanSave(root = dirHandle) {
@@ -395,7 +448,7 @@ async function restoreDataFolderInner() {
                 setRoot(stored, BACKEND.FOLDER);
                 await ensureDataSubfolders();
                 noteFolder('connected');
-                await checkCanSave();
+                await checkCanSaveWithin();
                 return true;
             }
             noteFolder('not-granted:' + perm);
@@ -422,7 +475,7 @@ export async function pickDataFolder() {
         primedHandle = handle;                  // so the next Start can ask about THIS folder
         setRoot(handle, BACKEND.FOLDER);
         await ensureDataSubfolders();
-        await checkCanSave();
+        await checkCanSaveWithin();
         return dirHandle;
     }
     // Called on a platform with no picker: adopt device storage rather than

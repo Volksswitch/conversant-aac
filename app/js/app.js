@@ -2307,12 +2307,23 @@ async function warmUpStorage() {
 // (CR-215). The button is disabled while starting and re-enabled when the start
 // finishes or fails.
 let startInProgress = false;
+// After a second with nothing else on screen, Start says it is working (Ken, November
+// 24 2026): a disabled button that looks the same as an enabled one read as "Start does
+// nothing". Most starts finish well inside the second and never show it.
+let startSlowTimer = null;
 function setStartBusy(busy) {
     startInProgress = busy;
     const btn = document.getElementById('startBtn');
     if (!btn) return;
     btn.disabled = busy;
     if (busy) btn.setAttribute('aria-busy', 'true'); else btn.removeAttribute('aria-busy');
+    if (startSlowTimer) { clearTimeout(startSlowTimer); startSlowTimer = null; }
+    if (busy) {
+        if (!btn.dataset.label) btn.dataset.label = btn.textContent;
+        startSlowTimer = setTimeout(() => { if (startInProgress) btn.textContent = 'Starting…'; }, 1000);
+    } else if (btn.dataset.label) {
+        btn.textContent = btn.dataset.label;
+    }
 }
 
 async function handleStart() {
@@ -8568,6 +8579,16 @@ async function sendProblemReportFromStartNow(pressed) {
             setTimeout(() => { btn.textContent = btn.dataset.label; }, 5000);
         }
     };
+    if (btn) {
+        // Remember the real label first, or say() would keep this as the label.
+        btn.dataset.label = btn.dataset.label || btn.textContent;
+    }
+    // Started BEFORE the folder step, not after it (Ken, November 24 2026): that step
+    // can take seconds, and with nothing changing on screen the link read as dead.
+    const stopDots = workingDots((t) => {
+        setProblemReportStatus(t);
+        if (btn) btn.textContent = t;
+    }, 'Preparing the report');
     // Before Start the data folder is not connected yet, so the report said there were
     // no conversations and carried no transcripts (CR-036). Connect it first - only
     // where that needs no permission prompt, and never for longer than the warm-up.
@@ -8578,14 +8599,6 @@ async function sendProblemReportFromStartNow(pressed) {
             }
         } catch { /* report without it */ }
     }
-    if (btn) {
-        // Remember the real label first, or say() would keep this as the label.
-        btn.dataset.label = btn.dataset.label || btn.textContent;
-    }
-    const stopDots = workingDots((t) => {
-        setProblemReportStatus(t);
-        if (btn) btn.textContent = t;
-    }, 'Preparing the report');
     let text;
     try {
         text = await buildProblemReportText();
