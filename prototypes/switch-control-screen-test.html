@@ -33,6 +33,20 @@
        inside the dialog each time. The shape Conversant could adopt: the conversation
        screen would carry on underneath Settings.
 
+  Result, November 23 2026 (Ken): F and G lagged like A to E, and so did Conversant.
+
+    H  Not a panel: a second problem (Ken, November 23 2026). Conversant's Settings tab
+       column scrolls, and Switch Control moves its highlight onto tabs scrolled out of
+       view, drawn where they would be (over the Express Panel below), without scrolling
+       them into view. H copies that: Conversant's fifteen tabs, built as the app builds
+       them (divs with role="tab" and one tab stop), in a box that scrolls, with rows of
+       buttons right below it. A readout at the foot, hidden from Switch Control, shows
+       what the page is told as the highlight moves: keyboard focus, a choice, the box
+       scrolling. If focus never moves with the highlight, a page cannot follow it. The
+       checkbox hides tabs not fully in view from Switch Control (aria-hidden), one
+       possible fix; Scroll up and Scroll down are the page's own way to scroll the box.
+       ?sctest=H in the address opens H directly, so Apple can go straight to it.
+
   The screen behind has as many buttons as Conversant's (a Command Bar and an Express
   Panel), so a full scan cycle is long enough to notice. Nothing here is the real app.
 -->
@@ -71,6 +85,29 @@
   .rows { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
   #plainPanel { display: none; background: var(--panel); min-height: 100vh; }
   #plainPanel.on { display: block; }
+
+  /* H: a box of tabs that scrolls, with buttons right below it (see the note at the top).
+     The box shows five tabs and a sliver of the sixth, as Conversant's column does. */
+  #hScreen { padding: 12px; }
+  .h-head { display: flex; align-items: flex-start; justify-content: space-between;
+            gap: 10px; margin-bottom: 8px; }
+  .h-title { font-size: 1.15rem; font-weight: 700; margin: 0 0 4px; }
+  .h-top { display: flex; align-items: flex-start; gap: 6px; }
+  .h-tabs { width: 220px; height: 340px; overflow-y: auto; display: flex; flex-direction: column;
+            gap: 6px; padding: 6px; border: 2px solid var(--edge); border-radius: 8px;
+            background: var(--raised); }
+  .h-tab { flex-shrink: 0; min-height: 56px; display: flex; align-items: center; padding: 6px 10px;
+           border: 2px solid var(--edge); border-radius: 8px; background: var(--page); cursor: pointer; }
+  .h-tab[aria-selected="true"] { background: var(--accent); color: #fff; }
+  .h-side { display: flex; flex-direction: column; gap: 6px; width: 160px; }
+  .h-rows { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-top: 6px; }
+  .h-check { display: flex; align-items: center; gap: 10px; min-height: 56px; margin-top: 10px; }
+  .h-check input { width: 28px; height: 28px; margin: 0; }
+  .h-report { margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--edge);
+              white-space: pre-line; font-size: .95rem; }
+  /* The page's keyboard focus, in a color Switch Control's blue highlight never uses, so
+     a recording shows whether focus follows the highlight. */
+  #hScreen :focus { outline: 3px solid #c0392b; outline-offset: -3px; }
 </style>
 </head>
 <body>
@@ -81,7 +118,7 @@
     the page that is showing; F and G load a new page, and F loads this whole page again.
     With Switch Control on, open each one and note whether the highlight moves into the
     panel at once, or keeps going around the buttons behind it. Then close it and try the
-    next.</p>
+    next. Scroll test H is a different problem: a list that scrolls.</p>
 
   <div class="bar" role="group" aria-label="Command Bar">
     <button type="button" class="open" data-way="A">Settings A</button>
@@ -95,6 +132,7 @@
     <button type="button">End</button>
     <button type="button" class="open" data-way="F">Settings F</button>
     <button type="button" class="open" data-way="G">Settings G</button>
+    <button type="button" id="hOpen">Scroll test H</button>
   </div>
 
   <div class="grid" aria-label="Phrases">
@@ -110,6 +148,39 @@
   </div>
 
   <div id="log" aria-hidden="true"></div>
+  <div class="ver">@@PROTO_VERSION@@</div>
+</div>
+
+<div id="hScreen" hidden>
+  <div class="h-head">
+    <div aria-hidden="true">
+      <div class="h-title">Scroll test H</div>
+      <p class="note">The tabs are in a box that scrolls, like Conversant's Settings tabs, and
+        the buttons below it stand in for the Express Panel. Scroll the page so the box and
+        the buttons are on screen. Then move the highlight down the tabs: does it go onto
+        tabs hidden below the box, and does the box scroll to show them? The lines at the
+        bottom show what this page is told. A red outline marks the page's keyboard focus.</p>
+    </div>
+    <button type="button" id="hBack">Back</button>
+  </div>
+  <div class="h-top">
+    <div class="h-tabs" id="hTabs" role="tablist" aria-orientation="vertical"
+         aria-label="Settings tabs"></div>
+    <div class="h-side">
+      <button type="button" id="hUp">Scroll up</button>
+      <button type="button" id="hDown">Scroll down</button>
+    </div>
+  </div>
+  <div class="h-rows" aria-label="Phrases">
+    <button type="button">Yes</button><button type="button">No</button>
+    <button type="button">I don't know</button><button type="button">Maybe</button>
+    <button type="button">OK</button><button type="button">Excuse me</button>
+    <button type="button">Hi</button><button type="button">Bye</button>
+    <button type="button">Thank you</button><button type="button">Sorry</button>
+    <button type="button">Mom</button><button type="button">Devon</button>
+  </div>
+  <label class="h-check"><input type="checkbox" id="hHide"> Hide tabs that are not fully in view</label>
+  <div class="h-report" id="hReport" aria-hidden="true"></div>
   <div class="ver">@@PROTO_VERSION@@</div>
 </div>
 
@@ -275,7 +346,128 @@
         e.data && e.data.sctest === 'close') close();
   });
 
-  // F: what the address asked for when this page loaded (see loadPage).
+  // H: the scrolling tabs (see the note at the top). Nothing here moves the page's
+  // keyboard focus, so any focus the readout reports came from outside the page.
+  const hScreen = document.getElementById('hScreen');
+  const hTabs = document.getElementById('hTabs');
+  const hHide = document.getElementById('hHide');
+  const hReport = document.getElementById('hReport');
+  const H_TABS = ['General', 'About Me', 'Text & Color', 'Speech', 'Screen Layout',
+    'Switch Access', 'Conversation', 'Placeholders', 'Practice', 'Conversation Review',
+    'Express Panel and Keyboard', 'Commands', 'Keyguard Design', 'Troubleshooting', 'About'];
+  let hFocus = 'none yet', hMoves = 0, hChosen = 'none yet';
+
+  // As Conversant builds its Settings tabs: divs with role="tab" and one tab stop.
+  H_TABS.forEach((name, i) => {
+    const t = document.createElement('div');
+    t.className = 'h-tab';
+    t.setAttribute('role', 'tab');
+    t.setAttribute('aria-selected', String(i === 0));
+    t.tabIndex = i === 0 ? 0 : -1;
+    t.textContent = name;
+    hTabs.appendChild(t);
+  });
+  const hTabEls = Array.from(hTabs.children);
+
+  function nameOf(el) {
+    if (el === hHide) return 'the checkbox';
+    return (el.getAttribute('aria-label') || el.textContent || el.id || el.tagName).trim();
+  }
+
+  // Which tabs the box shows in full and which in part.
+  function hView() {
+    const box = hTabs.getBoundingClientRect();
+    const top = box.top + hTabs.clientTop, bottom = top + hTabs.clientHeight;
+    const full = [], part = [];
+    hTabEls.forEach((t) => {
+      const r = t.getBoundingClientRect();
+      if (r.top >= top - 1 && r.bottom <= bottom + 1) full.push(t);
+      else if (r.bottom > top && r.top < bottom) part.push(t);
+    });
+    return { full, part };
+  }
+
+  function span(list) {
+    if (!list.length) return 'none';
+    if (list.length === 1) return list[0].textContent;
+    return list[0].textContent + ' to ' + list[list.length - 1].textContent;
+  }
+
+  // With the checkbox on, tabs not fully in view are hidden from Switch Control (and
+  // other assistive tools) but still answer a tap.
+  function hUpdate() {
+    if (hScreen.hidden) return;
+    const v = hView();
+    let hidden = 0;
+    hTabEls.forEach((t) => {
+      if (hHide.checked && !v.full.includes(t)) { t.setAttribute('aria-hidden', 'true'); hidden++; }
+      else t.removeAttribute('aria-hidden');
+    });
+    hReport.textContent = [
+      'What this page has been told:',
+      'Keyboard focus: ' + hFocus +
+        (hMoves ? ' (moved ' + hMoves + (hMoves === 1 ? ' time)' : ' times)') : ''),
+      'Last chosen: ' + hChosen,
+      // Partly shown tabs can sit at both ends of the box, so they are named one by one.
+      'The box shows in full: ' + span(v.full) +
+        (v.part.length ? '; in part: ' + v.part.map((t) => t.textContent).join(', ') : ''),
+      'Hidden from Switch Control: ' + (hHide.checked ? hidden + ' tabs' : 'none (checkbox off)'),
+    ].join('\n');
+  }
+
+  // Updated straight away rather than on the next frame: fifteen boxes are cheap to
+  // measure, and scroll events already arrive at most once a frame.
+  hTabs.addEventListener('scroll', hUpdate, { passive: true });
+  window.addEventListener('resize', hUpdate);
+  hHide.addEventListener('change', () => { hChosen = 'the checkbox'; hUpdate(); });
+
+  document.addEventListener('focusin', (e) => {
+    if (hScreen.hidden) return;
+    hFocus = nameOf(e.target);
+    hMoves++;
+    hUpdate();
+  });
+
+  hScreen.addEventListener('click', (e) => {
+    const t = e.target.closest('.h-tab');
+    if (t) {
+      hTabEls.forEach((x) => {
+        x.setAttribute('aria-selected', String(x === t));
+        x.tabIndex = x === t ? 0 : -1;
+      });
+      hChosen = t.textContent;
+      hUpdate();
+      return;
+    }
+    const b = e.target.closest('button');
+    if (b && b.id !== 'hBack') { hChosen = nameOf(b); hUpdate(); }
+  });
+
+  // One tab short of a full box, so the last tab in view stays in view.
+  document.getElementById('hUp').addEventListener('click', () => hTabs.scrollBy(0, -(hTabs.clientHeight - 62)));
+  document.getElementById('hDown').addEventListener('click', () => hTabs.scrollBy(0, hTabs.clientHeight - 62));
+
+  function showH() {
+    screen.style.display = 'none';
+    hScreen.hidden = false;
+    hTabs.scrollTop = 0;
+    hFocus = 'none yet'; hMoves = 0; hChosen = 'none yet';
+    hUpdate();
+    note('Opened scroll test H');
+  }
+
+  function hideH() {
+    hScreen.hidden = true;
+    screen.style.display = '';
+    note('Closed scroll test H');
+    document.getElementById('hOpen').focus();
+  }
+
+  document.getElementById('hOpen').addEventListener('click', showH);
+  document.getElementById('hBack').addEventListener('click', hideH);
+
+  // F: what the address asked for when this page loaded (see loadPage). H can be asked
+  // for the same way (?sctest=H), which opens it with nothing changing on screen first.
   const asked = loadState();
   if (asked === 'F') {
     way = 'F';
@@ -287,6 +479,8 @@
     note('Closed Settings F (the page loaded again)');
     const opener = screen.querySelector('[data-way="F"]');
     if (opener) opener.focus();
+  } else if (asked === 'H') {
+    showH();
   }
 })();
 </script>

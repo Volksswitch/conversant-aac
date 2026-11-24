@@ -71,6 +71,9 @@ PAGES = [
                'Turn on Switch Control, then open each of the seven “Settings” buttons in turn and note whether the '
                'highlight moves into the panel at once or keeps going around the buttons behind it. '
                'Buttons A to E change the page that is showing; F and G load a new page, and F loads this whole page again. '
+               '“Scroll test H” is a second problem: a box of tabs that scrolls, with buttons right below it, '
+               'to see whether Switch Control can reach tabs that are scrolled out of view. '
+               '<a href="' + SITE + 'conversant-switch-control-screen-test/?sctest=H">Open test H directly</a>. '
                'Nothing here is the real app.'),
      'other': []},
 ]
