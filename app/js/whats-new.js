@@ -22,6 +22,13 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.26": [
+    "Conversant no longer gets stuck on the Start screen when the browser won't answer about your data folder. After a recent Chrome update, Start and the \"send a report\" link could both do nothing at all. Now Start carries on after a few seconds and offers to let Conversant back into your folder. If that doesn't work, carry on and choose the folder again in Settings. If starting takes more than a second, the button says \"Starting…\", and the report link says \"Preparing the report\" as soon as you tap it.",
+    {
+      "for": "ipad",
+      "note": "When a paid service hears the other person, the listening tone now plays once Conversant is actually listening. It used to play just before the microphone started to open, so someone who began talking at the tone could lose their first words. The tone may sound a little tinny now, because the microphone is already on when it plays. With an iPad or iPhone's own listening in Safari, nothing changes."
+    }
+  ],
   "0.15.25": [
     "When Deepgram hears the other person, listening is ready a little sooner. Conversant now connects to Deepgram while the microphone is still opening, instead of waiting until it's open. On an iPad it also connects while the listening tone plays. The Listen button lights up sooner, and the other person's first words appear sooner.",
     "A problem report now says how long the microphone took to start each time listening was turned on, step by step. Anything the other person says before the microphone is ready can't be heard, so this shows where the time goes on your device."
