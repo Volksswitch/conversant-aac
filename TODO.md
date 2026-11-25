@@ -298,6 +298,22 @@ the phone's own hearing and voice both worked.
   send a problem report right after each failure while Deepgram is still selected.
 - **Why not fixed now:** the cause is not known, and a guess would change the main
   listening path on every iPad and iPhone.
+- **Same failure on Ken's own iPad 10, November 24 2026 (0.15.25, Home Screen app).**
+  The Deepgram voice Test reported 36 KB of audio and Ken heard nothing; the listening
+  tone was silent; two Deepgram listening starts connected and lit the button, and not one
+  sound sample arrived. All three use the browser's audio system, through three separate
+  audio contexts, and each said "running". **The app had been open about 7.7 hours**
+  (opened 12:17, tried 19:58 local). Reloading (into 0.15.26) fixed it and Ken could not
+  reproduce it. So it is not the iPhone and not 0.15.26: the page's whole audio system
+  went dead while reporting itself fine, most likely after the device slept or was
+  interrupted, and a fresh page brought it back.
+- **Next test, on Ken's iPad:** leave the installed app open for some hours (with the
+  iPad locking), then try the Deepgram voice Test and Deepgram listening without
+  reloading. If it reproduces, try the candidate fix below before reloading.
+- **Candidate fix, not built (proposed to Ken):** when a paid listening run gets no sound
+  (the 0.15.27 check), throw away all three audio contexts (listening, paid voice, tone)
+  and make new ones on the next tap. Only runs when audio is already broken. Unknown
+  whether a new context in the same page works or only a reload does.
 
 **Update November 8 2026, from three problem reports sent from the iPhone (version
 0.13.37).** Two causes found and fixed in the next version; one problem still open.
