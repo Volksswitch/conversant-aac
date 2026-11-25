@@ -1235,7 +1235,7 @@ const COMMAND_FACES = {
     listenBtn: 'Listen',
     sayAgainBtn: 'Say again',
     holdOnBtn: 'Hold on',
-    pardonBtn: 'Pardon?',
+    pardonBtn: 'What?',     // Ken, November 25 2026: "Pardon is a bit refined."
     windDownBtn: 'Wrap up',
     initiateBtn: 'Start',
     endConversationBtn: 'End',

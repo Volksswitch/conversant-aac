@@ -179,7 +179,7 @@ def fig_anatomy():
         mid(d, cx + 353, cy + 100, hint, font(23), 670, GRAY, 'B/hint')
 
     tag(d, 70, 746, 'C', fletter)
-    labels = ['Listen', 'Start', 'End', 'Say again', 'Hold on', 'Pardon?',
+    labels = ['Listen', 'Start', 'End', 'Say again', 'Hold on', 'What?',
               'Wrap up', 'Don’t save', 'Settings']
     bw, gap = 152, 8
     for i, lab in enumerate(labels):

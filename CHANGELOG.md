@@ -27,6 +27,7 @@ forgetting to tag one is only ever noise, never silence.
 ## Unreleased (next release)
 
 - **In About Me, the answer for turning off joking replies now reads "No — keep my response options straight".** If you had already chosen it, it is still chosen.
+- **With "What the command buttons show" set to words, the "Ask them to repeat" button now says "What?" instead of "Pardon?".**
 
 ## Version 0.15.28
 
