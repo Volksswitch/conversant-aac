@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.27": [
+    "When a paid service is listening but no sound at all comes from the microphone, the conversation pane now turns faint red, and a problem report shows what happened. Before, the Listen button lit and nothing was heard, with no sign that anything was wrong."
+  ],
   "0.15.26": [
     "Conversant no longer gets stuck on the Start screen when the browser won't answer about your data folder. After a recent Chrome update, Start and the \"send a report\" link could both do nothing at all. Now Start carries on after a few seconds and offers to let Conversant back into your folder. If that doesn't work, carry on and choose the folder again in Settings. If starting takes more than a second, the button says \"Starting…\", and the report link says \"Preparing the report\" as soon as you tap it.",
     {

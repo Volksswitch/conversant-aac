@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.15.27
+
 - **When a paid service is listening but no sound at all comes from the microphone, the conversation pane now turns faint red, and a problem report shows what happened.** Before, the Listen button lit and nothing was heard, with no sign that anything was wrong.
 
 ## Version 0.15.26
