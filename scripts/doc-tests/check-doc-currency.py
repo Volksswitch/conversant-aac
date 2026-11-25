@@ -60,6 +60,44 @@ READER_FACING = (
     'Conversant AAC Backup Compatibility.docx',
 )
 
+# ⚠ THE ARCHITECTURE AND DESIGN DOCUMENTS ARE IN THE SYNC SET TOO (Ken, November 25
+# 2026): "I'd like all architecture and design documents included in the sync docs
+# list so they update automatically. When a problem is encountered or new functionality
+# is added I want you to be able to refer to these documents as ground truth." This
+# reverses the scoping above for these documents only: they were counted and never
+# listed, so a plain "sync docs" passed over them, and the Architecture Overview sat
+# at 0.14.0 through all of 0.15 (the iPad sound work, switch access, the Chrome folder
+# fix). Documents that describe how the app works NOW. Left out on purpose: point-in-
+# time reviews and assessments, proposals and drafts for review, plans, test plans, and
+# guides written for users (those are reader-facing questions, not design ones).
+DESIGN_RECORDS = (
+    'Conversant AAC Architecture Overview.docx',
+    'Conversant AAC How Conversant Works.docx',
+    'Conversant AAC Configuration Model.docx',
+    'Conversant AAC UI-Design.docx',
+    'Conversant AAC Conversation Engine Design.docx',
+    'Conversant AAC Conversation Engine Overview.docx',
+    'Conversant AAC Conversation Flow.docx',
+    'Conversant AAC Conversation Goals.docx',
+    'Conversant AAC Conversation Review.docx',
+    'Conversant AAC Continuous Partner Capture.docx',
+    'Conversant AAC Express Panel Design.docx',
+    'Conversant AAC Keyboard Layout Options.docx',
+    'Conversant AAC Layout Suggestions.docx',
+    'Conversant AAC Color Schemes.docx',
+    'Conversant AAC Switch Access Design.docx',
+    'Conversant AAC Switch Access Proposal.docx',
+    'Conversant AAC Question Sessions Design.docx',
+    'Conversant AAC Language Support Design.docx',
+    'Conversant AAC Practice Mode.docx',
+    'Conversant AAC The Suggestion Layer.docx',
+    'Conversant AAC Response Option Guardrails.docx',
+    'Conversant AAC Pragmatics.docx',
+    'Conversant AAC Security Review.docx',
+    'Conversant AAC Weekly Report Handling.docx',
+    'Conversant AAC iPad Platform Measurements.docx',
+)
+
 
 def git(*args):
     r = subprocess.run(['git'] + list(args), cwd=ROOT, capture_output=True, text=True)
@@ -108,7 +146,8 @@ def main():
         for doc, c in unknown:
             print('    %-58s %s' % (doc, c))
     reader = [b for b in behind if b[0] in READER_FACING]
-    other = [b for b in behind if b[0] not in READER_FACING]
+    design = [b for b in behind if b[0] in DESIGN_RECORDS]
+    other = [b for b in behind if b[0] not in READER_FACING and b[0] not in DESIGN_RECORDS]
     rc = 0
     if reader:
         print('%d READER-FACING document(s) not reviewed since a release shipped '
@@ -118,15 +157,24 @@ def main():
             print('    %-58s %s' % (doc, names))
         print('  Run "sync docs".')
         rc = 1
+    if design:
+        print('%d ARCHITECTURE/DESIGN document(s) not reviewed since a release shipped '
+              '- these are the reference for how the app works:' % len(design))
+        for doc, commit, rels in sorted(design, key=lambda x: -len(x[2])):
+            # A count and the first release missed: these fall far behind, and a list
+            # of every version is unreadable.
+            print('    %-58s %d release(s), from %s' % (doc, len(rels), version_of(rels[-1])))
+        print('  Run "sync docs".')
+        rc = 1
     if other:
-        print('%d other tracked document(s) are behind a release. They are design '
-              'records, so most releases do not touch them; run with --all to list them.'
-              % len(other))
+        print('%d other tracked document(s) are behind a release (reviews, proposals, '
+              'plans and user guides); run with --all to list them.' % len(other))
         if '--all' in sys.argv:
             for doc, commit, rels in sorted(other, key=lambda x: -len(x[2])):
                 print('    %-58s %d release(s) since %s' % (doc, len(rels), commit))
-    if not reader and not unknown:
-        print('Every reader-facing document has been reviewed since the last release.')
+    if not reader and not design and not unknown:
+        print('Every reader-facing and architecture/design document has been reviewed '
+              'since the last release.')
     return rc
 
 
