@@ -22,6 +22,12 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.28": [
+    {
+      "for": "ipad",
+      "note": "If the sound on your iPad or iPhone stops working after Conversant has been left open for a long time, the app now notices. While Conversant is on screen it checks its sound every 30 seconds, and again when you come back to it, and quietly replaces any part that has stopped. A paid voice that can't play says your words in this device's own voice instead of staying silent. If paid listening hears nothing, your next tap on Listen starts it again with a fresh connection to the sound. If that still doesn't work, Conversant restarts itself the next time no conversation is under way, and you tap Start as usual."
+    }
+  ],
   "0.15.27": [
     "When a paid service is listening but no sound at all comes from the microphone, the conversation pane now turns faint red, and a problem report shows what happened. Before, the Listen button lit and nothing was heard, with no sign that anything was wrong."
   ],

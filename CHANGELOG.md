@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.15.28
+
 ### On an iPad
 - **If the sound on your iPad or iPhone stops working after Conversant has been left open for a long time, the app now notices.** While Conversant is on screen it checks its sound every 30 seconds, and again when you come back to it, and quietly replaces any part that has stopped. A paid voice that can't play says your words in this device's own voice instead of staying silent. If paid listening hears nothing, your next tap on Listen starts it again with a fresh connection to the sound. If that still doesn't work, Conversant restarts itself the next time no conversation is under way, and you tap Start as usual.
 
