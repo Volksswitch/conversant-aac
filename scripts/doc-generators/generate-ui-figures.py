@@ -17,7 +17,7 @@ the old placeholder ladder, and three access renderers when only one exists:
     ui-fig3-modes.png       Fig 5  cards swap, frame does not
     ui-fig4-transcript.png  Fig 6  transcript states as shipped
     ui-fig5-ladder.png      Fig 7  placeholders, armed by silence
-    ui-fig6-access.png      Fig 8  one renderer built, one seam
+    ui-fig6-access.png      Fig 8  one screen, every access method (switch scanning reads it)
 
 DIMENSIONS ARE FIXED. Each file keeps the pixel size the document already embeds: the
 drawing XML carries its own extent, so a different aspect ratio stretches the picture
@@ -142,12 +142,12 @@ def fig_card():
          'text, at reading size. What TTS will say.', cw)
     leader(d, (640, 452), (1000, 470))
     note(d, 1010, 435, 'Hint — the model’s short label for',
-         'the move: smaller, gray, since Aug 2026.', cw)
+         'the move. A setting picks what shows.', cw)
 
     cap(d, 90, 660, 'No slot badge, no format tag, no latency dot: the category is carried by POSITION', cw)
-    cap(d, 90, 698, 'and COLOR, and every card speaks the instant it is selected. The category name is', cw)
-    cap(d, 90, 736, 'still announced to screen readers, so the coding stays redundant where it matters.', cw)
-    cap(d, 90, 782, 'Selecting the card speaks it at once — selection is commitment, with no confirm step.', cw)
+    cap(d, 90, 698, 'and COLOR. A screen reader hears the full wording, not a category name, and the', cw)
+    cap(d, 90, 736, 'color-blind scheme also marks the category by the style of the left edge.', cw)
+    cap(d, 90, 782, 'Choosing the card speaks it, after a second tap if “One tap or two” asks for one.', cw)
     return im
 
 
@@ -164,8 +164,9 @@ def fig_anatomy():
          font(22, 'i'), cw, GRAY, 'A/note')
     tag(d, 70, 76, 'A', fletter)
 
-    pill(d, (86, 258, 306, 306), 'RESPONDING', 'initiative', font(20, 'b'))
-    left(d, 330, 268, 'mode chip — informational, not a button', font(24, 'i'), cw, GRAY, 'chip')
+    left(d, 112, 262, '♪ “I’m thinking about that.”', font(26, 'b'), cw, (69, 90, 100), 'np/line')
+    left(d, 560, 266, 'what the app is saying for the user, shown as it plays',
+         font(22, 'i'), cw, GRAY, 'np/note')
 
     tag(d, 70, 336, 'B', fletter)
     cards = [('preferred', '“I’d love to — what time?”', 'Love to — what time?', 86, 326),
@@ -178,8 +179,8 @@ def fig_anatomy():
         mid(d, cx + 353, cy + 100, hint, font(23), 670, GRAY, 'B/hint')
 
     tag(d, 70, 746, 'C', fletter)
-    labels = ['Listen', 'Start', 'End', 'Say again', 'Hold on', 'Ask again',
-              'Wind down', 'Don’t save', 'Settings']
+    labels = ['Listen', 'Start', 'End', 'Say again', 'Hold on', 'Pardon?',
+              'Wrap up', 'Don’t save', 'Settings']
     bw, gap = 152, 8
     for i, lab in enumerate(labels):
         x = 86 + i * (bw + gap)
@@ -187,7 +188,7 @@ def fig_anatomy():
         fits('C/label', lab, font(21, 'b'), bw - 12)
         d.text((x + bw / 2, 774), lab, font=font(21, 'b'), fill=(69, 90, 100), anchor='mm')
     left(d, 86, 822,
-         'Command Bar — icon-only on screen (labels here for legibility); fixed positions, every mode',
+         'Command Bar — icons by default, or these short words; fixed positions, every mode',
          font(21, 'i'), cw, GRAY, 'C/cap')
 
     tag(d, 70, 876, 'D', fletter)
@@ -221,7 +222,7 @@ def fig_modes():
     for n, (title, chipkey, cards) in enumerate(panels):
         ox = 40 + n * 590
         d.rounded_rectangle((ox, 60, ox + 550, 700), radius=16, outline=FRAME, width=4)
-        pill(d, (ox + 24, 90, ox + 314, 138), title, chipkey, fchip)
+        mid(d, ox + 275, 100, title, fchip, 500, GRAY, 'modes/title')
         for i, (key, label) in enumerate(cards):
             cx, cy = ox + 24 + (i % 2) * 258, 180 + (i // 2) * 250
             box(d, (cx, cy, cx + 244, cy + 224), key, width=3)
@@ -229,30 +230,34 @@ def fig_modes():
     cap(d, 40, 740,
         'The cards change; the frame does not. Same geometry, same four positions, same Command', cw)
     cap(d, 40, 778, 'Bar, in every mode — which is what a physical keyguard depends on.', cw)
-    cap(d, 40, 824, 'No badges: position and color carry the category, as shipped.', cw)
+    cap(d, 40, 824, 'No badges and no mode label on screen (the titles are for this figure only).', cw)
     return im
 
 
 # --- Fig 6 — transcript states, as shipped ----------------------------------
 def fig_transcript():
     im, d, cw = new(1600, 760)
-    rows = [('amber', 'HEARD',
+    # As shipped the state is a colored LEFT EDGE on the partner's live line, not a
+    # labeled banner: amber while heard, blue while the AI is asked, none once ready.
+    rows = [('amber', 'HEARD', SLOT['amber'][0],
              'The recognizer has delivered. Generation has ALREADY begun — a display, not a gate.'),
-            ('initiative', 'GENERATING',
-             'The round trip is running and a placeholder is audible; what plays is shown on screen.'),
-            ('preferred', 'OPTIONS READY',
-             'The palette is live. The transcript stays up for reference while the user chooses.')]
-    y = 60
-    for key, label, desc in rows:
-        box(d, (80, y, 1520, y + 150), key, width=3)
-        pill(d, (104, y + 20, 104 + 24 * len(label), y + 62), label, key, font(21, 'b'))
-        left(d, 104, y + 76, '“Want to come to dinner Friday?”', font(30, 'b'), cw, INK, 'T/quote')
-        left(d, 104, y + 118, desc, font(22, 'i'), cw, GRAY, 'T/desc')
-        y += 176
+            ('initiative', 'GENERATING', SLOT['initiative'][0],
+             'The AI is being asked and a placeholder may be playing; what plays is shown on screen.'),
+            ('preferred', 'OPTIONS READY', None,
+             'The options are live. The line stays up for reference while the user chooses.')]
+    y = 50
+    for key, label, edge, desc in rows:
+        left(d, 80, y, label, font(22, 'b'), cw, SLOT[key][0], 'T/label')
+        d.rectangle((80, y + 38, 1520, y + 112), fill=(245, 247, 248))
+        if edge:
+            d.rectangle((80, y + 38, 92, y + 112), fill=edge)
+        left(d, 112, y + 56, '“Want to come to dinner Friday?”', font(30, 'b'), cw, INK, 'T/quote')
+        left(d, 80, y + 124, desc, font(22, 'i'), cw, GRAY, 'T/desc')
+        y += 180
 
-    cap(d, 80, 606, 'There is no confirmation step: generation fires on the partner’s pause (June 2026),', cw)
-    cap(d, 80, 644, 'and a garbled capture is handled afterwards by “Ask them to repeat”, not by a gate.', cw)
-    cap(d, 80, 694, 'Two states not shown: a turn recorded without AI cleanup renders blue and italic, and', cw)
+    cap(d, 80, 606, 'There is no confirmation step: generation fires on the partner’s pause, and a garbled', cw)
+    cap(d, 80, 644, 'capture is handled afterwards by “Ask them to repeat”, not by a gate.', cw)
+    cap(d, 80, 694, 'Two states not shown: if the AI cannot be reached, the line turns blue and italic, and', cw)
     cap(d, 80, 726, 'a faint red wash over the box marks that something went wrong this conversation.', cw)
     return im
 
@@ -277,50 +282,60 @@ def fig_ladder():
 
     cap(d, 120, 420, 'The clock is started by the partner’s SILENCE, not by the generation round trip.', cw)
     cap(d, 120, 462, 'Every phrase is neutral and works after any kind of turn, because the app does not', cw)
-    cap(d, 120, 494, 'yet know what kind it was — which is why the old “Good question.” pool was removed.', cw)
-    cap(d, 120, 544, 'The user sets both delays and the per-turn cap, including zero to switch them off.', cw)
+    cap(d, 120, 494, 'yet know what kind of turn it was. A phrase already playing always finishes.', cw)
+    cap(d, 120, 544, 'The user sets both delays, the most per turn, and how much longer to wait each exchange.', cw)
     cap(d, 120, 582, 'Everything spoken is displayed as it plays: nothing is said on the user’s behalf unseen.', cw)
     return im
 
 
-# --- Fig 8 — one renderer built, one seam -----------------------------------
+# --- Fig 8 — one screen, every access method ----------------------------------
+# As built (0.15.0): the palette descriptor feeds ONE renderer, the screen layout.
+# Switch scanning does not render the descriptor; it reads the screen as drawn
+# (switch-access.js), decides the next stop by region (scan-rules.js), and presses
+# the highlighted button with a tap.
 def fig_access():
     im, d, cw = new(1840, 880)
-    d.rounded_rectangle((560, 40, 1280, 150), radius=14, outline=SLOT['persistent'][0], width=4,
+    d.rounded_rectangle((560, 30, 1280, 130), radius=14, outline=SLOT['persistent'][0], width=4,
                         fill=SLOT['persistent'][1])
-    mid(d, 920, 60, 'One palette descriptor', font(30, 'b'), 690, INK, 'access/title')
-    mid(d, 920, 104, 'slots · priority · droppable — emitted by the engine', font(23), 690,
+    mid(d, 920, 46, 'One palette descriptor', font(30, 'b'), 690, INK, 'access/title')
+    mid(d, 920, 90, 'slots · priority · droppable — emitted by the engine', font(23), 690,
         GRAY, 'access/sub')
 
-    cols = [(110, 'Direct select', 'preferred', 'BUILT',
-             ['2×2 on a side dock, 1×4 on a bottom dock.',
-              'Eye gaze and head tracking arrive here',
-              'too — in pointer-emulation mode they',
-              'are just a pointer, and the app never',
-              'asks what kind it is.']),
-            (700, 'Switch scanning', 'red', 'NOT BUILT',
-             ['No renderer exists. It also depends on',
-              'the update-queuing rule, specified and',
-              'unbuilt — a palette that changes',
-              'mid-cycle invalidates the count the',
-              'user is keeping.']),
-            (1290, 'Dwell / gaze grid', 'red', 'NOT BUILT',
+    d.line([(920, 130), (920, 180)], fill=LEAD, width=3)
+    box(d, (380, 180, 1460, 300), 'preferred', width=4, fill=False)
+    mid(d, 920, 196, 'Direct-select renderer: the one screen layout', font(30, 'b'), 1000,
+        INK, 'access/renderer')
+    mid(d, 920, 248, 'response options in a row or two by two, as the user chooses',
+        font(22), 1000, GRAY, 'access/renderer-sub')
+
+    cols = [(110, 'Touch and pointer', 'preferred', 'BUILT',
+             ['A finger or a mouse works the screen',
+              'as drawn. Eye gaze and head tracking',
+              'arrive here too: in pointer-emulation',
+              'mode they are just a pointer.']),
+            (700, 'Switch scanning', 'preferred', 'BUILT',
+             ['Reads the screen as drawn, not the',
+              'descriptor, and scans it by region:',
+              'response options, Express Panel,',
+              '“In my own words”, Command Bar.',
+              'A press taps the highlighted button.']),
+            (1290, 'Purpose-built gaze grid', 'red', 'NOT BUILT',
              ['A large-target renderer is future work.',
               'Gaze users are served today by the',
-              'direct-select renderer, with button size',
-              'and spacing as the tuning surface.'])]
+              'screen above, with button size and',
+              'spacing as the tuning surface.'])]
     for x, title, key, badge, lines in cols:
-        d.line([(920, 150), (x + 220, 250)], fill=LEAD, width=2)
-        box(d, (x, 250, x + 440, 620), key, width=4, fill=False)
-        mid(d, x + 220, 278, title, font(30, 'b'), 400, INK, 'access/col')
-        pill(d, (x + 130, 330, x + 310, 374), badge, key, font(21, 'b'))
+        d.line([(920, 300), (x + 220, 360)], fill=LEAD, width=2)
+        box(d, (x, 360, x + 440, 680), key, width=4, fill=False)
+        mid(d, x + 220, 384, title, font(30, 'b'), 400, INK, 'access/col')
+        pill(d, (x + 130, 434, x + 310, 478), badge, key, font(21, 'b'))
         for i, ln in enumerate(lines):
-            mid(d, x + 220, 410 + i * 38, ln, font(21), 410, GRAY, 'access/body')
+            mid(d, x + 220, 498 + i * 33, ln, font(21), 410, GRAY, 'access/body')
 
-    cap(d, 120, 680, 'The engine emits one descriptor; a renderer presents it. That seam is real, and it is', cw)
-    cap(d, 120, 718, 'what keeps conversation logic independent of access method — but one renderer exists.', cw)
-    cap(d, 120, 768, 'Priority-based dropping, and scan order following priority, are part of the contract', cw)
-    cap(d, 120, 806, 'and will matter when a scanning renderer is built; nothing exercises them yet.', cw)
+    cap(d, 120, 712, 'The engine emits one descriptor and one renderer draws it. Every access method then', cw)
+    cap(d, 120, 750, 'works that same screen, so the layout and the keyguard do not change with the method.', cw)
+    cap(d, 120, 796, 'Switch scanning does not use the descriptor’s priority or paging. It scans the screen', cw)
+    cap(d, 120, 834, 'in region order, and newer options wait while the highlight is in the response options.', cw)
     return im
 
 

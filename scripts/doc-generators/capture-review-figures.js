@@ -9,6 +9,12 @@
  * what the therapists are looking at, and it deletes a whole file's worth of mock-up.
  *
  * Run: node capture-review-figures.js
+ *
+ * ⚠ FIGURES 2 AND 3 ARE NOW CAPTURED FROM THE REAL APP (November 25 2026), by
+ * capture-app-figures.mjs, because this prototype still shows the first-build review
+ * screen (the old Command Bar, short labels, the "waited" note). Running this script
+ * overwrites rv-fig2.png and rv-fig3.png with those prototype shots: do not put them
+ * back into the document, and re-run capture-app-figures.mjs afterwards.
  */
 const puppeteer = require('puppeteer');
 const path = require('path');

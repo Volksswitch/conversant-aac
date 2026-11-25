@@ -31,32 +31,49 @@
  h3{font-size:14px;color:#1F4E79;margin:0 0 8px}
 </style></head><body>
 
-<div class="fig" id="f1">
+<!-- Figure 1 follows the app as of 0.15.28: each band is one tint with an edge in the
+     band's own color, the Context kinds are told apart by the default "shape" mark
+     (circle partner, triangle place, diamond topic, square feeling), a goal in the Flex
+     band carries an arrow, and a band holding more than fits gives its last position
+     to its own More button. The figure is fixed at 820 x 447 so the image embedded in
+     the document can be swapped without changing its size. -->
+<div class="fig" id="f1" style="height:447px">
+<style>
+ #f1 .b{border-left-width:5px}
+ #f1 .always{border-color:#283593}
+ #f1 .ctx,#f1 .place,#f1 .feel,#f1 .topic{background:#efebe9;color:#4E342E;border-color:#4E342E}
+ #f1 .flex{border-color:#1B5E20}
+ #f1 .more-a{background:#283593;color:#fff;font-weight:bold;border-color:#283593}
+ #f1 .ctx::before{content:'\25CF\2009'} #f1 .place::before{content:'\25B2\2009'}
+ #f1 .topic::before{content:'\25C6\2009'} #f1 .feel::before{content:'\25A0\2009'}
+ #f1 .goal::before{content:'\2192\2009';font-weight:800}
+ #f1 .imow{border-color:#455A64}
+</style>
 <h3>The three bands</h3>
 <div class="panel">
  <div class="b always">Yes</div><div class="b always">No</div><div class="b always">Okay</div>
  <div class="b always">Please</div><div class="b always">Thank you</div><div class="b always">Sorry</div>
  <div class="b always">Hi</div><div class="b always">Bye</div><div class="b always">Wait</div>
- <div class="b always">Help</div><div class="b always">Stop</div><div class="b always">More</div>
+ <div class="b always">Help</div><div class="b always">Stop</div><div class="b always">Maybe</div>
  <div class="b always">I don't know</div><div class="b always">Not now</div><div class="b always">Say again</div>
- <div class="b always">This device listens<br>and speaks for me</div><div class="b always">&nbsp;</div><div class="b always">&nbsp;</div>
+ <div class="b always">This device listens<br>and speaks for me</div><div class="b always">Excuse me</div><div class="b more-a">More</div>
  <div class="b ctx">Mom</div><div class="b ctx">Dr Ruiz</div><div class="b ctx">Marcus</div>
- <div class="b place">Home</div><div class="b place">The diner</div><div class="b place">The clinic</div>
+ <div class="b place">Home</div><div class="b place">The clinic</div><div class="b topic">My talk</div>
  <div class="b feel">Tired</div><div class="b feel">Happy</div><div class="b feel">Sore</div>
- <div class="b flex">Can you pass<br>me that?</div><div class="b flex">How's your<br>shoulder?</div><div class="b flex">I'm okay,<br>honestly</div>
+ <div class="b flex goal">Make plans</div><div class="b flex">Can you pass<br>me that?</div><div class="b flex">How's your<br>shoulder?</div>
  <div class="b flex">I need a hand</div><div class="b imow span4">In my own words</div>
  <div class="b flex">You're the best</div>
 </div>
 <p class="key">
- <span class="tag t-a">Always band</span> the words that stay in the same place forever. First, so nothing can shift them. Takes whatever the other two leave.<br>
- <span class="tag t-c">Context band</span> the buttons that <b>never speak</b>: who the partner is, where the user is, how they feel. Resizing it leaves the Always band untouched.<br>
- <span class="tag t-flex">Flex band</span> phrases suited to the partner and place selected above. Any room still spare at its end goes to Always phrases that did not fit. Flows around the compose key.
+ <span class="tag t-a">Always band</span> the words that stay in the same place forever. First, so nothing can shift them. Extra phrases are reached with the band's own More button.<br>
+ <span class="tag t-c">Context band</span> the buttons that <b>never speak</b>: who the partner is, where the user is, the topic, and how they feel.<br>
+ <span class="tag t-flex">Flex band</span> the user's goals (&rarr;), then phrases suited to the topic, partner and place selected above. Flows around the compose key.
 </p>
-<p class="cap"><b>The dividing line that makes this learnable:</b> a button in the Context band never says anything out loud.
-Everywhere else, a button speaks. Feeling does not fill the Flex band; only the partner and the place do.
+<p class="cap" style="margin-top:5px"><b>What puts a button in a band is where its content comes from.</b> The user supplies who, where, what about
+and how they feel in the Context band; the Flex band holds what depends on those choices. Feeling does not fill the Flex band.
 <b>The order is by which band must not move</b>, not by importance.<br>
-<b>One background color per band.</b> Inside the Context band the kind of button &mdash; partner, place, feeling &mdash;
-is said by the bar down its left edge, not by a different fill.</p>
+<b>One background color per band.</b> Inside the Context band a small mark says the kind of button:
+&#9679; partner, &#9650; place, &#9670; topic, &#9632; feeling. The mark is a setting; this is the default.</p>
 </div>
 
 <div class="fig" id="f2">
@@ -88,15 +105,14 @@ is said by the bar down its left edge, not by a different fill.</p>
 </div>
 </div>
 
-<div class="fig" id="f3">
+<div class="fig" id="f3" style="height:540px">
 <h3>How the Flex band is filled &mdash; most likely first, and never blank</h3>
 <p class="cap" style="margin:0 0 10px">The user lists each partner's phrases in the order they are likely to want them,
 and does the same for each place. Filling runs from the most specific list to the least &mdash; this partner in this
 place, then this partner anywhere, then anyone in this place, then the general set &mdash; until the room runs out. A
 phrase listed in two of them is shown once. All four are made the same way, by picking a partner and a place from two
-lists that also offer Anyone and Anyplace, so the general set is simply Anyone plus Anyplace. Anything still spare at
-the very end is filled from Always phrases that had no room in their own band &mdash; last in the queue, so they never
-cost a situational phrase its place.</p>
+lists that also offer Anyone and Anyplace, so the general set is simply Anyone plus Anyplace. When more phrases are
+listed than fit, the band's last position becomes its own More button. Always phrases never come into this band.</p>
 <div class="lrow"><div class="lname"><b>Mom at Home</b><br><span style="color:#999">1 phrase</span></div>
 <div class="layer" style="border-color:#bbb">
  <div class="b flex">What's for<br>dinner?</div>
@@ -114,23 +130,27 @@ cost a situational phrase its place.</p>
  <div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b empty" style="border:none;background:none">&nbsp;</div>
  <div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b flex">I need a hand</div><div class="b empty" style="border:none;background:none">&nbsp;</div>
 </div></div>
-<div class="lrow"><div class="lname">then Anyone, Anyplace<br><span style="color:#999">6 phrases, 1 fits</span></div>
+<div class="lrow"><div class="lname">then Anyone, Anyplace<br><span style="color:#999">6 phrases, behind More</span></div>
 <div class="layer" style="border-color:#bbb">
  <div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b empty" style="border:none;background:none">&nbsp;</div>
- <div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b flex">Could you<br>help me?</div>
+ <div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b" style="background:#1B5E20;color:#fff;font-weight:bold;border-color:#1B5E20">More</div>
 </div></div>
 <div class="arrow">&#9660; what the user sees</div>
 <div class="lrow"><div class="lname"><b>On screen</b></div>
 <div class="layer result">
  <div class="b flex">What's for<br>dinner?</div><div class="b flex">Can you pass<br>me that?</div><div class="b flex">How's your<br>shoulder?</div>
- <div class="b flex">You're the best</div><div class="b flex">I need a hand</div><div class="b flex">Could you<br>help me?</div>
+ <div class="b flex">You're the best</div><div class="b flex">I need a hand</div><div class="b" style="background:#1B5E20;color:#fff;font-weight:bold;border-color:#1B5E20">More</div>
 </div></div>
 <p class="cap"><b>No button can be blank</b>, because the general set always has more phrases than the room left over.
 <b>The most likely thing is always first</b>, which is the only ordering promise made &mdash; and it is one the user
-controls directly, by ordering their own lists. What falls off the end is the least likely of the general phrases,
-which is the right thing to lose.</p>
+controls directly, by ordering their own lists. What does not fit on the first set is the least likely of the general
+phrases, one tap away behind More.</p>
 </div>
 
+<!-- ⚠ SUPERSEDED November 25 2026: the document's Figure 4 is now a screenshot of the
+     real app's Express Panel and Keyboard tab (the Flex section, with the Insert buttons
+     and the topic dropdown), not this drawing. capture-express-panel-figures.js still
+     renders this block to ep-fig4.png; do not put that output back into the document. -->
 <div class="fig" id="f4">
 <h3>Setting it up: the panel is the editor</h3>
 <p class="cap" style="margin:0 0 10px">The live panel sits beside Settings and is tappable there. Tapping a button
