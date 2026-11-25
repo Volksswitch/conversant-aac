@@ -35,6 +35,7 @@
  * for any of the three services. The Settings Test button is the confirmation.
  */
 import * as speakerWake from './speaker-wake.js';
+import * as audioClock from './audio-clock.js';
 import { describeFailure } from './speech-catalog.js';
 
 // Wake the audio before anything plays, but never wait for ever (CR-280). On an iPad a
@@ -167,6 +168,7 @@ export async function fetchVoices(provider, key, timeoutMs = 10000) {
  */
 export function createVoice({ provider, getKey, getModel, onBilled, onAudio } = {}) {
     let ctx = null;
+    audioClock.register(`${provider.label} voice`, () => ctx);   // for the clock check
     const sources = new Set();   // playback nodes started but not yet finished
     let playToken = 0;
     let inFlight = null;
@@ -183,7 +185,8 @@ export function createVoice({ provider, getKey, getModel, onBilled, onAudio } = 
         || provider.defaultModel;
 
     function audioContext() {
-        if (!ctx) {
+        // A context closed because its clock stopped (audio-clock.js) is replaced.
+        if (!ctx || ctx.state === 'closed') {
             const Ctor = window.AudioContext || window.webkitAudioContext;
             if (!Ctor) throw new Error('This browser cannot play audio.');
             ctx = new Ctor();
@@ -199,7 +202,8 @@ export function createVoice({ provider, getKey, getModel, onBilled, onAudio } = 
     function unlock() {
         try {
             const c = audioContext();
-            if (c.state === 'suspended') c.resume();
+            // "interrupted" (iOS, after a call or Siri) needs a tap to resume too.
+            if (c.state !== 'running') c.resume();
         } catch { /* no audio at all — speak() will report it */ }
     }
 
@@ -275,15 +279,32 @@ export function createVoice({ provider, getKey, getModel, onBilled, onAudio } = 
 
     // `at` is the earliest context time to start: speaker-wake.js holds the first
     // sound after a quiet spell back a moment so a Bluetooth speaker can wake.
+    // A time limit on the sound (audio-clock.js): if the device's audio clock has
+    // stopped, the sound never starts or ends, so this rejects and tts.js says the
+    // sentence in the device's own voice instead of waiting for ever.
     function play(c, buffer, at = 0) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             const node = c.createBufferSource();
             node.buffer = buffer;
             node.connect(c.destination);
             sources.add(node);
             speakerWake.soundStarted(c);
-            node.onended = () => { sources.delete(node); speakerWake.soundEnded(c); resolve(); };
-            node.start(Math.max(at, c.currentTime));
+            let unguard = () => {};
+            const finish = () => { unguard(); sources.delete(node); speakerWake.soundEnded(c); resolve(); };
+            node.onended = finish;
+            const startAt = Math.max(at, c.currentTime);
+            node.start(startAt);
+            unguard = audioClock.guardPlayback(c, startAt + buffer.duration, {
+                onOverdue: finish,
+                onStopped: () => {
+                    node.onended = null;
+                    try { node.stop(); } catch { /* never started */ }
+                    sources.delete(node);
+                    speakerWake.soundEnded(c);
+                    audioClock.retire(c);   // the next sound gets a new context
+                    reject(new Error(audioClock.STOPPED_MESSAGE));
+                },
+            });
         });
     }
 

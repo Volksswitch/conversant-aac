@@ -63,6 +63,7 @@
 // as not running too. If the audio has not woken within the limit this throws, and
 // tts.js says the sentence in the device's own voice instead.
 import * as speakerWake from './speaker-wake.js';
+import * as audioClock from './audio-clock.js';
 
 const WAKE_LIMIT_MS = 1500;
 async function wake(c) {
@@ -195,6 +196,7 @@ export function billableCharacters(text) {
  */
 export function createVoice({ getKey, onBilled, onAudio } = {}) {
     let ctx = null;
+    audioClock.register('Deepgram voice', () => ctx);   // for the clock check
     let socket = null;
     let socketModel = null;
     // The key the open connection was made with (CR-086): a changed or removed key
@@ -221,7 +223,8 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
     }
 
     function audioContext() {
-        if (!ctx) {
+        // A context closed because its clock stopped (audio-clock.js) is replaced.
+        if (!ctx || ctx.state === 'closed') {
             const Ctor = window.AudioContext || window.webkitAudioContext;
             if (!Ctor) throw new Error('This browser cannot play audio.');
             ctx = new Ctor();
@@ -238,7 +241,8 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
     function unlock() {
         try {
             const c = audioContext();
-            if (c.state === 'suspended') c.resume();
+            // "interrupted" (iOS, after a call or Siri) needs a tap to resume too.
+            if (c.state !== 'running') c.resume();
         } catch { /* no audio at all — speak() will report it */ }
     }
 
@@ -402,7 +406,7 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
         // see speaker-wake.js. Costs WARM_MS here, and only after a quiet spell.
         const at = speakerWake.wakeSpeaker(c);
 
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             const buffer = c.createBuffer(1, samples.length, SAMPLE_RATE);
             buffer.getChannelData(0).set(samples);
             const node = c.createBufferSource();
@@ -410,12 +414,29 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
             node.connect(c.destination);
             sources.add(node);
             speakerWake.soundStarted(c);
-            node.onended = () => {
+            let unguard = () => {};
+            const finish = () => {
+                unguard();
                 sources.delete(node);
                 speakerWake.soundEnded(c);
                 resolve();
             };
-            node.start(Math.max(at, c.currentTime));
+            node.onended = finish;
+            const startAt = Math.max(at, c.currentTime);
+            node.start(startAt);
+            // A time limit (audio-clock.js): on a stopped audio clock the sound never
+            // starts or ends, so reject and let tts.js say it in the device's voice.
+            unguard = audioClock.guardPlayback(c, startAt + samples.length / SAMPLE_RATE, {
+                onOverdue: finish,
+                onStopped: () => {
+                    node.onended = null;
+                    try { node.stop(); } catch { /* never started */ }
+                    sources.delete(node);
+                    speakerWake.soundEnded(c);
+                    audioClock.retire(c);   // the next sound gets a new context
+                    reject(new Error(audioClock.STOPPED_MESSAGE));
+                },
+            });
         });
     }
 
@@ -465,10 +486,45 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
         let aborted = false;
         let underruns = 0;
         let settle = null;
-        const done = new Promise((resolve) => { settle = resolve; });
+        let fail = null;
+        const done = new Promise((resolve, reject) => { settle = resolve; fail = reject; });
+        // A failure can arrive while the sentence is still being fetched, before
+        // speak() waits on this; marked handled so the browser does not report it as
+        // an uncaught failure in the meantime. speak() still receives it.
+        done.catch(() => {});
+        // Time limits (audio-clock.js): one from the first piece, which notices a clock
+        // that does not move at all, and one from end(), for the sentence as a whole.
+        let unguardStart = () => {};
+        let unguardEnd = () => {};
+
+        function clearGuards() { unguardStart(); unguardEnd(); }
 
         function finishIfDone() {
-            if (ended && live === 0 && !queued && settle) { settle(); settle = null; }
+            if (ended && live === 0 && !queued && settle) {
+                clearGuards();
+                settle(); settle = fail = null;
+            }
+        }
+
+        // The audio clock stopped: nothing was heard, so stop and let tts.js say the
+        // whole sentence in the device's own voice.
+        function stoppedClock() {
+            clearGuards();
+            aborted = true;
+            queue = []; queued = 0;
+            for (const node of sources) { node.onended = null; }
+            stopAllSources();
+            audioClock.retire(c);   // the next sound gets a new context
+            if (fail) { fail(new Error(audioClock.STOPPED_MESSAGE)); settle = fail = null; }
+        }
+
+        // Every piece should be over by the time the cursor reaches the end.
+        function allPlayed() {
+            clearGuards();
+            for (; live > 0; live--) speakerWake.soundEnded(c);
+            for (const node of sources) { node.onended = null; }
+            sources.clear();
+            finishIfDone();
         }
 
         function schedule(samples) {
@@ -493,6 +549,12 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
             };
             node.start(cursor);
             cursor += samples.length / SAMPLE_RATE;
+            if (!started) {
+                unguardStart = audioClock.guardPlayback(c, cursor, {
+                    onStopped: stoppedClock,
+                    onOverdue: () => {},   // the time limit from end() covers the rest
+                });
+            }
             started = true;
         }
 
@@ -544,11 +606,18 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
                 if (!started) cursor = Math.max(c.currentTime, earliest);
                 drain(true);
                 finishIfDone();
+                if (settle) {
+                    unguardEnd = audioClock.guardPlayback(c, cursor, {
+                        onStopped: stoppedClock,
+                        onOverdue: allPlayed,
+                    });
+                }
             },
             abort() {
                 aborted = true;
+                clearGuards();
                 queue = []; queued = 0;
-                if (settle) { settle(); settle = null; }
+                if (settle) { settle(); settle = fail = null; }
             },
             hasStarted: () => started,
             underruns: () => underruns,
@@ -643,8 +712,7 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
             if (trimmed.length <= MAX_CACHED_CHARS) remember(key, samples);   // instant next time
             if (onAudio && !keyOverride) onAudio(model, trimmed, joinChunks(chunks));
             p.end();
-            await p.done;
-            if (player === p) player = null;
+            try { await p.done; } finally { if (player === p) player = null; }
         };
         chain = chain.then(run, run);   // one failure must not wedge the queue
         return chain;

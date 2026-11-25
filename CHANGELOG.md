@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+### On an iPad
+- **If the sound on your iPad or iPhone stops working after Conversant has been left open for a long time, the app now notices.** A paid voice that can't play says your words in this device's own voice instead of staying silent. If paid listening hears nothing, your next tap on Listen starts it again with a fresh connection to the sound. If that still doesn't work, Conversant restarts itself the next time no conversation is under way, and you tap Start as usual.
+
 ## Version 0.15.27
 
 - **When a paid service is listening but no sound at all comes from the microphone, the conversation pane now turns faint red, and a problem report shows what happened.** Before, the Listen button lit and nothing was heard, with no sign that anything was wrong.

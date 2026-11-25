@@ -4,6 +4,7 @@ import * as llm from './llm.js';
 import * as ui from './ui.js';
 import * as storage from './storage.js';
 import * as micCheck from './mic-check.js';
+import * as audioClock from './audio-clock.js';
 import * as placeholders from './placeholders.js';
 import * as engine from './engine.js';
 import * as convLogic from './conversation-logic.js';
@@ -693,7 +694,36 @@ function initApp() {
     // Paid listening that gets no sound at all is an error, not just a count (Ken,
     // November 24 2026; see mic-check.js). Set whatever the hearing choice is, since
     // Settings can switch to a paid service later without a reload.
-    micCheck.setNoSoundReporter((message) => storage.logError('stt-no-sound', message));
+    // The message also says whether each audio connection's clock is moving
+    // (audio-clock.js), and a stopped one is replaced so the next tap gets a fresh one.
+    micCheck.setNoSoundReporter(async (message) => {
+        let clocks = '';
+        try { clocks = await audioClock.describe(); } catch { /* the message goes anyway */ }
+        storage.logError('stt-no-sound', clocks ? `${message}; audio: ${clocks}` : message);
+        recoverStoppedAudio('no sound while listening');
+    });
+    // Coming back to the app after the device slept is when the audio was found
+    // stopped (Ken's iPad, November 25 2026), so look then, once the device has had a
+    // moment to bring its audio back. LOOK ONLY: nothing is replaced on this check.
+    // Whether an idle audio connection's clock keeps moving on every device is not yet
+    // known, so replacing on it could throw away a working one; a connection is
+    // replaced only when a sound actually failed (no sound while listening, or a voice
+    // sentence that did not play). A stopped one is noted, quietly, for the reports.
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible') return;
+        setTimeout(async () => {
+            try {
+                const line = await audioClock.describe();
+                if (line.includes('STOPPED')) storage.logError('audio-check', `back in the app: ${line}`, null, { quiet: true });
+            } catch { /* a check must never break anything */ }
+        }, 1500);
+    });
+    // Every tap wakes the audio. A replaced audio connection starts asleep, and on an
+    // iPad only a tap can wake it; before this only Start, Listen and the voice Test
+    // did, so a replaced voice would have stayed silent until the next Start.
+    for (const type of ['click', 'touchend', 'keydown']) {
+        document.addEventListener(type, wakeAllAudio, { capture: true, passive: true });
+    }
     if (speechSupport.apiPresent || usingPaidStt) {
         stt.setSilenceThreshold(storage.loadSilenceThreshold());
         // Stamp every partner turn with what heard it. Set beside init because that
@@ -991,6 +1021,9 @@ function initApp() {
     // the console.
     tts.onFallbackToBrowser((reason) => {
         storage.logError('voice', `Paid voice unavailable, used this device's voice instead: ${reason}`);
+        // The voice found the audio clock stopped (audio-clock.js), which takes the
+        // listening and the tone down with it; replace those too.
+        if (reason === audioClock.STOPPED_MESSAGE) recoverStoppedAudio('the voice could not play');
     });
     // Counted, not shown: the app has already moved on, so there is nothing for the
     // user to do, but a run of these in a report says the device voice is hanging.
@@ -2602,6 +2635,44 @@ function finishStart() {
  */
 function wakeListeningAudio() {
     if (stt.currentSource() !== 'browser') audioSession.unlockCapture();
+}
+
+/* Wake every audio connection the app uses, from inside a tap. Cheap: each one is
+ * skipped when it is already running. */
+function wakeAllAudio() {
+    try { tts.unlockAudio(); } catch { /* never block a tap */ }
+    try { chime.unlock(); } catch { /* never block a tap */ }
+    try { wakeListeningAudio(); } catch { /* never block a tap */ }
+}
+
+/*
+ * AUDIO THAT SAYS IT IS RUNNING BUT IS NOT (Ken's iPad, November 25 2026; see
+ * audio-clock.js). Left open overnight, the installed app's voice, listening tone and
+ * paid listening were all silent while every audio connection reported "running", and
+ * a reload fixed it. This closes any connection whose clock has stopped; its owner
+ * makes a new one, and the next tap wakes it.
+ *
+ * If one is found stopped AGAIN after being replaced, a new connection does not help
+ * on this device, so the app reloads as soon as nothing is under way - the same wait
+ * an update uses. A reload is the one thing known to fix it.
+ */
+let audioNeedsReload = false;
+let recoveringAudio = false;
+async function recoverStoppedAudio(why) {
+    if (recoveringAudio) return;
+    recoveringAudio = true;
+    try {
+        const { replaced, again } = await audioClock.replaceStopped();
+        if (replaced.length) {
+            storage.logError('audio-restart',
+                `${why}: audio had stopped; replaced ${replaced.join(', ')}` +
+                (again ? ' (stopped again after being replaced: reloading when nothing is under way)' : ''),
+                null, { quiet: true });
+            if (again) { audioNeedsReload = true; reloadForUpdateIfIdle(); }
+        }
+    } catch { /* a recovery attempt must never break anything */ } finally {
+        recoveringAudio = false;
+    }
 }
 
 function toggleListening() {
@@ -5617,7 +5688,8 @@ function expressLayoutRows() {
  */
 let updateWaitTimer = null;
 function reloadForUpdateIfIdle() {
-    if (!window.__aacUpdateReady) return;
+    // Also used when the audio could not be brought back without one (recoverStoppedAudio).
+    if (!window.__aacUpdateReady && !audioNeedsReload) return;
     const busy = conversationInProgress() || composerOpen || !!document.querySelector('dialog[open]');
     if (!busy) { window.location.reload(); return; }
     if (!updateWaitTimer) updateWaitTimer = setInterval(reloadForUpdateIfIdle, 5000);

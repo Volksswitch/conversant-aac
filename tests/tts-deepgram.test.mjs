@@ -260,6 +260,8 @@ function fakeContext() {
             return node;
         },
         destination: {},
+        closed: false,
+        close() { this.closed = true; return Promise.resolve(); },
     };
     // Every finished piece reports back, which is what resolves speak().
     ctx.finishAll = () => {
@@ -515,6 +517,7 @@ test('a long sentence that keeps arriving is not cut off at six seconds', async 
     for (let i = 0; i < 16; i++) {            // 8 seconds of arrival, a chunk every 0.5 s
         made[0].chunk(chunk40ms(800));
         t.mock.timers.tick(500);
+        ctx.currentTime += 0.5;               // a working audio clock moves with time
         await Promise.resolve();
     }
     assert.equal(failed, null, failed && failed.message);
@@ -646,4 +649,48 @@ test('the hiss is not counted as the app speaking', async (t) => {
     assert.equal(voice.isSpeaking(), false,
         'the echo guard and the placeholders must not think the app is talking');
     voice.cancel();
+});
+
+// ---- the audio clock stopped (Ken's iPad left open overnight, November 25 2026) ----
+
+test('a stopped audio clock fails the sentence, so the device voice can say it', async (t) => {
+    const { ctx, made, voice } = setup(t);
+    t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 1_000_000 });
+    let failed = null;
+    const speaking = voice.speak('hello there');
+    speaking.catch((e) => { failed = e; });
+    await settle(t);
+    for (let i = 0; i < 10; i++) made[0].chunk(chunk40ms(800));   // past the lead-in
+    made[0].flushed();
+    await settle(t);
+    t.mock.timers.tick(900);              // the clock never moves (currentTime stays 0)
+    await settle(t);
+    t.mock.timers.reset();
+    await speaking.catch(() => {});
+    assert.ok(failed, 'the sentence must fail rather than wait for ever');
+    assert.match(failed.message, /stopped working/);
+    assert.equal(ctx.closed, true, 'the stopped audio is closed so the next sound gets a new one');
+});
+
+test('a sound that played but never reported its end is let go, not failed', async (t) => {
+    const { ctx, made, voice } = setup(t);
+    t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 1_000_000 });
+    let failed = null;
+    let finished = false;
+    const speaking = voice.speak('hello there');
+    speaking.then(() => { finished = true; }, (e) => { failed = e; });
+    await settle(t);
+    for (let i = 0; i < 10; i++) made[0].chunk(chunk40ms(800));
+    made[0].flushed();
+    await settle(t);
+    for (let i = 0; i < 10; i++) {        // 5 seconds pass and the clock keeps up
+        t.mock.timers.tick(500);
+        ctx.currentTime += 0.5;
+        await settle(t);
+    }
+    t.mock.timers.reset();
+    await speaking.catch(() => {});
+    assert.equal(failed, null, failed && failed.message);
+    assert.equal(finished, true, 'resolved even though no end report came');
+    assert.equal(ctx.closed, false);
 });

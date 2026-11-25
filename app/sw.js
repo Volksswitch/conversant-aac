@@ -45,6 +45,7 @@ const SHELL = [
   './js/mouse-extras.js',
   './js/stt.js',
   './js/audio-session.js',
+  './js/audio-clock.js',
   './js/stt-deepgram.js',
   './js/stt-azure.js',
   './js/vad.js',

@@ -15,8 +15,13 @@
 //     dependency.
 //   - Never blocks or throws into the capture path: any audio failure is swallowed.
 
+import * as audioClock from './audio-clock.js';
+
 let enabled = true;
 let ctx = null;
+audioClock.register('tone', () => ctx);   // for the clock check (audio-clock.js)
+// A context closed because its clock stopped is replaced on next use.
+const toneContext = (AudioCtx) => (ctx && ctx.state !== 'closed' ? ctx : (ctx = new AudioCtx()));
 
 // Once-per-conversation mode, driven by the "resume listening automatically"
 // setting (Ken, July 27 2026). With auto-resume ON the mic restarts after every
@@ -91,7 +96,7 @@ export function playListenChime() {
         try { target = contextFor ? contextFor() : null; } catch { target = null; }
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (!target && !AudioCtx) { playedThisConversation = true; return true; }   // policy allowed it; no audio here
-        if (!target) ctx = ctx || new AudioCtx();
+        if (!target) toneContext(AudioCtx);
         const out = target || ctx;
         // NEVER schedule into a context that isn't running. WebKit starts a context
         // suspended unless it was created during a user gesture, and this call is
@@ -156,7 +161,7 @@ export function unlock() {
     try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (!AudioCtx) return;
-        ctx = ctx || new AudioCtx();
+        toneContext(AudioCtx);
         if (ctx.state !== 'running') ctx.resume().catch(() => { /* best-effort */ });
     } catch { /* audio unavailable */ }
 }

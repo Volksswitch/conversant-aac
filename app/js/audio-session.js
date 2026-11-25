@@ -27,6 +27,7 @@
  */
 
 import * as platform from './platform.js';
+import * as audioClock from './audio-clock.js';
 
 // Which devices this applies to. Replaceable for tests only: platform.js reads the
 // device once, when it loads.
@@ -126,6 +127,7 @@ export function forListening() {
  * that is already awake needs no tap to be used again.
  */
 let captureCtx = null;
+audioClock.register('listening', () => captureCtx);   // for the clock check (audio-clock.js)
 let captureCtor = null;   // which constructor made it; it never changes outside tests
 
 export function captureContext() {

@@ -323,6 +323,22 @@ the phone's own hearing and voice both worked.
 - **Found while reading the code, whatever the cause:** a paid voice's sentence that
   never finishes playing has no time limit (the device voice has had one since November
   8). It holds the voice for every later sentence.
+- **BUILT November 25 2026 (Ken: "Build all three"), not yet tried on a device**
+  (`audio-clock.js`):
+  1. **Measure:** the no-sound error and every problem report now say, for each audio
+     connection (listening, each paid voice, tone), whether its clock is moving. A quiet
+     `audio-check` entry is logged on returning to the app if one reads STOPPED.
+  2. **Time limit on a paid voice's sound** (Deepgram, Azure, Google, ElevenLabs): a
+     clock that has not moved 0.8 s after the sound starts fails the sentence, so the
+     device voice says it; a sound that never reports its end is let go 3 s after it
+     should have finished.
+  3. **Recover:** a stopped connection found when a sound actually failed is closed and
+     a new one made; every tap now wakes the audio, so the next tap starts it. If a
+     replacement stops too, the app reloads once nothing is under way (`audio-restart`
+     in the error log). The return-to-app check only LOOKS: whether an idle connection's
+     clock keeps moving on every device is unverified, so nothing is replaced on it.
+- **Next overnight test:** the report should show which connections read STOPPED, and
+  whether a tap after the failure brought listening back without a reload.
 - **Candidate fix, not built (proposed to Ken):** when a paid listening run gets no sound
   (the 0.15.27 check), throw away all three audio contexts (listening, paid voice, tone)
   and make new ones on the next tap. Only runs when audio is already broken. Unknown
