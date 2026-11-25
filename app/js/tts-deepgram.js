@@ -196,7 +196,8 @@ export function billableCharacters(text) {
  */
 export function createVoice({ getKey, onBilled, onAudio } = {}) {
     let ctx = null;
-    audioClock.register('Deepgram voice', () => ctx);   // for the clock check
+    let active = 0;   // sentences being fetched or played
+    audioClock.register('Deepgram voice', () => ctx, { inUse: () => active > 0 || sources.size > 0 });   // for the clock check
     let socket = null;
     let socketModel = null;
     // The key the open connection was made with (CR-086): a changed or removed key
@@ -714,7 +715,10 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
             p.end();
             try { await p.done; } finally { if (player === p) player = null; }
         };
-        chain = chain.then(run, run);   // one failure must not wedge the queue
+        // Counted while it runs, so the audio monitor (audio-clock.js) never replaces
+        // the audio of a sentence being fetched or played.
+        const tracked = async () => { active++; try { return await run(); } finally { active--; } };
+        chain = chain.then(tracked, tracked);   // one failure must not wedge the queue
         return chain;
     }
 

@@ -19,7 +19,9 @@ import * as audioClock from './audio-clock.js';
 
 let enabled = true;
 let ctx = null;
-audioClock.register('tone', () => ctx);   // for the clock check (audio-clock.js)
+// For the clock check (audio-clock.js); busy while the two notes are sounding.
+let toneBusyUntil = 0;
+audioClock.register('tone', () => ctx, { inUse: () => Date.now() < toneBusyUntil });
 // A context closed because its clock stopped is replaced on next use.
 const toneContext = (AudioCtx) => (ctx && ctx.state !== 'closed' ? ctx : (ctx = new AudioCtx()));
 
@@ -116,6 +118,7 @@ export function playListenChime() {
         const t = out.currentTime;
         playNote(out, t,        660, 0.20);  // E5
         playNote(out, t + 0.17, 880, 0.26);  // A5
+        toneBusyUntil = Date.now() + 700;
         playedThisConversation = true;
         lastSounded = true;
     } catch { /* audio unavailable — silent, never blocks capture */ }

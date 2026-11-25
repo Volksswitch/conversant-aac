@@ -702,21 +702,21 @@ function initApp() {
         storage.logError('stt-no-sound', clocks ? `${message}; audio: ${clocks}` : message);
         recoverStoppedAudio('no sound while listening');
     });
-    // Coming back to the app after the device slept is when the audio was found
-    // stopped (Ken's iPad, November 25 2026), so look then, once the device has had a
-    // moment to bring its audio back. LOOK ONLY: nothing is replaced on this check.
-    // Whether an idle audio connection's clock keeps moving on every device is not yet
-    // known, so replacing on it could throw away a working one; a connection is
-    // replaced only when a sound actually failed (no sound while listening, or a voice
-    // sentence that did not play). A stopped one is noted, quietly, for the reports.
-    document.addEventListener('visibilitychange', () => {
+    // THE AUDIO MONITOR (Ken, November 25 2026; see audio-clock.js monitorOnce). Every
+    // 30 seconds while the app is on screen, and 1.5 seconds after coming back to it
+    // (once the device has had a moment to bring its audio back), it checks the audio
+    // connections NOT in use and replaces one that has really stopped. A connection
+    // the device had only paused is counted for the report and never logged as an
+    // error. The listening audio counts as in use while Listen is on: closing it then
+    // would cut off the microphone mid-conversation.
+    audioClock.setInUse('listening', () => isListening);
+    const runAudioMonitor = () => {
         if (document.visibilityState !== 'visible') return;
-        setTimeout(async () => {
-            try {
-                const line = await audioClock.describe();
-                if (line.includes('STOPPED')) storage.logError('audio-check', `back in the app: ${line}`, null, { quiet: true });
-            } catch { /* a check must never break anything */ }
-        }, 1500);
+        monitorAudio().catch(() => { /* a check must never break anything */ });
+    };
+    setInterval(runAudioMonitor, 30000);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') setTimeout(runAudioMonitor, 1500);
     });
     // Every tap wakes the audio. A replaced audio connection starts asleep, and on an
     // iPad only a tap can wake it; before this only Start, Listen and the voice Test
@@ -2658,19 +2658,30 @@ function wakeAllAudio() {
  */
 let audioNeedsReload = false;
 let recoveringAudio = false;
+function noteAudioReplaced(why, { replaced, again }) {
+    if (!replaced.length) return;
+    storage.logError('audio-restart',
+        `${why}: audio had stopped; replaced ${replaced.join(', ')}` +
+        (again ? ' (stopped again after being replaced: reloading when nothing is under way)' : ''),
+        null, { quiet: true });
+    if (again) { audioNeedsReload = true; reloadForUpdateIfIdle(); }
+}
 async function recoverStoppedAudio(why) {
     if (recoveringAudio) return;
     recoveringAudio = true;
     try {
-        const { replaced, again } = await audioClock.replaceStopped();
-        if (replaced.length) {
-            storage.logError('audio-restart',
-                `${why}: audio had stopped; replaced ${replaced.join(', ')}` +
-                (again ? ' (stopped again after being replaced: reloading when nothing is under way)' : ''),
-                null, { quiet: true });
-            if (again) { audioNeedsReload = true; reloadForUpdateIfIdle(); }
-        }
+        noteAudioReplaced(why, await audioClock.replaceStopped());
     } catch { /* a recovery attempt must never break anything */ } finally {
+        recoveringAudio = false;
+    }
+}
+// The monitor's pass: idle connections only, a paused one nudged rather than replaced.
+async function monitorAudio() {
+    if (recoveringAudio) return;
+    recoveringAudio = true;
+    try {
+        noteAudioReplaced('audio check', await audioClock.monitorOnce());
+    } catch { /* a check must never break anything */ } finally {
         recoveringAudio = false;
     }
 }

@@ -347,7 +347,8 @@ export function describeFailure(status, region) {
  */
 export function createVoice({ getKey, getRegion, onBilled, onAudio } = {}) {
     let ctx = null;
-    audioClock.register('Azure voice', () => ctx);   // for the clock check
+    let active = 0;   // sentences being fetched or played
+    audioClock.register('Azure voice', () => ctx, { inUse: () => active > 0 || sources.size > 0 });   // for the clock check
     const sources = new Set();   // playback nodes started but not yet finished
     let playToken = 0;           // bumped by cancel(), so a cancel during the
                                  // resume wait is not overtaken by playback
@@ -535,7 +536,10 @@ export function createVoice({ getKey, getRegion, onBilled, onAudio } = {}) {
             }
             await play(c, buffer, at);
         };
-        chain = chain.then(run, run);       // one failure must not wedge the queue
+        // Counted while it runs, so the audio monitor (audio-clock.js) never replaces
+        // the audio of a sentence being fetched or played.
+        const tracked = async () => { active++; try { return await run(); } finally { active--; } };
+        chain = chain.then(tracked, tracked);       // one failure must not wedge the queue
         return chain;
     }
 

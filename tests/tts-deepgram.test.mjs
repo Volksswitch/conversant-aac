@@ -655,6 +655,7 @@ test('the hiss is not counted as the app speaking', async (t) => {
 
 test('a stopped audio clock fails the sentence, so the device voice can say it', async (t) => {
     const { ctx, made, voice } = setup(t);
+    ctx.currentTime = 5;                  // it ran for a while, then stopped (the overnight case)
     t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 1_000_000 });
     let failed = null;
     const speaking = voice.speak('hello there');
@@ -663,7 +664,7 @@ test('a stopped audio clock fails the sentence, so the device voice can say it',
     for (let i = 0; i < 10; i++) made[0].chunk(chunk40ms(800));   // past the lead-in
     made[0].flushed();
     await settle(t);
-    t.mock.timers.tick(900);              // the clock never moves (currentTime stays 0)
+    t.mock.timers.tick(900);              // the clock never moves (currentTime stays 5)
     await settle(t);
     t.mock.timers.reset();
     await speaking.catch(() => {});

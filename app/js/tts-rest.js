@@ -168,7 +168,8 @@ export async function fetchVoices(provider, key, timeoutMs = 10000) {
  */
 export function createVoice({ provider, getKey, getModel, onBilled, onAudio } = {}) {
     let ctx = null;
-    audioClock.register(`${provider.label} voice`, () => ctx);   // for the clock check
+    let active = 0;   // sentences being fetched or played
+    audioClock.register(`${provider.label} voice`, () => ctx, { inUse: () => active > 0 || sources.size > 0 });   // for the clock check
     const sources = new Set();   // playback nodes started but not yet finished
     let playToken = 0;
     let inFlight = null;
@@ -351,7 +352,10 @@ export function createVoice({ provider, getKey, getModel, onBilled, onAudio } = 
             }
             await play(c, buffer, at);
         };
-        chain = chain.then(run, run);      // one failure must not wedge the queue
+        // Counted while it runs, so the audio monitor (audio-clock.js) never replaces
+        // the audio of a sentence being fetched or played.
+        const tracked = async () => { active++; try { return await run(); } finally { active--; } };
+        chain = chain.then(tracked, tracked);      // one failure must not wedge the queue
         return chain;
     }
 

@@ -337,8 +337,31 @@ the phone's own hearing and voice both worked.
      replacement stops too, the app reloads once nothing is under way (`audio-restart`
      in the error log). The return-to-app check only LOOKS: whether an idle connection's
      clock keeps moving on every device is unverified, so nothing is replaced on it.
-- **Next overnight test:** the report should show which connections read STOPPED, and
-  whether a tap after the failure brought listening back without a reload.
+- **THE MONITOR, BUILT November 25 2026 (Ken: "Build the monitor"):** every 30 s while
+  the app is on screen, and 1.5 s after coming back to it, `audioClock.monitorOnce`
+  checks every audio connection NOT in use (listening counts as in use while Listen is
+  on; a voice while a sentence is fetched or played; the tone while it sounds). A
+  stopped clock gets half a second of pure silence played through it: if that wakes it,
+  the device had only paused it (counted in the report as "idle pauses seen", never an
+  error); if not, it is replaced and `audio-restart` is logged. This replaced the
+  return-to-app check that only looked.
+- **Found while checking it in a browser:** a NEW connection says "running" before its
+  clock starts, about 0.6-0.8 s of currentTime 0 (measured in Chrome). The first build
+  replaced a healthy brand-new tone connection that way. A clock that has never moved
+  now reads "not started", is never replaced, and a sound on it gets 2.5 s before the
+  voice time limit counts it stopped.
+- **Next overnight test:** the report should show which connections read STOPPED, how
+  many idle pauses the monitor saw, and whether listening and the voice came back
+  without a reload.
+
+### A holding-phrase test fails now and then
+
+- **November 25 2026:** `tests/placeholders.test.mjs` failed about 1 run in 5 ("the
+  same holding phrase is never said twice in a row across pauses", and once "plays
+  acknowledgment then thinking"). It does the same on the code from before that day's
+  work, so it is an existing flaky test, likely timing or random choice. Not
+  investigated yet: a flaky test teaches people to ignore failures, so it should be
+  fixed, but it was out of scope for the audio work.
 - **Candidate fix, not built (proposed to Ken):** when a paid listening run gets no sound
   (the 0.15.27 check), throw away all three audio contexts (listening, paid voice, tone)
   and make new ones on the next tap. Only runs when audio is already broken. Unknown
