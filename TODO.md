@@ -274,6 +274,31 @@ the one that quietly waits forever.
 
 ### iPhone: tapping a response says nothing and records nothing
 
+**Update November 24 2026, from a problem report sent from a borrowed iPhone (0.15.26,
+Safari tab, not the Home Screen).** Deepgram hearing and the Deepgram voice both failed;
+the phone's own hearing and voice both worked.
+
+- **Deepgram was not the problem.** The one Deepgram listening start connected in 0.25 s
+  (a bad key cannot connect), and 49 characters went to the Deepgram voice.
+- **The phone's audio was.** The microphone was handed over and the listening audio said
+  it was running, yet not one sound sample arrived in about 22 seconds. Both Deepgram
+  paths play or capture through the browser's audio system; the phone's own hearing and
+  voice do not use it, which is why switching fixed both.
+- **Nothing was logged for either failure**, so the app could not tell anyone. **Done
+  for listening (Ken, November 24 2026):** a paid listening run with no sound 5 seconds
+  after the microphone opens now logs `stt-no-sound` (once per session) and turns the
+  pane red. Silent playback still cannot be detected.
+- **Not known yet:** whether the phone was set to silent (that silences the Deepgram
+  voice but not the device voice, and would not explain the microphone), whether the
+  listening tone played with Deepgram hearing on, and whether this is new since November
+  1, when Deepgram hearing worked on an iPhone (installed app, 0.13.35, before the shared
+  listening audio of 0.15.7 and the tone change of 0.15.26).
+- **Next test, on that phone:** silent mode off; try the Deepgram voice with the phone's
+  own hearing (to separate the two); then Deepgram hearing, noting whether the tone plays;
+  send a problem report right after each failure while Deepgram is still selected.
+- **Why not fixed now:** the cause is not known, and a guess would change the main
+  listening path on every iPad and iPhone.
+
 **Update November 8 2026, from three problem reports sent from the iPhone (version
 0.13.37).** Two causes found and fixed in the next version; one problem still open.
 

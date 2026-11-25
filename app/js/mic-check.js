@@ -124,7 +124,49 @@ export function inputKind(label) {
     return 'other';
 }
 
+/*
+ * ⚠ NO SOUND AT ALL IS NOW LOGGED AS AN ERROR (Ken, November 24 2026). A borrowed
+ * iPhone's problem report showed a Deepgram listening run that connected, lit the Listen
+ * button, and received not one sample of sound in 22 seconds. It was only COUNTED here,
+ * so nothing logged it, nothing turned the transcript red, and it was found by reading
+ * the counts. A run that has had no sound NO_SOUND_MS after the microphone was handed
+ * over now calls the reporter once (app.js logs it). Any real microphone in any room
+ * delivers sound within a fraction of a second, even silence, so this cannot fire on a
+ * quiet room - only on sound that never arrives.
+ *
+ * Once per page load: a phone in this state fails every run, and an iPad reopens the
+ * microphone after every holding phrase, so one error per run would bury the error log.
+ * Later silent runs are still counted in startsWithNoSound.
+ */
+export const NO_SOUND_MS = 5000;
+let noSoundReporter = null;
+let noSoundTimer = null;
+let noSoundReported = false;
+let noSoundMs = NO_SOUND_MS;
+
+/** app.js: what to do when a run gets no sound. Receives a short description. */
+export function setNoSoundReporter(fn) { noSoundReporter = typeof fn === 'function' ? fn : null; }
+
+function clearNoSoundTimer() {
+    if (noSoundTimer !== null) { clearTimeout(noSoundTimer); noSoundTimer = null; }
+}
+
+function armNoSoundTimer(details) {
+    clearNoSoundTimer();
+    if (noSoundReported || !noSoundReporter) return;
+    noSoundTimer = setTimeout(() => {
+        noSoundTimer = null;
+        if (runFrames !== 0 || noSoundReported) return;
+        noSoundReported = true;
+        try {
+            noSoundReporter(`no sound arrived from the microphone in ${Math.round(noSoundMs / 1000)} s ` +
+                `of paid listening (${details()})`);
+        } catch { /* a diagnostic must never break capture */ }
+    }, noSoundMs);
+}
+
 function closeRun() {
+    clearNoSoundTimer();
     if (runFrames === 0) stats.runsWithNoSound++;
     runFrames = null;
 }
@@ -137,10 +179,14 @@ export function noteStart({ stream, audioCtx } = {}) {
     noteStage('mic');
     const state = audioCtx && audioCtx.state;
     if (state && state !== 'running') stats.notRunning[state] = (stats.notRunning[state] || 0) + 1;
+    let kindAtStart = 'unknown';
+    let mutedNow = false;
     try {
         const track = stream && stream.getAudioTracks && stream.getAudioTracks()[0];
         if (track) {
             const kind = inputKind(track.label);
+            kindAtStart = kind;
+            mutedNow = !!track.muted;
             stats.inputs[kind] = (stats.inputs[kind] || 0) + 1;
             if (track.muted) stats.mutedAtStart++;
             // Whether the device actually applied echo cancellation, noise filtering
@@ -154,11 +200,18 @@ export function noteStart({ stream, audioCtx } = {}) {
                 `micRate=${st.sampleRate || '?'} audioRate=${(audioCtx && audioCtx.sampleRate) || '?'}`;
         }
     } catch { /* a diagnostic must never break capture */ }
+    // The audio's state is read again when the timer fires: it may have changed since.
+    armNoSoundTimer(() => {
+        let nowState = 'unknown';
+        try { nowState = (audioCtx && audioCtx.state) || 'unknown'; } catch { /* ignore */ }
+        return `audio ${state || 'unknown'} at start and ${nowState} now, input ${kindAtStart}` +
+            `${mutedNow ? ', muted at start' : ''}`;
+    });
 }
 
 /** One frame of audio arrived, at this loudness (RMS, 0-1), with the gate's current levels. */
 export function noteFrame(level, gate) {
-    if (runFrames !== null && ++runFrames === 1) noteStage('sound');
+    if (runFrames !== null && ++runFrames === 1) { noteStage('sound'); clearNoSoundTimer(); }
     stats.frames++;
     if (level > stats.loudest) stats.loudest = level;
     let band = LEVEL_BANDS.findIndex((b) => level < b);
@@ -249,4 +302,11 @@ export function _reset() {
     runFrames = null;
     startLog.length = 0;
     currentStart = null;
+    clearNoSoundTimer();
+    noSoundReported = false;
+    noSoundReporter = null;
+    noSoundMs = NO_SOUND_MS;
 }
+
+/** For tests only: a shorter wait. */
+export function _setNoSoundMs(ms) { noSoundMs = ms; }

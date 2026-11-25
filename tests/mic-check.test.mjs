@@ -118,3 +118,61 @@ test('only the last twelve starts are kept', () => {
     assert.equal(entries.length, 12);
     assert.equal(entries[0].at, 3000);
 });
+
+// ---- no sound at all is logged (Ken, November 24 2026) ----
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+test('a run with no sound reports once, naming the audio state and input', async () => {
+    const got = [];
+    mic.setNoSoundReporter((m) => got.push(m));
+    mic._setNoSoundMs(20);
+    mic.noteStart({ stream: stream('iPhone Microphone'), audioCtx: ctx('running') });
+    await wait(50);
+    assert.equal(got.length, 1);
+    assert.match(got[0], /no sound arrived/);
+    assert.match(got[0], /running at start and running now/);
+    assert.match(got[0], /input built-in/);
+    assert.doesNotMatch(got[0], /iPhone Microphone/);   // the device name is never kept
+});
+
+test('a run that gets sound does not report', async () => {
+    const got = [];
+    mic.setNoSoundReporter((m) => got.push(m));
+    mic._setNoSoundMs(20);
+    mic.noteStart({ stream: stream('x'), audioCtx: ctx('running') });
+    mic.noteFrame(0.0001);   // a silent room is still sound arriving
+    await wait(50);
+    assert.equal(got.length, 0);
+});
+
+test('a run stopped before the wait does not report', async () => {
+    const got = [];
+    mic.setNoSoundReporter((m) => got.push(m));
+    mic._setNoSoundMs(20);
+    mic.noteStart({ stream: stream('x'), audioCtx: ctx('running') });
+    mic.noteStop();
+    await wait(50);
+    assert.equal(got.length, 0);
+});
+
+test('only the first silent run of a session reports', async () => {
+    const got = [];
+    mic.setNoSoundReporter((m) => got.push(m));
+    mic._setNoSoundMs(20);
+    for (let i = 0; i < 3; i++) {
+        mic.noteStart({ stream: stream('x'), audioCtx: ctx('running') });
+        await wait(40);
+        mic.noteStop();
+    }
+    assert.equal(got.length, 1);
+    assert.match(mic.summary(), /startsWithNoSound=3/);   // still counted
+});
+
+test('a reporter that throws cannot break listening', async () => {
+    mic.setNoSoundReporter(() => { throw new Error('boom'); });
+    mic._setNoSoundMs(20);
+    mic.noteStart({ stream: stream('x'), audioCtx: ctx('running') });
+    await wait(50);
+    mic.noteFrame(0.01);
+    assert.match(mic.summary(), /frames=1/);
+});

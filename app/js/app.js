@@ -3,6 +3,7 @@ import * as tts from './tts.js';
 import * as llm from './llm.js';
 import * as ui from './ui.js';
 import * as storage from './storage.js';
+import * as micCheck from './mic-check.js';
 import * as placeholders from './placeholders.js';
 import * as engine from './engine.js';
 import * as convLogic from './conversation-logic.js';
@@ -689,6 +690,10 @@ function initApp() {
     // the keyboard, Settings — is what the notice promises still works, and an
     // early return here left an iPad Home Screen app with no working controls at
     // all, Start included (Ken, July 30 2026).
+    // Paid listening that gets no sound at all is an error, not just a count (Ken,
+    // November 24 2026; see mic-check.js). Set whatever the hearing choice is, since
+    // Settings can switch to a paid service later without a reload.
+    micCheck.setNoSoundReporter((message) => storage.logError('stt-no-sound', message));
     if (speechSupport.apiPresent || usingPaidStt) {
         stt.setSilenceThreshold(storage.loadSilenceThreshold());
         // Stamp every partner turn with what heard it. Set beside init because that
