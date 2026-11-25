@@ -207,10 +207,19 @@ test('licensed humor is capped at one option and barred from serious turns', asy
     assert.match(block, /cannot answer something, a light brush-off/);
 });
 
+test('an answer saved under the old "suggestions" wording still declines joking (Nov 25 2026)', async () => {
+    localStorage.setItem('aac_worldview', JSON.stringify({
+        fields: { b2_cheeky: { value: 'No — keep my suggestions straight', state: 'answered' } },
+    }));
+    await wv.load();
+    assert.equal(wv.getField('b2_cheeky'), 'No — keep my response options straight');
+    assert.match(wv.buildBlock(), /does not want joking or cheeky suggestions/);
+});
+
 test('declining joking suggestions produces a prohibition, and nothing else', async () => {
     await wv.setField('b2_style', ['Sarcastic']);
     await wv.setField('b2_teasing', 'I enjoy it');
-    await wv.setField('b2_cheeky', 'No — keep my suggestions straight');
+    await wv.setField('b2_cheeky', 'No — keep my response options straight');
     const block = wv.buildBlock();
     assert.match(block, /does not want joking or cheeky suggestions/);
     // A decline must override the rest. Leaving "sarcastic, enjoys teasing" in the
@@ -249,7 +258,7 @@ test('the close-only answers scope humor and teasing to close partners', async (
 // lost. The model will not rank two kinds of instruction on its own, so say which
 // wins — a refusal that quietly loses to an example is worse than never asking.
 test('a decline explicitly overrides the Sound Check style examples', async () => {
-    await wv.setField('b2_cheeky', 'No — keep my suggestions straight');
+    await wv.setField('b2_cheeky', 'No — keep my response options straight');
     assert.match(wv.buildBlock(), /OVERRIDES the style examples/);
 });
 
@@ -272,7 +281,7 @@ test('every humor answer buildBlock recognises is still authored in the registry
     assert.ok(b2, 'module B2 must exist, and must be B2 — the number is the question bank\'s');
     const opts = new Set(b2.fields.flatMap(f => f.options || []));
     for (const s of [
-        'No — keep my suggestions straight',
+        'No — keep my response options straight',
         "I'm not much of a joker",
         "Only with people I'm close to",
         'Not really my thing',

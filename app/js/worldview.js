@@ -122,12 +122,32 @@ function writeCache(p) {
     } catch { /* quota — non-fatal, data folder is the source of truth */ }
 }
 
+/*
+ * Answers whose wording changed. A stored answer is matched by its exact words, so an
+ * answer saved under the old wording is moved to the new one when the profile is read
+ * (Ken, November 25 2026: "suggestions" became "response options"). Without this the
+ * old "No" would stop matching HUMOR_DECLINE and read as permission to joke.
+ */
+const RENAMED_ANSWERS = {
+    'No — keep my suggestions straight': 'No — keep my response options straight',
+};
+
+function renameAnswers(fields) {
+    for (const f of Object.values(fields || {})) {
+        if (!f || typeof f !== 'object') continue;
+        for (const k of ['value', 'prevValue']) {
+            if (typeof f[k] === 'string' && RENAMED_ANSWERS[f[k]]) f[k] = RENAMED_ANSWERS[f[k]];
+        }
+    }
+    return fields;
+}
+
 function normalize(p) {
     const base = defaultProfile();
     return {
         version: p.version ?? base.version,
         updated: p.updated ?? base.updated,
-        fields: p.fields ?? {},
+        fields: renameAnswers(p.fields ?? {}),
         privacy: p.privacy ?? {},
         gaps: Array.isArray(p.gaps) ? p.gaps : [],
         extras: Array.isArray(p.extras) ? p.extras.filter((e) => e && e.name) : []
@@ -593,7 +613,7 @@ function traitClause(field, value) {
  * The scoped answer is deliberately the SAME string on both questions, so one
  * constant covers teasing and permission alike.
  */
-const HUMOR_DECLINE = 'No — keep my suggestions straight';
+const HUMOR_DECLINE = 'No — keep my response options straight';
 const HUMOR_NOT_A_JOKER = "I'm not much of a joker";
 const HUMOR_CLOSE_ONLY = "Only with people I'm close to";
 const HUMOR_TEASE_NO = 'Not really my thing';

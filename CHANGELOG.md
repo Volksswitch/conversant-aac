@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **In About Me, the answer for turning off joking replies now reads "No — keep my response options straight".** If you had already chosen it, it is still chosen.
+
 ## Version 0.15.28
 
 ### On an iPad
