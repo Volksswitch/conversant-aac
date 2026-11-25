@@ -309,9 +309,20 @@ the phone's own hearing and voice both worked.
   nothing about the paid voice, which was silent too. So it is not only the iPhone: the
   page's whole audio system went dead while reporting itself fine, most likely after the
   device slept or was interrupted.
-- **Next test, on Ken's iPad:** leave the installed app open for some hours (with the
-  iPad locking), then try the Deepgram voice Test and Deepgram listening without
-  reloading. If it reproduces, try the candidate fix below before reloading.
+- **REPRODUCED November 25 2026 (0.15.27, iPad 10, Home Screen app, left open
+  overnight).** Listening worked at 8:12 pm; at 7:52 am Listen lit, iPadOS showed its
+  microphone indicator, Deepgram connected, and no sound arrived. The new `stt-no-sound`
+  error fired and the pane went red, as designed. The tone was silent, and the voice Test
+  timed out after 15 seconds (the report's own voice check, which only fetches and never
+  plays, timed out too: it waits behind any sentence still playing, so a stuck sentence
+  blocks it).
+- **Best explanation, unproven:** the page's audio clock stopped while still reporting
+  "running". Sound into the app and sound out of it both run on that clock, and a sound
+  played on a stopped clock never finishes, so the voice waits for ever. Measure it:
+  compare the clock's time a fraction of a second apart.
+- **Found while reading the code, whatever the cause:** a paid voice's sentence that
+  never finishes playing has no time limit (the device voice has had one since November
+  8). It holds the voice for every later sentence.
 - **Candidate fix, not built (proposed to Ken):** when a paid listening run gets no sound
   (the 0.15.27 check), throw away all three audio contexts (listening, paid voice, tone)
   and make new ones on the next tap. Only runs when audio is already broken. Unknown
