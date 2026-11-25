@@ -1,3 +1,29 @@
+/* ⚠ THIS GENERATOR IS RETIRED - the .docx is the source of truth. (November 25 2026, Ken)
+ *
+ * "Conversant AAC Beta Test Plan.docx" has been edited directly for months, by Ken and by
+ * every "sync docs" pass, and this script holds an old edition of it: it still says
+ * "Ken will send you a key", describes Deepgram as the voice for everyone, and misses
+ * every change since the summer. Running it would replace the document with that
+ * edition, silently. Same decision, for the same reason, as the Architecture Overview
+ * generator (August 20 2026). Edit the .docx.
+ *
+ * Kept, not deleted, as a record of the plan's original structure. To read what it
+ * produces, send it somewhere harmless:
+ *
+ *     ALLOW_RETIRED_BETA_DOC=1 OUTPATH=/tmp/beta.docx node generate-beta-test-plan-doc.js
+ */
+if (process.env.ALLOW_RETIRED_BETA_DOC !== '1') {
+    console.error('');
+    console.error('This generator is retired. "Conversant AAC Beta Test Plan.docx" is');
+    console.error('maintained directly, and this script holds an old edition of it.');
+    console.error('Running it would replace the document with that edition.');
+    console.error('');
+    console.error('Edit the .docx. To read what this produces:');
+    console.error('  ALLOW_RETIRED_BETA_DOC=1 OUTPATH=/tmp/beta.docx node generate-beta-test-plan-doc.js');
+    console.error('');
+    process.exit(1);
+}
+
 /* Generates docPath("Conversant AAC Beta Test Plan.docx").
  *
  * ⚠ THE FIRST LINE OF THIS COMMENT USED TO SAY "from BETA-TEST-PLAN.md" AND THAT IS
@@ -234,13 +260,13 @@ bulletBold("A tablet or computer.  ", "Either a Windows tablet, a MacBook, a Chr
 bulletBold("An internet connection.  ", "The app needs it both to hear the other person and to suggest responses. It will not work offline...  It will “work” to a degree but not in the way you probably care about."),
 bulletBold("An API key for the AI — we provide this, at no cost to you.  ", "It is what powers the response suggestions. Ken will send you a key to paste into Settings. (The app calls it the “API key”, which is what the AI companies call it too.) You do not need an account of your own and you will not be billed."),
 bulletBold("A free Deepgram account, for the voice.  ", "Deepgram gives the app a much more natural, more varied voice than the ones built into your device, and signing up gives you $200 of free credit — no credit card. That is far more than six weeks of testing will use. On an iPad set up as a Home Screen app it also does the listening, which the device cannot do on its own. If you somehow run through the credit, tell us and we will sort it out."),
-bulletBold("A supporter, for setup.  ", "Choosing a folder, pasting a key, and setting the layout are fiddly one-time jobs. After that the app is yours to drive."),
+bulletBold("Help with setup, if you want it.  ", "Choosing a folder, pasting a key, and setting the layout are one-time jobs, and they’re finicky. We’ll walk you through them, and you’re welcome to have someone you trust help too. After that the app is yours to drive."),
 bulletBold("The User Manual that covers your device specifically.", ""),
 
 // ===== 5 =====
 heading1("5.  Before Your First Real Conversation"),
 
-heading2("5.1  Setup (With Your Supporter)"),
+heading2("5.1  Setup"),
 boldPara("Your User Manual is where setup is explained properly", " — section 3, Getting Started, for opening the app and entering your API key; section 5.2 for where your data is kept; section 6.3, Speech, for your voice and the listening; and section 6.4 for button size and the keyboard. Work through it there. This is only a tick-list, plus the two things that are different because you are a beta tester."),
 numbered("Everything in the manual's section 3 and section 5.2 — open the app, set up where your data is kept, and paste your API key (section 3.2). We send you that key: you do not need an Anthropic account of your own and you will not be billed.", "steps"),
 numbered("Create your free Deepgram account and paste that key too (section 6.3). This is what gives you the good voice. On an iPad set up as a Home Screen app it also has to do the listening — that is the one configuration where it is required. Everywhere else, leave the listening on your browser's own: it is free, reliable, and spends no Deepgram credit.", "steps"),

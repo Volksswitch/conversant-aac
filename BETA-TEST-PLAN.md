@@ -1,3 +1,7 @@
+> **⚠ RETIRED, November 25 2026 (Ken).** This is an old draft. The Beta Test Plan is
+> `Documents/Conversant AAC Beta Test Plan.docx`, edited directly; this file and
+> `generate-beta-test-plan-doc.js` are no longer kept in step with it. Read the .docx.
+
 # Conversant AAC — Beta Test Plan
 
 **Draft, August 7 2026. Revised August 9 2026 after Ken's review.**
@@ -83,13 +87,14 @@ tell us why.
   credit — no credit card**. That is far more than six weeks of testing will use. On an iPad set
   up as a Home Screen app it also does the listening, which the device cannot do on its own. If
   you somehow run through the credit, tell us and we will sort it out.
-- **A supporter, for setup.** Choosing a folder, pasting a key, and setting the layout are
-  fiddly one-time jobs. After that the app is yours to drive.
+- **Help with setup, if you want it.** Choosing a folder, pasting a key, and setting the
+  layout are fiddly one-time jobs. We will walk you through them, and you are welcome to have
+  someone you trust help too. After that the app is yours to drive.
 - **The User Manual that covers your device specifically.**
 
 ## 5. Before your first real conversation
 
-### 5.1 Setup (with your supporter)
+### 5.1 Setup
 
 **Your User Manual is where setup is explained properly** — §3 *Getting Started* for opening the
 app and entering your API key, §5.2 for where your data is kept, §6.3 *Speech* for your voice and
