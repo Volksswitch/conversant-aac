@@ -303,10 +303,12 @@ the phone's own hearing and voice both worked.
   tone was silent; two Deepgram listening starts connected and lit the button, and not one
   sound sample arrived. All three use the browser's audio system, through three separate
   audio contexts, and each said "running". **The app had been open about 7.7 hours**
-  (opened 12:17, tried 19:58 local). Reloading (into 0.15.26) fixed it and Ken could not
-  reproduce it. So it is not the iPhone and not 0.15.26: the page's whole audio system
-  went dead while reporting itself fine, most likely after the device slept or was
-  interrupted, and a fresh page brought it back.
+  (opened 12:17, tried 19:58 local). After Ken reloaded, which also moved him to 0.15.26,
+  he could not reproduce it. **Two things changed at once, so either could be the fix.**
+  The reload is the likelier one: 0.15.26 changed only when the listening tone plays, and
+  nothing about the paid voice, which was silent too. So it is not only the iPhone: the
+  page's whole audio system went dead while reporting itself fine, most likely after the
+  device slept or was interrupted.
 - **Next test, on Ken's iPad:** leave the installed app open for some hours (with the
   iPad locking), then try the Deepgram voice Test and Deepgram listening without
   reloading. If it reproduces, try the candidate fix below before reloading.
