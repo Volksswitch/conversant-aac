@@ -29,6 +29,7 @@ forgetting to tag one is only ever noise, never silence.
 - **"Restart — clear all answers" in About Me now also removes the Express Panel buttons and phrase lists of the people, places and topics it clears.** Before, they stayed on the panel. If some are still left over from an earlier Restart, pressing Restart again removes them.
 - **Removing a person, place or topic in About Me now takes its button off the Express Panel straight away**, and switches it off if it was on. Before, the button could stay on screen until the panel was next redrawn.
 - **Removing a person also removes the wording instructions you kept or typed for talking with them**, which used to stay listed under "How I Sound". A practice scenario linked to them is kept, but no longer uses their About Me details. The warning before you remove someone says what will go.
+- **Documents for your topics now have their own place: About Me → "My Documents".** Add a PDF or pasted text there, and replace or remove documents there too. Each document is kept once and any number of topics can use it, so a topic's form now just has a checkbox for each document plus a "My Documents" button. Before replacing or removing a document, the app tells you which topics use it. When you remove a topic, it asks whether to remove any document that no other topic uses.
 
 ## Version 0.15.29
 

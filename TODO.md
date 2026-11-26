@@ -37,6 +37,14 @@ the one that quietly waits forever.
 
 ## Open
 
+### My Documents: update the talk guide, the manuals and video 3.11
+- **Raised 2026-11-26 (Ken: documents sit above topics in the hierarchy, so they are added, replaced and removed in a new About Me screen, "My Documents"; a topic only checks the ones it uses).** Built and tested in the app the same day, not yet released.
+- **Still to do:**
+  1. **"Taking Questions After a Talk" guide:** section 3 (adding documents on the topic form; now "My Documents", then check them on the topic) and section 6 ("Replace" on the topic's form; now in My Documents, which warns which topics use it). Removing a topic now asks about documents no other topic uses.
+  2. **All three User Manuals, sections 4.8 and 5.8:** the same changes, plus the My Documents screen itself.
+  3. **Video 3.11 (Taking Questions After a Talk):** its narration says "You add your own with Add a PDF or text file, or by pasting in text" over the topic form, and its one-page companion says the same. The script (`scripts/video/scripts/3.11-taking-questions.mjs`) needs the steps reworded to go through My Documents, then "sync videos".
+- **Why not now:** documents wait for "sync docs" and videos for "sync videos" (Ken's timing), and the change is not released yet.
+
 ### iPads below iPadOS 26 can't save: documents, iPadOS 27, and a possible fix
 - **Raised 2026-11-23 (Ken's iPad mini 6 on iPadOS 18.4.1; his problem reports).** Safari before 26 can't write files the way Conversant does, in a tab or a Home Screen app (Ken tried both). 0.15.23 detects it, stops using the storage, and warns at Start and in Settings. Details in CLAUDE.md, iPad section.
 - **Still to do:**

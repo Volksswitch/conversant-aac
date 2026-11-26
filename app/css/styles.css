@@ -4259,6 +4259,7 @@ dialog label.radio-label.radio-disabled {
 .wv-talk-doc { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.25rem 0.75rem; }
 .wv-talk-doc .wv-person-checkbox-row { flex: 1 1 14rem; min-width: 0; }
 .wv-talk-doc-tools { display: flex; gap: 0.5rem; }
+.wv-talk-doc-name { flex: 1 1 14rem; min-width: 0; }
 .wv-talk-add { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .wv-talk-pastebox { display: flex; flex-direction: column; gap: 0.5rem; }
 .wv-talk-pastebox[hidden] { display: none; }

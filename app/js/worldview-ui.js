@@ -451,6 +451,20 @@ function renderHome() {
         el('div', { class: 'wv-chevron', text: '›' })
     ]));
 
+    // My Documents - what the topics draw on, kept once and shared (Ken, November 26 2026).
+    const docsMeta = el('div', { class: 'wv-module-meta',
+        text: 'The papers, pages and notes your topics\' answers come from' });
+    contentEl.append(el('button', { class: 'wv-module-row', onclick: () => renderDocuments() }, [
+        el('div', { class: 'wv-module-main' }, [
+            el('div', { class: 'wv-module-title', text: 'My Documents' }),
+            docsMeta,
+        ]),
+        el('div', { class: 'wv-chevron', text: '›' })
+    ]));
+    sourceMaterial.listSources().then((list) => {
+        if (list && list.length) docsMeta.textContent = `${list.length} ${list.length === 1 ? 'document' : 'documents'} your topics can use`;
+    }).catch(() => { /* no folder: keep the description */ });
+
     // Goals for any conversation - the third source of a conversation goal, after the
     // person and the place. Its own row rather than a section of People or Places,
     // because it is precisely the list that belongs to NEITHER of them.
@@ -1756,8 +1770,8 @@ function renderTopics(editingId = null) {
     contentEl.append(el('button', { class: 'wv-back', text: '‹ About Me', onclick: renderHome }));
     contentEl.append(el('h3', { class: 'wv-page-title', text: 'My Topics' }));
     contentEl.append(el('p', { class: 'wv-intro', text:
-        'Add the subjects you take questions on, such as a talk you give, and the documents '
-        + 'your answers should come from. Put the topic\'s button on the Express Panel. When '
+        'Add the subjects you take questions on, such as a talk you give, and check the documents '
+        + 'your answers should come from. Documents are added in My Documents. Put the topic\'s button on the Express Panel. When '
         + 'you tap it, each question you hear gets four answers drawn from those documents.' }));
     for (const t of topics.listTopics()) {
         contentEl.append(editingId === t.id ? buildTopicForm(t) : buildTopicCard(t));
@@ -1791,13 +1805,18 @@ function buildTopicCard(t) {
                 const owned = expressPanel.situationsFor({ topicId: t.id });
                 const ok = await confirmDanger({
                     title: `Remove ${t.name || 'this topic'}?`,
-                    body: 'This removes the topic and its note. Its documents stay in your '
-                        + 'documents folder for other topics.' + expressNote(owned) + ' This cannot be undone.',
+                    body: 'This removes the topic and its note. Its documents stay in My Documents. '
+                        + 'You\'ll be asked next about any that no other topic uses.'
+                        + expressNote(owned) + ' This cannot be undone.',
                     confirmLabel: 'Remove', cancelLabel: 'Cancel',
                 });
                 if (!ok) return;
                 await topics.removeTopic(t.id);
                 if (owned.keys.length || owned.buttons) expressPanel.removeSituationsFor({ topicId: t.id });
+                // A document only this topic used is now used by none, so ask whether it
+                // goes too (Ken, November 26 2026). Keeping it is the safe answer: it stays
+                // in My Documents for a later topic.
+                await offerToRemoveOrphanDocs(t.sources, t.name || 'this topic');
                 renderTopics();
             } }),
     ]));
@@ -1807,12 +1826,15 @@ function buildTopicCard(t) {
 // Edit form for a topic, or the blank "add a topic" form. An existing topic saves as it
 // is edited, like a place; a new one is saved by "Add topic".
 function buildTopicForm(existing) {
+    // A new topic the user left half-typed to visit My Documents comes back as they left it.
+    const held = !existing && pendingNewTopic ? pendingNewTopic : null;
+    pendingNewTopic = null;
     const card = el('div', { class: 'wv-card wv-place-form', id: existing ? 'wvtopicform-' + existing.id : null });
     const nameIn = el('input', { type: 'text', class: 'wv-text',
-        placeholder: 'Topic (e.g. Conversant AAC)', value: existing ? existing.name : '' });
+        placeholder: 'Topic (e.g. Conversant AAC)', value: existing ? existing.name : (held ? held.name : '') });
     const pronIn = el('input', { type: 'text', class: 'wv-text wv-say-as', 'data-no-predict': '',
         placeholder: 'How to say it — only if the voice gets it wrong',
-        value: existing ? existing.pronunciation : '' });
+        value: existing ? existing.pronunciation : (held ? held.pronunciation : '') });
     const pronHear = el('button', { class: 'wv-btn-speak wv-say-as-hear',
         onclick: () => { const v = pronIn.value.trim() || nameIn.value.trim(); if (v) speak(v); } });
     setIconButton(pronHear, 'speak', 'Hear it said');
@@ -1824,7 +1846,19 @@ function buildTopicForm(existing) {
             name: nameIn.value, pronunciation: pronIn.value.trim(), ...docsEd.read(),
         });
     }
-    const docsEd = buildTopicDocsEditor(existing, { onChange: commitNow });
+    const docsEd = buildTopicDocsEditor(existing || (held ? { sources: held.sources, note: held.note } : null), {
+        onChange: commitNow,
+        onOpenDocuments: async (docs) => {
+            if (existing) {
+                await commitNow();
+                renderDocuments({ back: () => renderTopics(existing.id), backLabel: '‹ My Topics' });
+            } else {
+                pendingNewTopic = { name: nameIn.value, pronunciation: pronIn.value, ...docs };
+                topicsReturnScroll = contentEl.scrollTop;
+                renderDocuments({ back: () => renderTopics(), backLabel: '‹ My Topics' });
+            }
+        },
+    });
     if (existing) for (const box of [nameIn, pronIn]) box.addEventListener('change', commitNow);
 
     card.append(el('div', { class: 'wv-person-fields' }, [nameIn, pronRow, docsEd.node]));
@@ -1840,14 +1874,196 @@ function buildTopicForm(existing) {
     return card;
 }
 
+// --- My Documents (Ken, November 26 2026) --------------------------------------------
+//
+// The documents topics draw their answers from. They sit ABOVE the topics: each is kept
+// once, in the data folder's sources folder, and a topic only checks which ones it uses.
+// So adding, replacing and removing happen here and nowhere else. Ken: "I'm a fan of
+// reinforcing hierarchy in the UI design." Replacing or removing one changes every topic
+// that uses it, so both say which topics those are before anything happens.
+
+// A new topic the user left half-typed to come here (name, pronunciation, sources, note).
+let pendingNewTopic = null;
+
+function topicsUsing(docId) {
+    return topics.listTopics().filter((t) => t.sources.includes(docId)).map((t) => t.name || '(unnamed topic)');
+}
+
+function namesList(names) {
+    if (names.length <= 1) return names.join('');
+    return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+}
+
+// After a topic is removed: the documents it used that no topic uses now. Asks once for
+// all of them, and removes them only on a yes.
+async function offerToRemoveOrphanDocs(sourceIds, topicName) {
+    let list = [];
+    try { list = await sourceMaterial.listSources(); } catch { return; }
+    const orphans = list.filter((d) => (sourceIds || []).includes(d.id) && !topicsUsing(d.id).length);
+    if (!orphans.length) return;
+    const titles = namesList(orphans.map((d) => d.title));
+    const one = orphans.length === 1;
+    const ok = await confirmDanger({
+        title: one ? `Also remove ${orphans[0].title}?` : `Also remove ${orphans.length} documents?`,
+        body: `${topicName} was the only topic using ${one ? 'it' : `these: ${titles}`}. `
+            + `Remove ${one ? 'it' : 'them'} from My Documents too, or keep ${one ? 'it' : 'them'} for another topic later? `
+            + 'Removing cannot be undone.',
+        confirmLabel: one ? 'Remove document' : 'Remove documents',
+        cancelLabel: one ? 'Keep it' : 'Keep them',
+    });
+    if (!ok) return;
+    for (const d of orphans) {
+        await sourceMaterial.removeSource(d.id);
+        await topics.forgetSource(d.id);
+    }
+}
+
+function renderDocuments({ back = null, backLabel = '‹ About Me' } = {}) {
+    showDockKeyboard();
+    const goBack = back || renderHome;
+    contentEl.innerHTML = '';
+    contentEl.scrollTop = 0;
+    contentEl.append(el('button', { class: 'wv-back', text: backLabel, onclick: goBack }));
+    contentEl.append(el('h3', { class: 'wv-page-title', text: 'My Documents' }));
+    contentEl.append(el('p', { class: 'wv-intro', text:
+        'The papers, pages and notes your topics\' answers come from. Each document is kept '
+        + 'once here, and any number of topics can use it: in My Topics, check the documents '
+        + 'each topic uses. Replacing a document gives every topic that uses it the new version.' }));
+    if (!storage.hasDataFolder() && typeof window.showDirectoryPicker === 'function') {
+        contentEl.append(el('p', { class: 'wv-talk-empty', text:
+            'Choose a data folder first (Settings, General tab). Your documents are kept there.' }));
+    }
+
+    const status = el('div', { class: 'wv-talk-status', role: 'status', 'aria-live': 'polite' });
+    const say = (text, bad = false) => {
+        status.textContent = text || '';
+        status.classList.toggle('wv-talk-status-bad', !!bad);
+    };
+
+    const docList = el('div', { class: 'wv-talk-docs' });
+    const renderList = async () => {
+        let list = [];
+        try { list = await sourceMaterial.listSources(); } catch { /* no folder: empty */ }
+        docList.innerHTML = '';
+        if (!list.length) {
+            docList.append(el('p', { class: 'wv-talk-empty', text: 'No documents yet.' }));
+            return;
+        }
+        for (const d of list) {
+            const users = topicsUsing(d.id);
+            const replace = el('button', { class: 'wv-btn wv-btn-link', text: 'Replace',
+                'aria-label': `Replace ${d.title} with a newer version`,
+                // The file is chosen FIRST and the warning comes after: a file picker only
+                // opens straight from a tap, and waiting on a warning would spend that tap.
+                onclick: () => pickFile(async (picked) => {
+                    const now = topicsUsing(d.id);
+                    if (now.length) {
+                        const ok = await confirmDanger({
+                            title: `Replace ${d.title}?`,
+                            body: `${now.length === 1 ? 'This topic uses' : 'These topics use'} it: ${namesList(now)}. `
+                                + `${now.length === 1 ? 'It' : 'Each of them'} will use the new version from now on. `
+                                + 'The old version cannot be brought back.',
+                            confirmLabel: 'Replace', cancelLabel: 'Cancel',
+                        });
+                        if (!ok) { say(''); return; }
+                    }
+                    await sourceMaterial.replaceSource(d.id, picked);
+                    say(`Replaced ${d.title}.`);
+                    renderList();
+                }) });
+            const remove = el('button', { class: 'wv-btn wv-btn-link', text: 'Remove',
+                'aria-label': `Remove ${d.title}`,
+                onclick: async () => {
+                    const now = topicsUsing(d.id);
+                    const ok = await confirmDanger({
+                        title: `Remove ${d.title}?`,
+                        body: (now.length
+                            ? `${now.length === 1 ? 'This topic uses' : 'These topics use'} it, and will stop: ${namesList(now)}. `
+                            : 'No topic uses it. ')
+                            + 'This cannot be undone.',
+                        confirmLabel: 'Remove', cancelLabel: 'Cancel',
+                    });
+                    if (!ok) return;
+                    await sourceMaterial.removeSource(d.id);
+                    await topics.forgetSource(d.id);
+                    say(`Removed ${d.title}.`);
+                    renderList();
+                } });
+            docList.append(el('div', { class: 'wv-talk-doc' }, [
+                el('div', { class: 'wv-talk-doc-name' }, [
+                    el('div', { text: `${d.title} (${d.words.toLocaleString('en-US')} words)` }),
+                    el('div', { class: 'wv-module-meta', text: users.length
+                        ? `Used by ${namesList(users)}` : 'Not used by any topic' }),
+                ]),
+                el('div', { class: 'wv-talk-doc-tools' }, [replace, remove]),
+            ]));
+        }
+    };
+
+    // Reading a picked file. A PDF is read on the device; it can take a few seconds.
+    const fileIn = el('input', { type: 'file', accept: '.pdf,.txt,.md,application/pdf,text/plain', hidden: true });
+    let onPicked = null;
+    fileIn.addEventListener('change', async () => {
+        const file = fileIn.files && fileIn.files[0];
+        fileIn.value = '';
+        if (!file || !onPicked) return;
+        const then = onPicked;
+        onPicked = null;
+        try {
+            say(`Reading ${file.name}...`);
+            const r = await readDocumentFile(file, {
+                onProgress: ({ page, pages }) => say(`Reading ${file.name}: page ${page} of ${pages}`),
+            });
+            await then({ text: r.text, original: r.kind === 'pdf' ? { blob: file, ext: 'pdf' } : null,
+                title: file.name.replace(/\.(pdf|txt|md)$/i, '') });
+        } catch (err) {
+            say(err.message || String(err), true);
+        }
+    });
+    function pickFile(then) { onPicked = then; fileIn.click(); }
+
+    const addFile = el('button', { class: 'wv-btn', text: 'Add a PDF or text file',
+        onclick: () => pickFile(async ({ text, original, title }) => {
+            const d = await sourceMaterial.addSource({ title, text, original });
+            say(`Added ${d.title} (${d.words.toLocaleString('en-US')} words).`);
+            renderList();
+        }) });
+
+    // Pasting text: for a web page, or anything that is not a PDF.
+    const pasteTitle = el('input', { type: 'text', class: 'wv-text', 'data-no-predict': '',
+        placeholder: 'Name of the document' });
+    const pasteText = el('textarea', { class: 'wv-text wv-talk-paste', 'data-no-predict': '', rows: '6',
+        placeholder: 'Paste the document\'s text here' });
+    const pasteAdd = el('button', { class: 'wv-btn wv-btn-primary', text: 'Add this text',
+        onclick: async () => {
+            try {
+                const d = await sourceMaterial.addSource({ title: pasteTitle.value, text: pasteText.value });
+                pasteTitle.value = ''; pasteText.value = '';
+                pasteBox.hidden = true;
+                say(`Added ${d.title} (${d.words.toLocaleString('en-US')} words).`);
+                renderList();
+            } catch (err) { say(err.message || String(err), true); }
+        } });
+    const pasteBox = el('div', { class: 'wv-talk-pastebox', hidden: true }, [pasteTitle, pasteText, pasteAdd]);
+    const pasteOpen = el('button', { class: 'wv-btn', text: 'Paste text',
+        onclick: () => { pasteBox.hidden = !pasteBox.hidden; if (!pasteBox.hidden) pasteTitle.focus(); } });
+
+    contentEl.append(el('div', { class: 'wv-card wv-talk-body' }, [
+        docList,
+        el('div', { class: 'wv-talk-add' }, [addFile, pasteOpen, fileIn]),
+        pasteBox, status,
+    ]));
+    renderList();
+}
+
 // --- A topic's documents and note (Ken, November 9 2026) ---------------------------
 //
 // Used by the topic form (My Topics). Holds which documents the answers come from and
 // the user's note on how they relate to the material. Same shape as buildGoalEditor: a
-// node, a read(), and an onChange the form saves on. Documents are added HERE but kept
-// in the one shared source-material folder, so a paper added for one topic can be ticked
-// for another, and replacing it reaches both. (Built first on a place, then moved to
-// topics the same day: a topic is independent of where the user is.)
+// node, a read(), and an onChange the form saves on. Documents are only CHECKED here;
+// they are added, replaced and removed in My Documents (renderDocuments), since one
+// document can serve several topics (Ken, November 26 2026). (Built first on a place,
+// then moved to topics the same day: a topic is independent of where the user is.)
 // What the response options showed before "Show only the short label" was checked here,
 // so unchecking it puts back the user's own choice rather than a default.
 let topicCardModeBefore = null;
@@ -1857,12 +2073,6 @@ function buildTopicDocsEditor(saved, opts = {}) {
     const draft = {
         sources: saved ? [...saved.sources] : [],
         note: saved ? saved.note : '',
-    };
-
-    const status = el('div', { class: 'wv-talk-status', role: 'status', 'aria-live': 'polite' });
-    const say = (text, bad = false) => {
-        status.textContent = text || '';
-        status.classList.toggle('wv-talk-status-bad', !!bad);
     };
 
     // The short-label suggestion (Ken, November 8 2026: suggested, not forced). A checkbox
@@ -1909,7 +2119,9 @@ function buildTopicDocsEditor(saved, opts = {}) {
         flexNote.hidden = !flexNote.textContent;
     };
 
-    // The documents.
+    // The documents. Only a checkbox per document here: adding, replacing and removing
+    // happen in My Documents, which sits above the topics (Ken, November 26 2026: "the
+    // individual topics simply reference them"). A topic only chooses which ones it uses.
     const docList = el('div', { class: 'wv-talk-docs' });
     const renderDocs = async () => {
         let list = [];
@@ -1918,7 +2130,8 @@ function buildTopicDocsEditor(saved, opts = {}) {
         draft.sources = draft.sources.filter((id) => list.some((d) => d.id === id));
         docList.innerHTML = '';
         if (!list.length) {
-            docList.append(el('p', { class: 'wv-talk-empty', text: 'No documents yet.' }));
+            docList.append(el('p', { class: 'wv-talk-empty',
+                text: 'No documents yet. Add them in My Documents, then check the ones this topic uses.' }));
             return;
         }
         for (const d of list) {
@@ -1931,89 +2144,17 @@ function buildTopicDocsEditor(saved, opts = {}) {
                     : draft.sources.filter((x) => x !== d.id);
                 onChange();
             });
-            const replace = el('button', { class: 'wv-btn wv-btn-link', text: 'Replace',
-                'aria-label': `Replace ${d.title} with a newer version`,
-                onclick: () => pickFile(async (picked) => {
-                    await sourceMaterial.replaceSource(d.id, picked);
-                    say(`Replaced ${d.title}. Every topic that uses it now has the new version.`);
-                    renderDocs();
-                }) });
-            const remove = el('button', { class: 'wv-btn wv-btn-link', text: 'Remove',
-                'aria-label': `Remove ${d.title}`,
-                onclick: async () => {
-                    const ok = await confirmDanger({
-                        title: `Remove ${d.title}?`,
-                        body: 'This removes the document from your documents folder. Every topic '
-                            + 'that uses it stops using it. This cannot be undone.',
-                        confirmLabel: 'Remove', cancelLabel: 'Cancel',
-                    });
-                    if (!ok) return;
-                    await sourceMaterial.removeSource(d.id);
-                    await topics.forgetSource(d.id);
-                    draft.sources = draft.sources.filter((x) => x !== d.id);
-                    say(`Removed ${d.title}.`);
-                    renderDocs();
-                } });
             docList.append(el('div', { class: 'wv-talk-doc' }, [
                 el('label', { class: 'wv-person-checkbox-row', for: id }, [
                     box, el('span', { text: `${d.title} (${d.words.toLocaleString('en-US')} words)` }),
                 ]),
-                el('div', { class: 'wv-talk-doc-tools' }, [replace, remove]),
             ]));
         }
     };
 
-    // Reading a picked file. A PDF is read on the device; it can take a few seconds.
-    const fileIn = el('input', { type: 'file', accept: '.pdf,.txt,.md,application/pdf,text/plain', hidden: true });
-    let onPicked = null;
-    fileIn.addEventListener('change', async () => {
-        const file = fileIn.files && fileIn.files[0];
-        fileIn.value = '';
-        if (!file || !onPicked) return;
-        const then = onPicked;
-        onPicked = null;
-        try {
-            say(`Reading ${file.name}...`);
-            const r = await readDocumentFile(file, {
-                onProgress: ({ page, pages }) => say(`Reading ${file.name}: page ${page} of ${pages}`),
-            });
-            await then({ text: r.text, original: r.kind === 'pdf' ? { blob: file, ext: 'pdf' } : null,
-                title: file.name.replace(/\.(pdf|txt|md)$/i, '') });
-        } catch (err) {
-            say(err.message || String(err), true);
-        }
-    });
-    function pickFile(then) { onPicked = then; fileIn.click(); }
-
-    const addFile = el('button', { class: 'wv-btn', text: 'Add a PDF or text file',
-        onclick: () => pickFile(async ({ text, original, title }) => {
-            const d = await sourceMaterial.addSource({ title, text, original });
-            draft.sources = [...draft.sources, d.id];   // added here, so it is for this topic
-            say(`Added ${d.title} (${d.words.toLocaleString('en-US')} words).`);
-            onChange();
-            renderDocs();
-        }) });
-
-    // Pasting text: for a web page, or anything that is not a PDF.
-    const pasteTitle = el('input', { type: 'text', class: 'wv-text', 'data-no-predict': '',
-        placeholder: 'Name of the document' });
-    const pasteText = el('textarea', { class: 'wv-text wv-talk-paste', 'data-no-predict': '', rows: '6',
-        placeholder: 'Paste the document\'s text here' });
-    const pasteAdd = el('button', { class: 'wv-btn wv-btn-primary', text: 'Add this text',
-        onclick: async () => {
-            try {
-                const d = await sourceMaterial.addSource({ title: pasteTitle.value, text: pasteText.value });
-                draft.sources = [...draft.sources, d.id];
-                pasteTitle.value = ''; pasteText.value = '';
-                pasteBox.hidden = true;
-                say(`Added ${d.title} (${d.words.toLocaleString('en-US')} words).`);
-                onChange();
-                renderDocs();
-            } catch (err) { say(err.message || String(err), true); }
-        } });
-    const pasteBox = el('div', { class: 'wv-talk-pastebox', hidden: true }, [pasteTitle, pasteText, pasteAdd]);
-    const pasteOpen = el('button', { class: 'wv-btn', text: 'Paste text',
-        onclick: () => { pasteBox.hidden = !pasteBox.hidden; if (!pasteBox.hidden) pasteTitle.focus(); } });
+    const openDocs = el('button', { class: 'wv-btn', text: 'My Documents',
+        'aria-label': 'Open My Documents to add, replace or remove documents',
+        onclick: () => { if (opts.onOpenDocuments) opts.onOpenDocuments(read()); } });
 
     // The note on who "I" is (rule 10). Blank means the presenter is assumed NOT to be
     // one of the people the material describes.
@@ -2026,17 +2167,15 @@ function buildTopicDocsEditor(saved, opts = {}) {
         offer, flexNote,
         el('div', { class: 'wv-talk-heading', text: 'Documents the answers come from' }),
         docList,
-        el('div', { class: 'wv-talk-add' }, [addFile, pasteOpen, fileIn]),
-        pasteBox, status, noteIn,
+        el('div', { class: 'wv-talk-add' }, [openDocs]),
+        noteIn,
     ]);
     renderOffer();
     renderFlexNote();
     renderDocs();
 
-    return {
-        node,
-        read: () => ({ note: noteIn.value.trim(), sources: [...draft.sources] }),
-    };
+    function read() { return { note: noteIn.value.trim(), sources: [...draft.sources] }; }
+    return { node, read };
 }
 
 // --- Module (a chunk of cards) ----------------------------------------------
