@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<!--
+  Settings tabs test (Ken, November 26 2026).
+
+  Apple's Switch Control moves its highlight onto Settings tabs scrolled out of view and
+  draws it over the Express Panel; the page is told nothing until Select is pressed
+  (measured on test H). Ken ruled out any fix that needs scrolling or extra presses, so
+  the fix is to keep every tab on screen. This page copies Conversant's Settings panel
+  at the size the app gives it, with a dummy Express Panel, and lays the tabs out two
+  ways:
+    today    one column that scrolls (the app as it is)
+    columns  as many columns as it takes for all fifteen tabs to fit, filled top to
+             bottom, so the reading and scanning order is the same list as today
+  Geometry copied from the running app at 1180 x 763 (an iPad tab): title bar 65 px,
+  tab column 140 px wide with 12 px above the first tab, tabs 56 px tall, bottom dock
+  30% of the height, side dock 30% of the width. "Larger buttons" uses 72 px tabs, the
+  size a side dock or a raised button size gives.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Conversant AAC Settings Tabs Test</title>
+<style>
+  :root {
+    --tab-h: 56px;
+    --tab-w: 140px;
+    --head-h: 65px;
+    --edge: #7b8794;
+    --surface: #ffffff;
+    --tabs-bg: #eef1f4;
+    --active: #e3f2fd;
+    --link: #1565c0;
+    --ink: #1f2933;
+    --muted: #52606d;
+    --dock-bg: #e9edf1;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--surface);
+    overflow: hidden;
+    touch-action: pan-x pan-y;
+  }
+  #app { position: fixed; inset: 0; display: flex; flex-direction: column; }
+  body.dock-side #app { flex-direction: row; }
+
+  /* Settings panel */
+  #settings { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; }
+  #settingsHeader {
+    height: var(--head-h); flex-shrink: 0; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 0.6rem 0 1rem;
+    background: #eceff2; border-bottom: 1px solid var(--edge);
+  }
+  #settingsHeader h1 { font-size: 1.15rem; margin: 0; }
+  .head-btns { display: flex; gap: 0.4rem; }
+  .head-btns button {
+    width: var(--tab-h); height: var(--tab-h); font-size: 1.3rem; border: 1px solid var(--edge);
+    border-radius: 6px; background: transparent; color: var(--ink);
+  }
+  #layout { display: flex; flex: 1; min-height: 0; }
+
+  #tabs {
+    width: var(--tab-w); flex-shrink: 0; background: var(--tabs-bg);
+    border-right: 1px solid var(--edge); padding-top: 12px; overflow-y: auto;
+  }
+  body.cols #tabs {
+    overflow: hidden;
+    display: grid; grid-auto-flow: column;
+    grid-auto-columns: calc(var(--tab-w) - 1px);
+    align-content: start;
+  }
+  .settings-tab {
+    min-height: var(--tab-h); padding: 0.5rem 1rem; font-size: 0.9rem; cursor: pointer;
+    display: flex; align-items: center; line-height: 1.2;
+  }
+  body.cols .settings-tab { height: var(--tab-h); min-height: 0; overflow: hidden; }
+  .settings-tab.active { background: var(--active); font-weight: 600; color: var(--link); }
+  .settings-tab:focus-visible { outline: 3px solid var(--link); outline-offset: -3px; }
+
+  #content { flex: 1; overflow-y: auto; padding: 0.8rem 1rem; min-width: 0; }
+  #content h2 { font-size: 1.05rem; margin: 0 0 0.6rem; }
+  .test-box {
+    border: 2px dashed #b26a00; border-radius: 8px; padding: 0.5rem 0.7rem; margin-bottom: 0.9rem;
+    background: #fff8e1;
+  }
+  .test-box .label { font-weight: bold; margin-right: 0.4rem; }
+  .test-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin: 0.25rem 0; }
+  .test-row button {
+    min-height: 44px; padding: 0 0.8rem; border: 1px solid var(--edge); border-radius: 6px;
+    background: #fff; color: var(--ink); font-size: 0.9rem;
+  }
+  .test-row button[aria-pressed="true"] { background: #455a64; color: #fff; border-color: #455a64; }
+  #status { font-size: 0.9rem; color: var(--muted); margin-top: 0.3rem; }
+  #status.bad { color: #b00020; font-weight: bold; }
+  #status.good { color: #1b5e20; font-weight: bold; }
+  details { border: 1px solid var(--edge); border-radius: 6px; margin-bottom: 0.5rem; }
+  summary { min-height: var(--tab-h); display: flex; align-items: center; padding: 0 0.8rem; cursor: pointer; font-weight: 600; }
+  details > div { padding: 0.5rem 0.8rem 0.8rem; }
+  details button, details select { min-height: 44px; font-size: 0.9rem; }
+  .ver { font-size: 0.75rem; color: var(--muted); margin-top: 0.8rem; }
+
+  /* Express Panel stand-in */
+  #dock {
+    flex-shrink: 0; background: var(--dock-bg); border-top: 1px solid var(--edge);
+    display: grid; gap: 4px; padding: 4px;
+    height: 30%;
+    grid-template-columns: repeat(9, 1fr);
+  }
+  body.dock-side #dock {
+    height: auto; width: 30%; border-top: 0; border-left: 1px solid var(--edge);
+    grid-template-columns: repeat(3, 1fr);
+  }
+  #dock button {
+    border: 1px solid var(--edge); border-radius: 6px; background: #fff; color: var(--ink);
+    font-size: 0.85rem; padding: 0 2px; min-height: 0; overflow: hidden;
+  }
+</style>
+</head>
+<body class="cols">
+<div id="app">
+  <div id="settings">
+    <div id="settingsHeader">
+      <h1>Settings</h1>
+      <div class="head-btns">
+        <button type="button" aria-label="Help">?</button>
+        <button type="button" aria-label="Close Settings">&#x2715;</button>
+      </div>
+    </div>
+    <div id="layout">
+      <nav id="tabs" role="tablist" aria-orientation="vertical" aria-label="Settings tabs"></nav>
+      <div id="content">
+        <div class="test-box">
+          <div class="test-row" role="group" aria-label="Tab layout">
+            <span class="label">Tabs:</span>
+            <button type="button" id="layToday">One column, as today</button>
+            <button type="button" id="layCols">Columns as needed</button>
+          </div>
+          <div class="test-row" role="group" aria-label="Express Panel position">
+            <span class="label">Express Panel:</span>
+            <button type="button" id="dockBottom">Bottom</button>
+            <button type="button" id="dockSide">Right side</button>
+            <button type="button" id="bigBtns">Larger buttons</button>
+          </div>
+          <div id="status" aria-live="polite"></div>
+        </div>
+        <h2 id="panelTitle"></h2>
+        <div id="panelBody"></div>
+        <div class="ver">@@PROTO_VERSION@@</div>
+      </div>
+    </div>
+  </div>
+  <div id="dock" aria-label="Express Panel"></div>
+</div>
+
+<script>
+(() => {
+  const TABS = ['General', 'About Me', 'Text & Color', 'Speech', 'Screen Layout',
+    'Switch Access (in progress)', 'Conversation', 'Placeholders', 'Practice',
+    'Conversation Review', 'Express Panel and Keyboard', 'Commands', 'Keyguard Design',
+    'Troubleshooting', 'About'];
+  const PHRASES = ['Yes', 'No', 'Maybe', 'I don’t know', 'Thank you', 'Please', 'Sorry',
+    'Hi', 'Bye', 'OK', 'Excuse me', 'Wait', 'Help', 'Again', 'Stop', 'More', 'Done',
+    'Good', 'Bad', 'Mom', 'Devon', 'Coffee', 'Water', 'Later', 'Now', 'Fine', 'Great',
+    'Not sure', 'Me too', 'Really?', 'Funny', 'Tired', 'Happy', 'Sad', 'Hungry', 'Hold on'];
+
+  const tabsEl = document.getElementById('tabs');
+  const dock = document.getElementById('dock');
+  const status = document.getElementById('status');
+  const body = document.body;
+  let active = 0;
+
+  TABS.forEach((name, i) => {
+    const t = document.createElement('div');
+    t.className = 'settings-tab';
+    t.textContent = name;
+    t.setAttribute('role', 'tab');
+    t.addEventListener('click', () => choose(i));
+    tabsEl.appendChild(t);
+  });
+  PHRASES.forEach(p => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = p;
+    dock.appendChild(b);
+  });
+  const tabEls = Array.from(tabsEl.children);
+
+  function choose(i) {
+    active = i;
+    tabEls.forEach((t, k) => {
+      const on = k === i;
+      t.classList.toggle('active', on);
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+    });
+    document.getElementById('panelTitle').textContent = TABS[i];
+    const b = document.getElementById('panelBody');
+    b.innerHTML = '';
+    ['First section', 'Second section', 'Third section'].forEach((s, k) => {
+      const d = document.createElement('details');
+      const sm = document.createElement('summary');
+      sm.textContent = TABS[i] + ': ' + s.toLowerCase();
+      const inner = document.createElement('div');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = 'A setting ' + (k + 1);
+      inner.appendChild(btn);
+      d.append(sm, inner);
+      b.appendChild(d);
+    });
+    report();
+  }
+
+  // Columns as needed: as many rows as fit in the column's height, then as many columns
+  // as that takes, with the tabs spread evenly across them.
+  function layOut() {
+    const tabH = parseFloat(getComputedStyle(body).getPropertyValue('--tab-h'));
+    const tabW = parseFloat(getComputedStyle(body).getPropertyValue('--tab-w'));
+    if (!body.classList.contains('cols')) {
+      tabsEl.style.width = '';
+      tabsEl.style.gridTemplateRows = '';
+      return;
+    }
+    const avail = tabsEl.clientHeight - 12;
+    const fit = Math.max(1, Math.floor(avail / tabH));
+    const cols = Math.ceil(TABS.length / fit);
+    const rows = Math.ceil(TABS.length / cols);
+    tabsEl.style.gridTemplateRows = 'repeat(' + rows + ', ' + tabH + 'px)';
+    tabsEl.style.width = (cols * (tabW - 1) + 1) + 'px';
+  }
+
+  function report() {
+    const box = tabsEl.getBoundingClientRect();
+    const out = tabEls.filter(t => {
+      const r = t.getBoundingClientRect();
+      return r.bottom > box.bottom + 0.5 || r.right > box.right + 0.5;
+    }).length;
+    const cols = body.classList.contains('cols')
+      ? Math.round(tabsEl.getBoundingClientRect().width / (parseFloat(getComputedStyle(body).getPropertyValue('--tab-w')) - 1))
+      : 1;
+    if (out) {
+      status.className = 'bad';
+      status.textContent = out + ' of 15 tabs are out of view (one column).';
+    } else {
+      status.className = 'good';
+      status.textContent = 'All 15 tabs are in view, in ' + cols + (cols === 1 ? ' column.' : ' columns.');
+    }
+  }
+
+  function setPressed() {
+    document.getElementById('layToday').setAttribute('aria-pressed', String(!body.classList.contains('cols')));
+    document.getElementById('layCols').setAttribute('aria-pressed', String(body.classList.contains('cols')));
+    document.getElementById('dockBottom').setAttribute('aria-pressed', String(!body.classList.contains('dock-side')));
+    document.getElementById('dockSide').setAttribute('aria-pressed', String(body.classList.contains('dock-side')));
+    document.getElementById('bigBtns').setAttribute('aria-pressed', String(body.classList.contains('big')));
+  }
+
+  function refresh() {
+    body.style.setProperty('--tab-h', body.classList.contains('big') ? '72px' : '56px');
+    setPressed();
+    layOut();
+    report();
+    requestAnimationFrame(() => { layOut(); report(); });
+  }
+
+  document.getElementById('layToday').addEventListener('click', () => { body.classList.remove('cols'); refresh(); });
+  document.getElementById('layCols').addEventListener('click', () => { body.classList.add('cols'); refresh(); });
+  document.getElementById('dockBottom').addEventListener('click', () => { body.classList.remove('dock-side'); refresh(); });
+  document.getElementById('dockSide').addEventListener('click', () => { body.classList.add('dock-side'); refresh(); });
+  document.getElementById('bigBtns').addEventListener('click', () => { body.classList.toggle('big'); refresh(); });
+  tabsEl.addEventListener('scroll', report, { passive: true });
+  window.addEventListener('resize', refresh);
+
+  choose(0);
+  refresh();
+})();
+</script>
+</body>
+</html>

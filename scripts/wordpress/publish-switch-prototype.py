@@ -11,6 +11,8 @@ Three prototype pages, each linking to the other two:
   prototypes/switch-access-composer.html -> /conversant-switch-access-composer-prototype/
 and one test of Apple's Switch Control, not a prototype:
   prototypes/switch-control-screen-test.html -> /conversant-switch-control-screen-test/
+and a test of showing every Settings tab without scrolling:
+  prototypes/settings-tabs-test.html -> /conversant-settings-tabs-test/
 
 Ken, November 9 2026: "add it to the website", then "publish it" for the Settings one,
 for the speech and language therapists.
@@ -78,6 +80,18 @@ PAGES = [
                '<a href="' + SITE + 'conversant-switch-control-screen-test/?sctest=H">Open test H directly</a>. '
                'Nothing here is the real app.'),
      'other': []},
+    # Every Settings tab on screen, no scrolling (Ken, November 26 2026). 'full': the
+    # frame breaks out of the site's 702 px column and is one screen tall, because the
+    # test is only meaningful at the size the app itself would have on the iPad.
+    {'slug': 'conversant-settings-tabs-test', 'title': 'Conversant AAC Settings Tabs Test',
+     'file': 'settings-tabs-test.html', 'full': True,
+     'intro': ('This page tests a new layout for Conversant AAC’s Settings tabs on an iPad. '
+               'Scroll down until the gray Settings title bar is at the top of the screen. '
+               '“One column, as today” shows the problem: the lower tabs are hidden behind the phrase buttons. '
+               '“Columns as needed” puts every tab on screen. '
+               'With Switch Control on, check that the highlight never goes behind the phrase buttons. '
+               'Nothing here is the real app.'),
+     'other': []},
 ]
 
 
@@ -89,9 +103,14 @@ def build(pg):
     proto = proto.replace('@@PROTO_VERSION@@', 'published from ' + (stamp or 'an uncommitted copy'))
     intro = f'<p>{pg["intro"]}</p>' + ''.join(
         NL + f'<p>{html.escape(text)} <a href="{SITE}{slug}/">Open it</a>.</p>' for slug, text in pg['other'])
+    if pg.get('full'):
+        size = ('display:block;width:100vw;max-width:100vw;margin-left:calc(50% - 50vw);'
+                'height:100vh;height:100dvh;border:0;')
+    else:
+        size = f'width:100%;height:{pg["height"]}px;border:1px solid #b9c2ca;border-radius:6px;'
     frame = (f'<iframe title="{html.escape(pg["title"])}" '
              'allow="clipboard-write" '
-             f'style="width:100%;height:{pg["height"]}px;border:1px solid #b9c2ca;border-radius:6px;" '
+             f'style="{size}" '
              f'srcdoc="{html.escape(proto, quote=True)}"></iframe>')
     return '<!-- wp:html -->' + NL + intro + NL + frame + NL + '<!-- /wp:html -->'
 
