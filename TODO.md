@@ -42,7 +42,8 @@ the one that quietly waits forever.
 - **Already true today, and different:** a group audience's "How I talk with them" (formality, length, warmth, a note such as "tie it to their clients") already adjusts the WORDING of in-depth answers. What is open is letting a person or place change WHAT KIND of answer is given.
 - **Why not now:** Ken: "Allowing other dimensions to fundamentally shape the nature of topic responses is functionality that requires careful thought." It needs a rule for when two dimensions disagree (the topic's setting against the person's), and a way for the user to see what is deciding. Revisit once brief and in-depth topics have been used for real.
 
-### My Documents: update the talk guide, the manuals and video 3.11
+### My Documents: update video 3.11 (the guide and manuals are done)
+- **Documents DONE 2026-11-26 ("sync docs" to 0.15.30):** items 1, 2 and 4 below for the talk guide and all three manuals. What remains is video 3.11 only (item 3, plus naming the "In depth" choice from item 4).
 - **Raised 2026-11-26 (Ken: documents belong to topics, so they are added, replaced and removed in "My Documents", the first row of the My Topics screen; a topic only checks the ones it uses. Restart asks separately before deleting documents).** Built and tested in the app the same day, not yet released.
 - **Still to do:**
   1. **"Taking Questions After a Talk" guide:** section 3 (adding documents on the topic form; now "My Documents", then check them on the topic) and section 6 ("Replace" on the topic's form; now in My Documents, which warns which topics use it). Removing a topic now asks about documents no other topic uses.

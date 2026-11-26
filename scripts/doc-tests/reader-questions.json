@@ -168,6 +168,15 @@
       "mustCover": true,
       "q": "What devices does the app run on?",
       "a": "Windows, Chromebook and Mac computers (in Chrome or Edge), iPads, and Android devices."
+    },
+    {
+      "id": "topic-depth",
+      "docs": [
+        "*"
+      ],
+      "mustCover": true,
+      "q": "What does switching on a topic do to the response options, and how is that decided?",
+      "a": "It depends on the topic's own setting, which the user chooses for each topic. An in-depth topic replaces the usual response options with four answers drawn only from its documents, a short one first, for taking questions such as after a talk. A brief topic keeps the usual response options and lets the AI use the topic's documents when they help. New topics start as brief. The app does not decide it from who the user is talking with or where they are. Switching a brief topic off asks the AI again without its documents."
     }
   ],
   "scopes": {

@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **Fixed: on a new topic, choosing "In depth" and then tapping "My Documents" before saving switched the choice back to "Brief".** It now comes back as you left it.
+
 ## Version 0.15.30
 
 - **"Restart — clear all answers" in About Me now also removes the Express Panel buttons and phrase lists of the people, places and topics it clears.** Before, they stayed on the panel. If some are still left over from an earlier Restart, pressing Restart again removes them.

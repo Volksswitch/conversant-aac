@@ -1866,7 +1866,7 @@ function buildTopicForm(existing) {
             name: nameIn.value, pronunciation: pronIn.value.trim(), ...docsEd.read(),
         });
     }
-    const docsEd = buildTopicDocsEditor(existing || (held ? { sources: held.sources, note: held.note } : null), {
+    const docsEd = buildTopicDocsEditor(existing || (held ? { sources: held.sources, note: held.note, depth: held.depth } : null), {
         onChange: commitNow,
         onOpenDocuments: async (docs) => {
             if (existing) {
