@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.15.31
+
 - **New: a keyguard layout file.** On the "Keyguard Design" tab, "Save layout file" saves a small file with just this screen's layout settings and measurements, to email to the person making your keyguard. Type your device's make and model in the box first. Nothing personal goes in it: no phrases, people, places, conversations or keys. "Load layout file" loads one someone sends back: it changes only how the screen is laid out, then restarts the app.
 - **Fixed: on a new topic, choosing "In depth" and then tapping "My Documents" before saving switched the choice back to "Brief".** It now comes back as you left it.
 
