@@ -1830,6 +1830,10 @@ function buildTopicForm(existing) {
 // in the one shared source-material folder, so a paper added for one topic can be ticked
 // for another, and replacing it reaches both. (Built first on a place, then moved to
 // topics the same day: a topic is independent of where the user is.)
+// What the response options showed before "Show only the short label" was checked here,
+// so unchecking it puts back the user's own choice rather than a default.
+let topicCardModeBefore = null;
+
 function buildTopicDocsEditor(saved, opts = {}) {
     const onChange = opts.onChange || (() => {});
     const draft = {
@@ -1843,22 +1847,35 @@ function buildTopicDocsEditor(saved, opts = {}) {
         status.classList.toggle('wv-talk-status-bad', !!bad);
     };
 
-    // The short-label suggestion (Ken, November 8 2026: suggested, not forced). Shown only
-    // while the cards are not already showing short labels alone.
+    // The short-label suggestion (Ken, November 8 2026: suggested, not forced). A checkbox
+    // that is ALWAYS shown and shows the current state (Ken, November 26 2026): a one-time
+    // button vanished once pressed, left no record of the choice and no way to undo it here,
+    // and was missing altogether on the next topic.
     const offer = el('div', { class: 'wv-talk-offer' });
     const renderOffer = () => {
         offer.innerHTML = '';
-        if (storage.loadCardTextMode() === 'condensed') return;
+        const isShort = storage.loadCardTextMode() === 'condensed';
+        const box = el('input', { type: 'checkbox' });
+        box.checked = isShort;
+        box.addEventListener('change', () => {
+            let next;
+            if (box.checked) {
+                const cur = storage.loadCardTextMode();
+                if (cur !== 'condensed') topicCardModeBefore = cur;
+                next = 'condensed';
+            } else {
+                next = topicCardModeBefore || 'both-full';
+            }
+            // Through the Settings control itself, so the setting, the cards and the
+            // control on the Conversation tab all change together.
+            const sel = document.getElementById('cardTextModeInput');
+            if (sel) { sel.value = next; sel.dispatchEvent(new Event('change')); }
+            else storage.saveCardTextMode(next);
+        });
         offer.append(
-            el('span', { text: 'Answers to questions are long. Showing only the short label on each card makes them quicker to choose.' }),
-            el('button', { class: 'wv-btn', text: 'Show short labels only', onclick: () => {
-                // Through the Settings control itself, so the setting, the cards and the
-                // control on the Conversation tab all change together.
-                const sel = document.getElementById('cardTextModeInput');
-                if (sel) { sel.value = 'condensed'; sel.dispatchEvent(new Event('change')); }
-                else storage.saveCardTextMode('condensed');
-                renderOffer();
-            } }));
+            el('span', { text: 'Answers to questions are long. Showing only the short label on each response option makes them quicker to choose. This changes every conversation, not only this topic, and is the same as "What a response option shows" on the Conversation tab.' }),
+            el('label', { class: 'wv-talk-offer-check' }, [
+                box, el('span', { text: ' Show only the short label' })]));
     };
 
     // The topic's own phrases and the "What do you mean by...?" buttons appear in the Flex
