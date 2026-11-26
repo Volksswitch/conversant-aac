@@ -14,6 +14,8 @@ let externalSource = null;
 // so a replay or a critique knows what produced the transcript it is reading.
 let backend = 'browser';
 export function currentBackend() { return backend; }
+// Whether this page has already told platform.js that the built-in recognizer heard words.
+let builtinHeardNoted = false;
 // Per-platform recognition tuning (see platform.js). Defaults are the desktop
 // values; init() replaces them with the platform's.
 let speechCfg = { continuous: true, restartDelayMs: 0, guardVisibility: false };
@@ -722,8 +724,17 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
         let heardPartner = false;   // any non-echo content this event?
         let sawFinal = false;       // did the recognizer settle a segment? (the 0s trigger)
         for (let i = event.resultIndex; i < event.results.length; i++) {
-            if (ingest(event.results[i][0].transcript, event.results[i].isFinal)) heardPartner = true;
+            const kept = ingest(event.results[i][0].transcript, event.results[i].isFinal);
+            if (kept) heardPartner = true;
             if (event.results[i].isFinal) sawFinal = true;
+            // Settled words that are not our own speech: the device's own listening
+            // works in this setup, so platform.js stops warning about it (iPhone and
+            // iPad only; it decides that itself). Once per page is enough.
+            if (kept && event.results[i].isFinal && !builtinHeardNoted
+                && String(event.results[i][0].transcript || '').trim()) {
+                builtinHeardNoted = true;
+                platform.noteBuiltinHeard();
+            }
         }
         afterIngest(heardPartner, sawFinal);
     };

@@ -133,6 +133,51 @@ for (const [name, ua] of [['Chrome', UA.iosChrome], ['Edge', UA.iosEdge]]) {
     });
 }
 
+/* ── Heard here before (Ken, November 26 2026) ──────────────────────────────────
+ * An iPhone on iOS 27 heard 42 pieces of speech with its own listening in a Home Screen
+ * app while its own report called that listening a PROBLEM. Once words have been heard
+ * in a setup, that setup stops being warned. */
+function freshStore(entries = {}) {
+    const store = new Map(Object.entries(entries));
+    globalThis.localStorage = {
+        getItem: (k) => (store.has(k) ? store.get(k) : null),
+        setItem: (k, v) => store.set(k, String(v)),
+        removeItem: (k) => store.delete(k),
+    };
+    return store;
+}
+const IPHONE_27 = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1';
+
+test('a Home Screen app that has heard words is no longer warned', async () => {
+    const store = freshStore();
+    const p = await loadPlatform({ ua: IPHONE_27, touch: true, standalone: true });
+    assert.equal(p.speechRecognitionSupport().usable, false, 'warned until it has heard anything');
+    assert.equal(p.noteBuiltinHeard(new Date('2026-11-26T12:00:00Z')), true);
+    const s = p.speechRecognitionSupport();
+    assert.equal(s.usable, true);
+    assert.equal(s.reason, '');
+    assert.equal(s.heardHere, '2026-11-26');
+    assert.match(p.describe(), /heard words here/);
+    assert.equal(p.noteBuiltinHeard(new Date('2026-12-01T12:00:00Z')), false, 'written once');
+    assert.equal(JSON.parse(store.get('aac_builtin_heard'))['home-screen'], '2026-11-26', 'keeps the first date');
+    delete globalThis.localStorage;
+});
+
+test('hearing in a Safari tab says nothing about the Home Screen app', async () => {
+    freshStore({ aac_builtin_heard: JSON.stringify({ 'safari-tab': '2026-11-20' }) });
+    const p = await loadPlatform({ ua: UA.iosSafari, touch: true, standalone: true });
+    assert.equal(p.speechRecognitionSupport().usable, false, 'a different setup, still warned');
+    delete globalThis.localStorage;
+});
+
+test('Android is still warned after hearing words: its warning is about quality', async () => {
+    freshStore();
+    const p = await loadPlatform({ ua: UA.androidTablet, touch: true, standalone: true });
+    assert.equal(p.noteBuiltinHeard(), false, 'nothing recorded on Android');
+    assert.equal(p.speechRecognitionSupport().usable, false);
+    delete globalThis.localStorage;
+});
+
 test('no recognizer at all: the one case that is a dead end', async () => {
     const p = await loadPlatform({ ua: UA.mac, speech: false });
     const s = p.speechRecognitionSupport();

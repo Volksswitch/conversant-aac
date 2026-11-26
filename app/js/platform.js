@@ -172,6 +172,13 @@ export function speechRecognitionSupport() {
     }
 
     if (isIOS()) {
+        // HEARD HERE BEFORE, so the measurement below no longer applies to this device
+        // (Ken, November 26 2026). An iPhone on iOS 27 running as a Home Screen app heard
+        // 42 pieces of speech with its own listening while its own report called that
+        // listening a PROBLEM. The warning was right for the July iPad and wrong for that
+        // phone, so a device that has actually heard words in this setup stops being warned.
+        const heard = builtinHeardHere();
+        if (heard) return { usable: true, apiPresent: true, reason: '', remedy: '', heardHere: heard };
         // Measured: recognition starts and then delivers nothing at all in a Home
         // Screen app, in every browser.
         if (isStandalone()) {
@@ -197,6 +204,57 @@ export function speechRecognitionSupport() {
     }
 
     return { usable: true, apiPresent: true, reason: '', remedy: '' };
+}
+
+/*
+ * THE DEVICE REMEMBERS THAT ITS OWN LISTENING HAS HEARD WORDS (Ken, November 26 2026).
+ *
+ * Kept per SETUP, not per device: a Home Screen app, a Safari tab and the Chrome or Edge
+ * wrappers behaved differently on the July iPad, so hearing words in a Safari tab says
+ * nothing about the Home Screen app. Recorded by stt.js on the first settled, non-echo
+ * result from the built-in recognizer.
+ *
+ * ⚠ iPhone and iPad only. Android is warned for a different reason: its listening
+ * WORKS but drops words and plays its own tone (Ken's August 31 2026 decision), so
+ * hearing words there proves nothing and must not lift the warning.
+ *
+ * ⚠ Its own localStorage key, outside the settings bundle, so a backup or a settings
+ * profile cannot carry "this device can hear" to a device that cannot.
+ *
+ * What it gives up, stated once: the app's own message says this listening "sometimes"
+ * hears nothing, so a device that heard once and then fails is no longer warned. Ken
+ * chose that over warning a device that demonstrably works.
+ */
+const HEARD_KEY = 'aac_builtin_heard';
+
+function setupName() {
+    if (isStandalone()) return 'home-screen';
+    return iosBrowserShell() || 'safari-tab';
+}
+
+function readHeard() {
+    try {
+        const v = JSON.parse(globalThis.localStorage.getItem(HEARD_KEY) || '{}');
+        return v && typeof v === 'object' ? v : {};
+    } catch { return {}; }
+}
+
+// The date words were first heard in this setup, or '' when they never have been.
+export function builtinHeardHere() {
+    if (!isIOS()) return '';
+    const at = readHeard()[setupName()];
+    return typeof at === 'string' ? at : '';
+}
+
+// Called by stt.js. Writes once per setup; later calls change nothing.
+export function noteBuiltinHeard(now = new Date()) {
+    if (!isIOS() || builtinHeardHere()) return false;
+    try {
+        const v = readHeard();
+        v[setupName()] = now.toISOString().slice(0, 10);
+        globalThis.localStorage.setItem(HEARD_KEY, JSON.stringify(v));
+        return true;
+    } catch { return false; }
 }
 
 /*
@@ -279,7 +337,8 @@ export function describe() {
     const sr = speechRecognitionSupport();
     // Three states, not two: a missing recognizer and one that is merely measured
     // unreliable are different facts, and only the first is a dead end.
-    bits.push(sr.usable ? 'listening available'
+    bits.push(sr.heardHere ? 'listening has heard words here'
+        : sr.usable ? 'listening available'
         : sr.apiPresent ? 'listening unreliable here (enabled anyway)'
             : 'no speech recognition in this browser');
     return bits.join(' · ');

@@ -108,6 +108,7 @@ export async function collectSystemInfo({ appVersion = '?', buildId = '?' } = {}
         info.platform.iosShell = platform.iosBrowserShell();
         const sr = platform.speechRecognitionSupport();
         info.speech.recognition = { apiPresent: sr.apiPresent, usable: sr.usable, reason: sr.reason || null };
+        if (sr.heardHere) info.speech.recognition.heardHere = sr.heardHere;
     } catch { /* ignore */ }
     try { info.display = viewport.getMetrics(); } catch { info.display = { error: 'unavailable' }; }
     try {
