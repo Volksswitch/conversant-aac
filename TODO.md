@@ -42,16 +42,6 @@ the one that quietly waits forever.
 - **Already true today, and different:** a group audience's "How I talk with them" (formality, length, warmth, a note such as "tie it to their clients") already adjusts the WORDING of in-depth answers. What is open is letting a person or place change WHAT KIND of answer is given.
 - **Why not now:** Ken: "Allowing other dimensions to fundamentally shape the nature of topic responses is functionality that requires careful thought." It needs a rule for when two dimensions disagree (the topic's setting against the person's), and a way for the user to see what is deciding. Revisit once brief and in-depth topics have been used for real.
 
-### My Documents: update video 3.11 (the guide and manuals are done)
-- **Documents DONE 2026-11-26 ("sync docs" to 0.15.30):** items 1, 2 and 4 below for the talk guide and all three manuals. What remains is video 3.11 only (item 3, plus naming the "In depth" choice from item 4).
-- **Raised 2026-11-26 (Ken: documents belong to topics, so they are added, replaced and removed in "My Documents", the first row of the My Topics screen; a topic only checks the ones it uses. Restart asks separately before deleting documents).** Built and tested in the app the same day, not yet released.
-- **Still to do:**
-  1. **"Taking Questions After a Talk" guide:** section 3 (adding documents on the topic form; now "My Documents", then check them on the topic) and section 6 ("Replace" on the topic's form; now in My Documents, which warns which topics use it). Removing a topic now asks about documents no other topic uses.
-  2. **All three User Manuals, sections 4.8 and 5.8:** the same changes, plus the My Documents screen itself.
-  3. **Video 3.11 (Taking Questions After a Talk):** its narration says "You add your own with Add a PDF or text file, or by pasting in text" over the topic form, and its one-page companion says the same. The script (`scripts/video/scripts/3.11-taking-questions.mjs`) needs the steps reworded to go through My Documents, then "sync videos".
-  4. **Brief or in depth (built 2026-11-26):** each topic's form now has a "Response options" choice. The talk guide, the manuals' sections 4.8 and 5.8 and video 3.11 must say a topic for taking questions is set to "In depth", and that NEW topics start as "Brief". The manuals also need the brief use itself (documents as background at a doctor's visit, with an example), and that switching a brief topic off asks the AI again. Video 3.11's stored topic has no setting, so it reads as in depth and still renders correctly; its narration should name the choice.
-- **Why not now:** documents wait for "sync docs" and videos for "sync videos" (Ken's timing), and the change is not released yet.
-
 ### iPads below iPadOS 26 can't save: documents, iPadOS 27, and a possible fix
 - **Raised 2026-11-23 (Ken's iPad mini 6 on iPadOS 18.4.1; his problem reports).** Safari before 26 can't write files the way Conversant does, in a tab or a Home Screen app (Ken tried both). 0.15.23 detects it, stops using the storage, and warns at Start and in Settings. Details in CLAUDE.md, iPad section.
 - **Still to do:**
