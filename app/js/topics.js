@@ -14,13 +14,19 @@
  * switch it off would give the next conversation four paragraph answers to "How was
  * your weekend?".
  *
- *   { id, name, pronunciation, sources: [source-material ids], note }
+ *   { id, name, pronunciation, sources: [source-material ids], note, depth }
  *
  *   sources  documents in the shared source-material folder, in the order chosen. A
  *            document is kept once, so replacing it reaches every topic using it.
  *   note     how the user relates to the material, in their words (rule 10 of the
  *            prompt: who "I" is). Blank means the user is NOT one of the people the
  *            material describes.
+ *   depth    'brief' or 'indepth' (Ken, November 26 2026), set explicitly per topic
+ *            and never inferred from who the user is with or where they are.
+ *            In depth: four answers drawn from the documents (question sessions).
+ *            Brief: the ordinary four response options, with the documents given to
+ *            the AI as background facts about the user. A topic saved before this
+ *            field existed is in depth, so nobody's topic changes behavior.
  *
  * "Talking about it" (everyday conversation drawing on the user's writing) is a
  * separate future project, not a mode of a topic (TODO.md).
@@ -57,6 +63,7 @@ function normalizeTopic(t) {
         sources: [...new Set((Array.isArray(t.sources) ? t.sources : [])
             .filter((x) => typeof x === 'string' && x))].slice(0, SOURCES_MAX),
         note: String(t.note ?? '').trim().slice(0, NOTE_MAX),
+        depth: t.depth === 'brief' ? 'brief' : 'indepth',
     };
 }
 
@@ -133,15 +140,16 @@ export function count() {
     return ensureLoaded().topics.length;
 }
 
-export async function addTopic({ name = '', pronunciation = '', sources = [], note = '' } = {}) {
+// A NEW topic starts brief (Ken, November 26 2026: everyday use is the commoner case).
+export async function addTopic({ name = '', pronunciation = '', sources = [], note = '', depth = 'brief' } = {}) {
     const m = ensureLoaded();
-    const t = normalizeTopic({ id: newId(), name, pronunciation, sources, note });
+    const t = normalizeTopic({ id: newId(), name, pronunciation, sources, note, depth });
     m.topics.push(t);
     await save();
     return t.id;
 }
 
-export async function updateTopic(id, { name, pronunciation, sources, note } = {}) {
+export async function updateTopic(id, { name, pronunciation, sources, note, depth } = {}) {
     const m = ensureLoaded();
     const i = m.topics.findIndex((x) => x.id === id);
     if (i < 0) return;
@@ -152,6 +160,7 @@ export async function updateTopic(id, { name, pronunciation, sources, note } = {
         ...(pronunciation !== undefined ? { pronunciation } : {}),
         ...(sources !== undefined ? { sources } : {}),
         ...(note !== undefined ? { note } : {}),
+        ...(depth !== undefined ? { depth } : {}),
     });
     await save();
 }

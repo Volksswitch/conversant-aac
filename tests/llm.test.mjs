@@ -985,3 +985,22 @@ test('the AI is told never to state a pain level or symptom the user did not giv
     // ...and choices the partner names are still shown, one each (Ken, October 31 2026).
     assert.match(sys, /the closed-set rule still applies: offer every choice they named/);
 });
+
+// November 26 2026. A brief topic's documents reach the AI as background facts, in the
+// CACHED part of the prompt (they change only when a topic is switched on or off), with
+// the rules that stop them being read out or added to.
+test('a brief topic\'s documents go in the cached block with their rules, and go when cleared', async () => {
+    mockFetch(structured);
+    llm.setTopicDocs([{ name: 'Meal log', text: 'Wednesday: burger, stomach bad.' }]);
+    await llm.generateResponses([{ role: 'partner', text: 'How did the meal test go?' }]);
+    let call = getFetchCalls().at(-1);
+    assert.ok(cachedBlock(call).text.includes('=== Meal log ==='));
+    assert.ok(cachedBlock(call).text.includes('Wednesday: burger'));
+    assert.ok(cachedBlock(call).text.includes(llm.DOCS_RULES));
+    llm.setTopicDocs([]);
+    mockFetch(structured);
+    await llm.generateResponses([{ role: 'partner', text: 'How did the meal test go?' }]);
+    call = getFetchCalls().at(-1);
+    assert.ok(!sysText(call).includes('Meal log'));
+    assert.ok(!sysText(call).includes(llm.DOCS_RULES));
+});

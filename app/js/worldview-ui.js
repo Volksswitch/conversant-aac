@@ -2093,7 +2093,29 @@ function buildTopicDocsEditor(saved, opts = {}) {
     const draft = {
         sources: saved ? [...saved.sources] : [],
         note: saved ? saved.note : '',
+        // A new topic starts brief; a saved one keeps what it has (Ken, November 26 2026).
+        depth: saved && saved.depth ? saved.depth : 'brief',
     };
+
+    // Brief or in depth, chosen explicitly for each topic (Ken, November 26 2026) and
+    // never worked out from who the user is with or where they are.
+    const depthName = 'wvtopicdepth-' + Math.random().toString(36).slice(2, 8);
+    const depthChoice = (value, label) => {
+        const r = el('input', { type: 'radio', name: depthName, value });
+        r.checked = draft.depth === value;
+        r.addEventListener('change', () => {
+            if (!r.checked) return;
+            draft.depth = value;
+            renderOffer();
+            onChange();
+        });
+        return el('label', { class: 'wv-person-checkbox-row' }, [r, el('span', { text: label })]);
+    };
+    const depthBox = el('div', { class: 'wv-talk-depth', role: 'radiogroup', 'aria-label': 'Response options' }, [
+        el('div', { class: 'wv-talk-heading', text: 'Response options' }),
+        depthChoice('brief', 'Brief: the usual short response options, using these documents when they help'),
+        depthChoice('indepth', 'In depth: four answers drawn from these documents, for taking questions'),
+    ]);
 
     // The short-label suggestion (Ken, November 8 2026: suggested, not forced). A checkbox
     // that is ALWAYS shown and shows the current state (Ken, November 26 2026): a one-time
@@ -2102,6 +2124,8 @@ function buildTopicDocsEditor(saved, opts = {}) {
     const offer = el('div', { class: 'wv-talk-offer' });
     const renderOffer = () => {
         offer.innerHTML = '';
+        // Only in-depth answers are long; brief options don't need it.
+        if (draft.depth !== 'indepth') return;
         const isShort = storage.loadCardTextMode() === 'condensed';
         const box = el('input', { type: 'checkbox' });
         box.checked = isShort;
@@ -2184,7 +2208,7 @@ function buildTopicDocsEditor(saved, opts = {}) {
     noteIn.addEventListener('change', () => { draft.note = noteIn.value.trim(); onChange(); });
 
     const node = el('div', { class: 'wv-talk-body' }, [
-        offer, flexNote,
+        depthBox, offer, flexNote,
         el('div', { class: 'wv-talk-heading', text: 'Documents the answers come from' }),
         docList,
         el('div', { class: 'wv-talk-add' }, [openDocs]),
@@ -2194,7 +2218,7 @@ function buildTopicDocsEditor(saved, opts = {}) {
     renderFlexNote();
     renderDocs();
 
-    function read() { return { note: noteIn.value.trim(), sources: [...draft.sources] }; }
+    function read() { return { note: noteIn.value.trim(), sources: [...draft.sources], depth: draft.depth }; }
     return { node, read };
 }
 

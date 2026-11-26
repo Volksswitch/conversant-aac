@@ -62,9 +62,78 @@ Allergies: penicillin (rash).` },
 4. Can my aide pick up prescriptions for me?` },
 ];
 
-const DOCS_BLOCK = `Documents the user has chosen for this conversation. They are BACKGROUND FACTS ABOUT THE USER, exactly like the profile: use a fact from them only when the other person's turn calls for it, and say it briefly, the way the user would say it out loud - never read a document out, never list values the other person did not ask about, and never add a number, date, name or event that is not in them. If the other person asks about something the documents do not cover, the user does not know it from here: do not guess. The four response options keep their usual kinds. The user's own notes may say what they want to raise; the INITIATIVE option may raise one of those when there is room for it.
+// The rules the documents are sent with are the APP'S own (llm.DOCS_RULES, applied by
+// llm.setTopicDocs), so this test exercises exactly what ships.
 
-${DOCS.map((d) => `=== ${d.name} ===\n${d.text}`).join('\n\n')}`;
+// Ken's meal-test scenario (November 26 2026): a week of the user's own notes, kept as a
+// topic's document, switched on part-way through a visit.
+const MEAL_LOG = [{ name: 'Meal test - what I ate and how I felt', text: `meal test week, for dr okafor. aide typed most of it from what i told her
+
+mon nov 16
+bfast - oatmeal w/ banana, coffee
+lunch - turkey sandwich, chips
+dinner - spaghetti + garlic bread
+felt ok. bit of stomach ache after dinner maybe 1 hr. legs tight in morning as usual
+
+tue 17
+bfast - eggs, toast
+lunch - leftover spaghetti
+dinner - chicken, rice, green beans
+no stomach trouble. slept ok
+
+wed 18
+bfast skipped (late)
+lunch - burger and fries from the place on high st
+dinner - cereal
+stomach bad in the afternoon, bloated, cramps ~2 hrs. took nothing for it
+
+thu 19
+bfast oatmeal
+lunch salad w chicken
+dinner salmon, potatoes
+felt good all day!!
+
+fri 20
+bfast - pancakes w syrup
+lunch - pizza (2 slices)
+dinner - pizza again lol
+stomach upset after lunch and again in eve. heartburn at night
+
+sat 21
+bfast eggs toast
+lunch soup
+dinner tacos
+mild stomach ache after tacos, not bad
+
+sun 22
+bfast oatmeal w banana
+lunch turkey sandwich
+dinner chicken rice
+fine. no problems
+
+notes: worst days were wed and fri - both had greasy food (burger, pizza). the oatmeal days were all fine. forgot evening metformin on wed and sat.` }];
+
+const SETS = [
+    { title: 'Clinic visit with lab results, medications and visit notes', docs: DOCS, who: 'Dr. Okafor', turns: null },
+    { title: "Ken's meal-test scenario: a week-long food and symptom log", docs: MEAL_LOG, who: 'Dr. Okafor', turns: [
+        { id: 'M1', history: [
+            { role: 'partner', text: 'How are you doing?' },
+            { role: 'user', text: "Pretty good, thanks. A bit tired." },
+            { role: 'partner', text: 'I asked you to record your meals and how they affected your symptoms. How did that go?' }] },
+        { id: 'M2', history: [
+            { role: 'partner', text: 'How are you doing?' },
+            { role: 'user', text: "Pretty good, thanks. A bit tired." },
+            { role: 'partner', text: 'I asked you to record your meals and how they affected your symptoms. How did that go?' },
+            { role: 'user', text: 'The worst days were the ones with greasy food, like the burger and the pizza.' },
+            { role: 'partner', text: 'Interesting. Would you be willing to continue the experiment for another week?' }] },
+        { id: 'M3', history: [
+            { role: 'partner', text: 'Did anything else stand out in your notes, like the days you felt best?' }] },
+        { id: 'M4', history: [
+            { role: 'partner', text: 'Were you taking your metformin every day that week?' }] },
+        { id: 'M5', history: [
+            { role: 'partner', text: 'What did you have for breakfast this morning?' }] },
+    ] },
+];
 
 const TURNS = [
     { id: 'T1', partner: 'Hi Jordan, good to see you. How have you been?' },
@@ -78,14 +147,15 @@ const TURNS = [
     { id: 'T9', partner: "We'll check your blood again in three months. Does that work for you?" },
 ];
 
-async function ask(turn, withDocs) {
-    llm.setWorldviewBlock(withDocs ? `${PROFILE}\n\n${DOCS_BLOCK}` : PROFILE);
+async function ask(turn, docs) {
+    llm.setWorldviewBlock(PROFILE);
+    llm.setTopicDocs(docs || []);
     llm.setSituationBlock('The user is talking with: Dr. Tom Okafor, their doctor. The user is at: Riverside Family Clinic.');
     let usage = null;
     llm.onUsage((u) => { usage = u; });
     const t0 = Date.now();
     try {
-        const r = await llm.generateResponses([{ role: 'partner', text: turn.partner }], {}, {});
+        const r = await llm.generateResponses(turn.history || [{ role: 'partner', text: turn.partner }], {}, {});
         return { ms: Date.now() - t0, usage, options: r.responses || [] };
     } catch (err) {
         return { ms: Date.now() - t0, usage, error: err.message };
@@ -107,17 +177,23 @@ async function run() {
     const L = [`# Everyday conversation with a topic's documents - ${date}`, '',
         'A: no documents (today). B: the documents as background facts. Same made-up visit, same prompt otherwise.', ''];
     const times = { A: [], B: [] };
-    for (const t of TURNS) {
-        L.push(`## ${t.id}`, '', `**Dr. Okafor:** ${t.partner}`, '');
-        for (const [label, withDocs] of [['A', false], ['B', true]]) {
-            const r = await ask(t, withDocs);
+    for (const set of SETS) {
+    L.push(`# ${set.title}`, '');
+    for (const t of set.turns || TURNS) {
+        L.push(`## ${t.id}`, '');
+        for (const h of t.history || [{ role: 'partner', text: t.partner }]) {
+            L.push(`**${h.role === 'partner' ? set.who : 'User'}:** ${h.text}`, '');
+        }
+        for (const [label, docs] of [['A', null], ['B', set.docs]]) {
+            const r = await ask(t, docs);
             times[label].push(r.ms);
             L.push(`**${label}** (${(r.ms / 1000).toFixed(1)} s; ${fmtUsage(r.usage)})`, '');
             if (r.error) L.push(`- FAILED: ${r.error}`);
-            for (const o of r.options) L.push(`- **${o.slot}:** ${o.text}`);
+            for (const o of r.options || []) L.push(`- **${o.slot}:** ${o.text}`);
             L.push('');
             process.stdout.write(`${t.id}${label} `);
         }
+    }
     }
     const med = (a) => { const s = [...a].sort((x, y) => x - y); return (s[Math.floor(s.length / 2)] / 1000).toFixed(1); };
     L.splice(3, 0, `Typical wait: A ${med(times.A)} s, B ${med(times.B)} s.`, '');

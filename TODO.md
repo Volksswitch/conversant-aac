@@ -48,6 +48,7 @@ the one that quietly waits forever.
   1. **"Taking Questions After a Talk" guide:** section 3 (adding documents on the topic form; now "My Documents", then check them on the topic) and section 6 ("Replace" on the topic's form; now in My Documents, which warns which topics use it). Removing a topic now asks about documents no other topic uses.
   2. **All three User Manuals, sections 4.8 and 5.8:** the same changes, plus the My Documents screen itself.
   3. **Video 3.11 (Taking Questions After a Talk):** its narration says "You add your own with Add a PDF or text file, or by pasting in text" over the topic form, and its one-page companion says the same. The script (`scripts/video/scripts/3.11-taking-questions.mjs`) needs the steps reworded to go through My Documents, then "sync videos".
+  4. **Brief or in depth (built 2026-11-26):** each topic's form now has a "Response options" choice. The talk guide, the manuals' sections 4.8 and 5.8 and video 3.11 must say a topic for taking questions is set to "In depth", and that NEW topics start as "Brief". The manuals also need the brief use itself (documents as background at a doctor's visit, with an example), and that switching a brief topic off asks the AI again. Video 3.11's stored topic has no setting, so it reads as in depth and still renders correctly; its narration should name the choice.
 - **Why not now:** documents wait for "sync docs" and videos for "sync videos" (Ken's timing), and the change is not released yet.
 
 ### iPads below iPadOS 26 can't save: documents, iPadOS 27, and a possible fix

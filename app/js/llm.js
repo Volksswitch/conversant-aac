@@ -389,6 +389,24 @@ export function setSituationBlock(text) {
     situationBlock = (text || '').trim();
 }
 
+/*
+ * A BRIEF topic's documents (Ken, November 26 2026): background facts about the user,
+ * like the profile, for the ordinary four response options. Tested in
+ * scripts/everyday-docs-eval.mjs, which imports DOCS_RULES so the test and the app
+ * cannot drift apart. Kept in the cached part of the prompt: it changes only when a
+ * topic is switched on or off, which is rare against the many requests in between.
+ * An IN-DEPTH topic does not come through here; its documents go to generateAnswers.
+ */
+export const DOCS_RULES = `Documents the user has chosen for this conversation. They are BACKGROUND FACTS ABOUT THE USER, exactly like the profile: use a fact from them only when the other person's turn calls for it, and say it briefly, the way the user would say it out loud - never read a document out, never list values the other person did not ask about, and never add a number, date, name, event or REASON that is not in them (if a document says the user forgets a pill, do not add why). If the other person asks about something the documents do not cover, the user does not know it from here: say so plainly or turn it back, and never offer a hedged guess such as "I don't think so, but don't take my word for it" - a guess is still a fact in the user's mouth. The four response options keep their usual kinds. The user's own notes may say what they want to raise; the INITIATIVE option may raise one of those when there is room for it.`;
+
+let topicDocsBlock = '';
+export function setTopicDocs(docs) {
+    const list = (Array.isArray(docs) ? docs : []).filter((d) => d && d.text);
+    topicDocsBlock = list.length
+        ? `${DOCS_RULES}\n\n${list.map((d) => `=== ${d.name} ===\n${d.text}`).join('\n\n')}`
+        : '';
+}
+
 // A function that builds the situation block from the app's state AT REQUEST TIME.
 // When set, it is used instead of the last block passed to setSituationBlock. The
 // cached copy went stale: switching a partner button off, or on with no partner turn
@@ -424,6 +442,7 @@ function buildProfileBlock() {
     if (worldviewBlock) sections.push(`\n\n${worldviewBlock}`);
     if (relationshipsBlock) sections.push(`\n\n${relationshipsBlock}`);
     if (placesBlock) sections.push(`\n\n${placesBlock}`);
+    if (topicDocsBlock) sections.push(`\n\n${topicDocsBlock}`);
     sections.push(`\n\nNever output placeholder text in square brackets such as [Name], [your name], or [city]. If you do not know a personal detail, phrase the response so it is not needed.`);
     return sections.join('');
 }

@@ -11,7 +11,7 @@ test('a topic survives a reload, with its documents and note', async () => {
         note: ' I lead the project. ' });
     await topics.load();   // read back the STORED copy: the whitelist trap bites here
     assert.deepEqual(topics.getTopic(id), { id, name: 'Conversant AAC', pronunciation: '',
-        sources: ['src-a', 'src-b'], note: 'I lead the project.' });
+        sources: ['src-a', 'src-b'], note: 'I lead the project.', depth: 'brief' });
 });
 
 test('the note is limited where it enters', async () => {
@@ -22,7 +22,7 @@ test('the note is limited where it enters', async () => {
 test('an update keeps what it was not given, and an emptied name keeps the old one', async () => {
     const id = await topics.addTopic({ name: 'Keyguards', sources: ['s1'], note: 'n' });
     await topics.updateTopic(id, { name: '  ', note: 'new note' });
-    assert.deepEqual(topics.getTopic(id), { id, name: 'Keyguards', pronunciation: '', sources: ['s1'], note: 'new note' });
+    assert.deepEqual(topics.getTopic(id), { id, name: 'Keyguards', pronunciation: '', sources: ['s1'], note: 'new note', depth: 'brief' });
 });
 
 test('a deleted document is forgotten by every topic, and removing a topic removes it', async () => {
@@ -35,4 +35,18 @@ test('a deleted document is forgotten by every topic, and removing a topic remov
     await topics.removeTopic(a);
     assert.equal(topics.getTopic(a), null);
     assert.equal(topics.count(), 1);
+});
+
+// November 26 2026. Brief or in depth is set on each topic. A new topic is brief; a topic
+// saved before the setting existed is in depth, so nobody's topic changes behavior.
+test('a topic is brief or in depth, and older topics stay in depth', async () => {
+    const a = await topics.addTopic({ name: 'Meal test' });
+    assert.equal(topics.getTopic(a).depth, 'brief');
+    await topics.updateTopic(a, { depth: 'indepth' });
+    assert.equal(topics.getTopic(a).depth, 'indepth');
+    await topics.updateTopic(a, { depth: 'something else' });
+    assert.equal(topics.getTopic(a).depth, 'indepth', 'anything unknown is in depth');
+    localStorage.setItem('aac_topics', JSON.stringify({ version: 1, topics: [{ id: 'old', name: 'My talk', sources: [] }] }));
+    await topics.load();
+    assert.equal(topics.getTopic('old').depth, 'indepth');
 });

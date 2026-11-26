@@ -2860,9 +2860,37 @@ function failureEvent(err) {
 // The talk settings of the place the user has tapped, or null when that is not a talk
 // that is switched on. Read fresh each time, so switching the talk on or off in My
 // Places takes effect at the next question.
+// Only an IN-DEPTH topic takes questions (Ken, November 26 2026). A BRIEF topic leaves
+// the ordinary response options in place and lends them its documents instead (below).
 function activeTalk() {
     const t = activeTopic && activeTopic.topicId ? topics.getTopic(activeTopic.topicId) : null;
-    return t ? { sources: t.sources, note: t.note, name: t.name } : null;
+    return t && t.depth !== 'brief' ? { sources: t.sources, note: t.note, name: t.name } : null;
+}
+
+function activeBriefTopic() {
+    const t = activeTopic && activeTopic.topicId ? topics.getTopic(activeTopic.topicId) : null;
+    return t && t.depth === 'brief' ? t : null;
+}
+
+// Give the AI a brief topic's documents as background facts, or none. Read again only
+// when the topic, its documents or a document's version changed, so most requests cost
+// one small read of the documents list. Called before every request for options.
+let topicDocsKey = '';
+async function syncTopicDocs() {
+    const t = activeBriefTopic();
+    if (!t || !t.sources.length) {
+        if (topicDocsKey) { llm.setTopicDocs([]); topicDocsKey = ''; }
+        return;
+    }
+    let index = [];
+    try { index = await sourceMaterial.listSources(); } catch { /* no folder: none */ }
+    const used = t.sources.map((id) => index.find((d) => d.id === id)).filter(Boolean);
+    const key = t.id + '|' + used.map((d) => `${d.id}@${d.updated || ''}`).join(',');
+    if (key === topicDocsKey) return;
+    let docs = [];
+    try { docs = await sourceMaterial.readSources(used.map((d) => d.id)); } catch { docs = []; }
+    llm.setTopicDocs(docs);
+    topicDocsKey = key;
 }
 
 // The question to answer. After the user asked what a word meant, what the person says
@@ -3048,6 +3076,7 @@ async function generateOptions(partnerText) {
     const token = ++generationToken;
     ui.setPaletteBusy(true);   // the cards showing may be replaced — say so (Ken)
     const pEpoch = placeholderEpoch;   // if a speaking button fires mid-generation, don't restart placeholders
+    await syncTopicDocs();   // a brief topic's documents, current as of this request
 
     // FAST PATH — winding down + a plain farewell reply: re-offer the goodbyes
     // NOW, skipping the AI round-trip, so the user can speak another closing
@@ -5475,6 +5504,7 @@ function clearInfluencers() {
     activePartner = null;
     activeFeeling = null;
     activeTopic = null;   // like a partner (Ken, November 9 2026)
+    llm.setTopicDocs([]); topicDocsKey = '';   // and its documents with it
     // EVERY goal goes, whichever list it came from. A conversation goal is a property
     // OF the conversation by definition, so it cannot outlive it - which is also why
     // the general list is the only one of the three that survives a change of partner
@@ -5958,6 +5988,7 @@ function reconcileInfluencers() {
     }
     if (activeFeeling) activeFeeling = find(activeFeeling);
     if (activeTopic) activeTopic = find(activeTopic);
+    syncTopicDocs().catch(() => { /* next request tries again */ });
 }
 
 // An Always-band button leaves the panel on whatever page it is showing (Ken, October 6
@@ -6615,7 +6646,8 @@ async function handleTogglePlace(item) {
 // One place all three toggles end, so the "set, not cleared" rule and the counting
 // cannot drift apart between them - three copies of a condition is how one of them
 // ends up saying something different by accident.
-// A TOPIC button (November 9 2026): switches question answering on or off.
+// A TOPIC button (November 9 2026): switches its documents on or off. An in-depth topic
+// takes questions; a brief one lends its documents to the ordinary response options.
 async function handleToggleTopic(item) {
     if (editedInSettings(item)) return;
     activeTopic = (activeTopic && activeTopic.id === item.id) ? null : item;
@@ -6624,8 +6656,17 @@ async function handleToggleTopic(item) {
     talkClarify = null;
     renderExpressPanel();
     storage.logContext('topic');
-    ui.setStatus(activeTopic ? `Taking questions on ${activeTopic.name || 'this topic'}` : 'Topic cleared');
-    await noteContextSet('topic', !!activeTopic);
+    await syncTopicDocs();
+    ui.setStatus(activeTopic
+        ? (activeTalk() ? `Taking questions on ${activeTopic.name || 'this topic'}` : `Using ${activeTopic.name || 'this topic'}`)
+        : 'Topic cleared');
+    if (activeTopic) { await noteContextSet('topic', true); return; }
+    // SWITCHING A TOPIC OFF ASKS AGAIN, unlike a partner, place or goal (Ken, November 26
+    // 2026). The options on screen, or still on their way, were built from its documents,
+    // and switching it off is a request to stop using them. Asking again also throws away
+    // a set still being prepared.
+    metrics.event(metrics.EV.CONTEXT_SET, { kind: 'topic' });
+    if (await refreshForContextChange()) metrics.event(metrics.EV.CONTEXT_REFRESH, { kind: 'topic' });
 }
 
 async function noteContextSet(kind, wasSet) {

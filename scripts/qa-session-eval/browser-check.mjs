@@ -151,7 +151,7 @@ try {
         const topics = await import('/js/topics.js');
         await topics.load();
         const id = await topics.addTopic({ name: 'At my talk',
-            sources: [doc.id], note: 'NOTE-SENTINEL I lead the project.' });
+            sources: [doc.id], note: 'NOTE-SENTINEL I lead the project.', depth: 'indepth' });
         const ep = await import('/js/express-panel.js');
         const m = ep.getModel();
         ep.setBand('context', [...m.context, { type: 'topic', name: 'At my talk', topicId: id }]);
@@ -360,6 +360,36 @@ try {
     // Two taps where the setting asks for them; harmless otherwise.
     if (await isOn()) { await page.click('#endConversationBtn'); await pace(800); }
     check(!(await isOn()), 'End conversation switches the topic off');
+
+    // 9. A BRIEF topic (Ken, November 26 2026): ordinary response options, with the
+    //    topic's documents sent as background. Switching it off asks again without them.
+    await page.evaluate(async (id) => {
+        const topics = await import('/js/topics.js');
+        await topics.updateTopic(id, { depth: 'brief' });
+    }, placeId);
+    await page.click('#expressPanel .ep-btn::-p-text(At my talk)');
+    await pace(400);
+    check(await isOn(), 'the brief topic is switched on');
+    let before = await page.evaluate(() => window.__requests.length);
+    await page.click('#listenBtn');
+    await pace(800);
+    await page.evaluate(() => window.__mic.hear('What have you been reading lately?'));
+    await page.waitForFunction((n) => window.__requests.length > n, { timeout: 8000 }, before);
+    await pace(800);
+    reqs = await requests();
+    let last = reqs[reqs.length - 1];
+    check(!last.talk, 'a brief topic gets ordinary response options, not talk answers');
+    check(/MATERIAL-SENTINEL/.test(last.system), 'and its document is sent as background');
+    shown = await cards();
+    check(shown.some((c) => /Everyday reply/.test(c.label)), 'the ordinary options are on screen');
+    before = reqs.length;
+    await page.click('#expressPanel .ep-btn::-p-text(At my talk)');
+    await page.waitForFunction((n) => window.__requests.length > n, { timeout: 8000 }, before).catch(() => {});
+    await pace(800);
+    reqs = await requests();
+    check(reqs.length > before, 'switching the brief topic off asks the AI again');
+    last = reqs[reqs.length - 1];
+    check(last && !last.talk && !/MATERIAL-SENTINEL/.test(last.system), 'and the new request leaves the document out');
 } finally {
     await browser.close();
     server.kill();
