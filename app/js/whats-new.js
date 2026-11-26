@@ -22,6 +22,15 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.30": [
+    "\"Restart — clear all answers\" in About Me now also removes the Express Panel buttons and phrase lists of the people, places and topics it clears. Before, they stayed on the panel. If some are still left over from an earlier Restart, pressing Restart again removes them.",
+    "Removing a person, place or topic in About Me now takes its button off the Express Panel straight away, and switches it off if it was on. Before, the button could stay on screen until the panel was next redrawn.",
+    "Removing a person also removes the wording instructions you kept or typed for talking with them, which used to stay listed under \"How I Sound\". A practice scenario linked to them is kept, but no longer uses their About Me details. The warning before you remove someone says what will go.",
+    "Documents for your topics now have their own place: \"My Documents\", at the top of About Me → \"My Topics\". Add a PDF or pasted text there, and replace or remove documents there too. Each document is kept once and any number of topics can use it, so a topic's form now just has a checkbox for each document plus a \"My Documents\" button. Before replacing or removing a document, the app tells you which topics use it. When you remove a topic, it asks whether to remove any document that no other topic uses. \"Restart — clear all answers\" keeps your documents unless you choose to delete them in a separate question afterwards.",
+    "Each topic now has a \"Response options\" choice: brief or in depth. In depth is how topics have always worked: four answers drawn from the topic's documents, for taking questions after a talk. Brief gives your usual short response options, and the AI uses the topic's documents when they help. For example, a topic holding your test results or a week of meal notes, switched on at a doctor's visit, lets the AI answer \"What were your cholesterol numbers?\" from your own results. New topics start as brief; topics you already have stay in depth. \"Show only the short label\" now appears only on in-depth topics.",
+    "Switching a brief topic off asks the AI again without its documents, so the response options on screen stop drawing on them right away.",
+    "In your data folder, the folder that holds your documents is now called \"documents\" instead of \"sources\", to match \"My Documents\". The app moves your existing documents across by itself the first time it starts. If you use the same data folder on two devices, update both: until a device is updated, it won't see the documents."
+  ],
   "0.15.29": [
     "In About Me, the answer for turning off joking replies now reads \"No — keep my response options straight\". If you had already chosen it, it is still chosen.",
     "With \"What the command buttons show\" set to words, the \"Ask them to repeat\" button now says \"What?\" instead of \"Pardon?\".",
