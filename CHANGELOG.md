@@ -26,10 +26,6 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-### On an iPad
-
-- If you use your device's own listening in the Home Screen app, the warning that it may not work now goes away once it has heard the other person. It stays away on that device.
-
 ## Version 0.15.31
 
 - **New: a keyguard layout file.** On the "Keyguard Design" tab, "Save layout file" saves a small file with just this screen's layout settings and measurements, to email to the person making your keyguard. Type your device's make and model in the box first. Nothing personal goes in it: no phrases, people, places, conversations or keys. "Load layout file" loads one someone sends back: it changes only how the screen is laid out, then restarts the app.

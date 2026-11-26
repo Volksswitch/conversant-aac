@@ -15,6 +15,10 @@
  *   Edge, tab            starts, delivers nothing  denied
  *   any Home Screen app  starts, delivers nothing  GRANTED
  *
+ * ⚠ THAT TABLE IS THE iPAD. On an iPhone the Home Screen app's own listening WORKS
+ * (Ken, November 26 2026, iOS 27), while the iPad on the latest iPadOS still hears
+ * nothing. See isIPhone() and speechRecognitionSupport().
+ *
  * The failure mode is the dangerous kind: recognition STARTS, feature detection
  * passes, and then no interim and no final results ever arrive. An app that trusts
  * feature detection will sit with its microphone icon lit, believing it is
@@ -63,6 +67,13 @@ function isTouchApple() {
 
 export function isIOS() {
     return isTouchApple();
+}
+
+// An iPhone, as opposed to an iPad. Easy where telling an iPad from a Mac is not: every
+// iPhone browser says "iPhone", and no iPad browser does (iPad Safari says "Macintosh",
+// the Chrome and Edge wrappers say "iPad").
+export function isIPhone() {
+    return isTouchApple() && /iPhone|iPod/.test(ua);
 }
 
 /*
@@ -118,12 +129,13 @@ export function iosBrowserShell() {
  * warn-don't-block note at the top of this file).
  */
 
-// Says "iPhone or iPad" because both get it (Ken, November 8 2026). The Home Screen
+// iPad only since November 26 2026 (Ken): on an iPhone the device's own listening works
+// in a Home Screen app, and on an iPad it still does not, on the latest iPadOS. The
 // remedy points at a paid service rather than at Safari: installing to the Home Screen
-// is the recommended way to run it on both (Ken, October 11 and November 8 2026). The
-// button stays live either way (warn, never block), so the user may still try it.
+// is the recommended way to run it (Ken, October 11 and November 8 2026). The button
+// stays live either way (warn, never block), so the user may still try it.
 const IOS_HOME_SCREEN_REMEDY =
-    'On an iPhone or iPad installed this way, the device\'s own listening sometimes hears nothing. ' +
+    'On an iPad installed this way, the device\'s own listening hears nothing. ' +
     'Add an Azure Speech key (the recommended service) in Settings, under Speech, and choose it ' +
     'for hearing the other person.';
 const IOS_SHELL_REMEDY =
@@ -172,16 +184,13 @@ export function speechRecognitionSupport() {
     }
 
     if (isIOS()) {
-        // HEARD HERE BEFORE, so the measurement below no longer applies to this device
-        // (Ken, November 26 2026). An iPhone on iOS 27 running as a Home Screen app heard
-        // 42 pieces of speech with its own listening while its own report called that
-        // listening a PROBLEM. The warning was right for the July iPad and wrong for that
-        // phone, so a device that has actually heard words in this setup stops being warned.
-        const heard = builtinHeardHere();
-        if (heard) return { usable: true, apiPresent: true, reason: '', remedy: '', heardHere: heard };
         // Measured: recognition starts and then delivers nothing at all in a Home
-        // Screen app, in every browser.
-        if (isStandalone()) {
+        // Screen app, in every browser - ON AN iPAD. An iPhone's Home Screen app hears
+        // with its own listening (Ken, November 26 2026: 42 pieces of speech in one
+        // conversation on iOS 27, while the iPad on the latest iPadOS still hears
+        // nothing), so an iPhone is not warned there. The Chrome and Edge wrappers below
+        // are still warned on both: nobody has tried them on an iPhone.
+        if (isStandalone() && !isIPhone()) {
             return {
                 usable: false,
                 apiPresent: true,
@@ -204,57 +213,6 @@ export function speechRecognitionSupport() {
     }
 
     return { usable: true, apiPresent: true, reason: '', remedy: '' };
-}
-
-/*
- * THE DEVICE REMEMBERS THAT ITS OWN LISTENING HAS HEARD WORDS (Ken, November 26 2026).
- *
- * Kept per SETUP, not per device: a Home Screen app, a Safari tab and the Chrome or Edge
- * wrappers behaved differently on the July iPad, so hearing words in a Safari tab says
- * nothing about the Home Screen app. Recorded by stt.js on the first settled, non-echo
- * result from the built-in recognizer.
- *
- * ⚠ iPhone and iPad only. Android is warned for a different reason: its listening
- * WORKS but drops words and plays its own tone (Ken's August 31 2026 decision), so
- * hearing words there proves nothing and must not lift the warning.
- *
- * ⚠ Its own localStorage key, outside the settings bundle, so a backup or a settings
- * profile cannot carry "this device can hear" to a device that cannot.
- *
- * What it gives up, stated once: the app's own message says this listening "sometimes"
- * hears nothing, so a device that heard once and then fails is no longer warned. Ken
- * chose that over warning a device that demonstrably works.
- */
-const HEARD_KEY = 'aac_builtin_heard';
-
-function setupName() {
-    if (isStandalone()) return 'home-screen';
-    return iosBrowserShell() || 'safari-tab';
-}
-
-function readHeard() {
-    try {
-        const v = JSON.parse(globalThis.localStorage.getItem(HEARD_KEY) || '{}');
-        return v && typeof v === 'object' ? v : {};
-    } catch { return {}; }
-}
-
-// The date words were first heard in this setup, or '' when they never have been.
-export function builtinHeardHere() {
-    if (!isIOS()) return '';
-    const at = readHeard()[setupName()];
-    return typeof at === 'string' ? at : '';
-}
-
-// Called by stt.js. Writes once per setup; later calls change nothing.
-export function noteBuiltinHeard(now = new Date()) {
-    if (!isIOS() || builtinHeardHere()) return false;
-    try {
-        const v = readHeard();
-        v[setupName()] = now.toISOString().slice(0, 10);
-        globalThis.localStorage.setItem(HEARD_KEY, JSON.stringify(v));
-        return true;
-    } catch { return false; }
 }
 
 /*
@@ -337,8 +295,7 @@ export function describe() {
     const sr = speechRecognitionSupport();
     // Three states, not two: a missing recognizer and one that is merely measured
     // unreliable are different facts, and only the first is a dead end.
-    bits.push(sr.heardHere ? 'listening has heard words here'
-        : sr.usable ? 'listening available'
+    bits.push(sr.usable ? 'listening available'
         : sr.apiPresent ? 'listening unreliable here (enabled anyway)'
             : 'no speech recognition in this browser');
     return bits.join(' · ');

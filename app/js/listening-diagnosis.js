@@ -96,9 +96,6 @@ export function diagnoseListening({ chosen, test, recognition, permission, stt =
         } else if (r.usable === false) {
             add("This device's own listening is available", 'PROBLEM',
                 `It exists but is known not to deliver words here${r.reason ? ` (${r.reason})` : ''}. A paid service is needed on this setup.`);
-        } else if (r.heardHere) {
-            add("This device's own listening is available", 'OK',
-                `Present, and it has heard words in this setup on this device (first on ${r.heardHere}), so the app no longer warns about it.`);
         } else if (r.apiPresent) {
             add("This device's own listening is available", 'OK', 'Present, and expected to work here.');
         } else {

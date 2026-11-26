@@ -103,17 +103,6 @@ test("the device's own listening known not to work here is named", () => {
     assert.match(formatDiagnosis(d), /NOT MEASURED/);
 });
 
-test("listening that has heard words here before is OK, with the date", () => {
-    const d = run({
-        chosen: 'builtin', test: { result: 'not needed', message: '' },
-        recognition: { apiPresent: true, usable: true, reason: null, heardHere: '2026-11-26' },
-        stt: baseStt({ backend: 'browser' }),
-    });
-    const text = formatDiagnosis(d);
-    assert.match(text, /heard words in this setup on this device \(first on 2026-11-26\)/);
-    assert.doesNotMatch(text, /known not to deliver/);
-});
-
 test('the normal "no-speech" and "aborted" are not counted as errors', () => {
     const d = run({ chosen: 'builtin', stt: baseStt({ backend: 'browser', recognizerErrors: { 'no-speech': 9, aborted: 3 } }) });
     assert.equal(d.problems, 0);

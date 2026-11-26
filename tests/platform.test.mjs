@@ -111,14 +111,34 @@ test('iPad Home Screen app: warned, but the recognizer is still there to try', a
 
 // Ken's iPhone, November 8 2026: an iPhone is treated exactly like an iPad, so the
 // messages must not name the iPad alone.
-test('an iPhone Home Screen app gets the same verdict, and no message says iPad alone', async () => {
-    const ua = 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6 Mobile/15E148 Safari/604.1';
-    const p = await loadPlatform({ ua, touch: true, standalone: true });
+// Ken, November 26 2026: an iPhone's Home Screen app hears with its own listening; an
+// iPad's still does not, on the latest iPadOS. They are no longer treated the same.
+const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1';
+
+test('an iPhone Home Screen app is NOT warned about its own listening', async () => {
+    const p = await loadPlatform({ ua: IPHONE_UA, touch: true, standalone: true });
     assert.equal(p.isIOS(), true);
+    assert.equal(p.isIPhone(), true);
     const s = p.speechRecognitionSupport();
-    assert.equal(s.usable, false);
-    assert.equal(s.apiPresent, true);
-    for (const text of [s.reason, s.remedy]) assert.doesNotMatch(text, /(?<!iPhone or )\biPad\b/);
+    assert.equal(s.usable, true);
+    assert.equal(s.reason, '');
+    assert.equal(s.remedy, '');
+});
+
+test('an iPad is never taken for an iPhone, so its Home Screen app is still warned', async () => {
+    for (const ua of [UA.iosSafari, UA.iosChrome, UA.iosEdge]) {
+        const p = await loadPlatform({ ua, touch: true, standalone: true });
+        assert.equal(p.isIPhone(), false, ua);
+        assert.equal(p.speechRecognitionSupport().usable, false, ua);
+    }
+    const mac = await loadPlatform({ ua: UA.mac, touch: false });
+    assert.equal(mac.isIPhone(), false, 'a Mac is not an iPhone either');
+});
+
+test('the Chrome wrapper on an iPhone is still warned: nobody has tried it', async () => {
+    const ua = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/140.0 Mobile/15E148 Safari/604.1';
+    const p = await loadPlatform({ ua, touch: true });
+    assert.equal(p.speechRecognitionSupport().usable, false);
 });
 
 for (const [name, ua] of [['Chrome', UA.iosChrome], ['Edge', UA.iosEdge]]) {
@@ -132,51 +152,6 @@ for (const [name, ua] of [['Chrome', UA.iosChrome], ['Edge', UA.iosEdge]]) {
         assert.match(s.reason, new RegExp(name), 'names the browser the user is actually in');
     });
 }
-
-/* ── Heard here before (Ken, November 26 2026) ──────────────────────────────────
- * An iPhone on iOS 27 heard 42 pieces of speech with its own listening in a Home Screen
- * app while its own report called that listening a PROBLEM. Once words have been heard
- * in a setup, that setup stops being warned. */
-function freshStore(entries = {}) {
-    const store = new Map(Object.entries(entries));
-    globalThis.localStorage = {
-        getItem: (k) => (store.has(k) ? store.get(k) : null),
-        setItem: (k, v) => store.set(k, String(v)),
-        removeItem: (k) => store.delete(k),
-    };
-    return store;
-}
-const IPHONE_27 = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.2 Mobile/15E148 Safari/604.1';
-
-test('a Home Screen app that has heard words is no longer warned', async () => {
-    const store = freshStore();
-    const p = await loadPlatform({ ua: IPHONE_27, touch: true, standalone: true });
-    assert.equal(p.speechRecognitionSupport().usable, false, 'warned until it has heard anything');
-    assert.equal(p.noteBuiltinHeard(new Date('2026-11-26T12:00:00Z')), true);
-    const s = p.speechRecognitionSupport();
-    assert.equal(s.usable, true);
-    assert.equal(s.reason, '');
-    assert.equal(s.heardHere, '2026-11-26');
-    assert.match(p.describe(), /heard words here/);
-    assert.equal(p.noteBuiltinHeard(new Date('2026-12-01T12:00:00Z')), false, 'written once');
-    assert.equal(JSON.parse(store.get('aac_builtin_heard'))['home-screen'], '2026-11-26', 'keeps the first date');
-    delete globalThis.localStorage;
-});
-
-test('hearing in a Safari tab says nothing about the Home Screen app', async () => {
-    freshStore({ aac_builtin_heard: JSON.stringify({ 'safari-tab': '2026-11-20' }) });
-    const p = await loadPlatform({ ua: UA.iosSafari, touch: true, standalone: true });
-    assert.equal(p.speechRecognitionSupport().usable, false, 'a different setup, still warned');
-    delete globalThis.localStorage;
-});
-
-test('Android is still warned after hearing words: its warning is about quality', async () => {
-    freshStore();
-    const p = await loadPlatform({ ua: UA.androidTablet, touch: true, standalone: true });
-    assert.equal(p.noteBuiltinHeard(), false, 'nothing recorded on Android');
-    assert.equal(p.speechRecognitionSupport().usable, false);
-    delete globalThis.localStorage;
-});
 
 test('no recognizer at all: the one case that is a dead end', async () => {
     const p = await loadPlatform({ ua: UA.mac, speech: false });
