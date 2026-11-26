@@ -51,7 +51,7 @@ const lastPicker = '::-p-xpath((//select[contains(@class,"ee-name-select")])[las
 async function saveDocuments(page) {
   await page.evaluate(async (docs, now) => {
     const root = await navigator.storage.getDirectory();
-    const dir = await root.getDirectoryHandle('sources', { create: true });
+    const dir = await root.getDirectoryHandle('documents', { create: true });
     const put = async (name, text) => {
       const w = await (await dir.getFileHandle(name, { create: true })).createWritable();
       await w.write(text);
@@ -71,7 +71,7 @@ export default {
   inBrowserStorage: true,
   storage: {
     aac_topics: { version: 1, topics: [{ id: 'tp-talk', name: TOPIC, pronunciation: '',
-      sources: DOCS.map((d) => d.id), note: 'I use Conversant every day. This is a talk I give to my class.' }] },
+      sources: DOCS.map((d) => d.id), note: 'I use Conversant every day. This is a talk I give to my class.', depth: 'indepth' }] },
   },
   ai: {
     answerSets: [
@@ -102,15 +102,19 @@ export default {
       say: "then About Me," },
     { speaker: 'narrator', waitFor: topic('My Topics'), highlight: topic('My Topics'), press: true,
       say: "and My Topics." },
+    { speaker: 'narrator', waitFor: topic('My Documents'), highlight: topic('My Documents'),
+      page: "In About Me, My Topics, add documents in My Documents, at the top. Then add a topic and check its documents.",
+      say: "At the top is My Documents, where you add the documents your answers come from: a PDF, or text you paste in." },
     { speaker: 'narrator', waitFor: topicCard, highlight: topicCard,
-      say: "Marc has already added a topic for his talk." },
+      say: "Below it, Marc has already added a topic for his talk." },
     { speaker: 'narrator', tap: editBtn, press: true,
       say: "Tap Edit to see what's in it." },
+    { speaker: 'narrator', waitFor: '.wv-talk-depth', highlight: '.wv-talk-depth',
+      page: "Set Response options to In depth (new topics start as Brief). Say how you relate to the material.",
+      say: "His topic's response options are set to In depth. That's what gives four answers to each question. New topics start as Brief, which keeps your everyday response options." },
     { speaker: 'narrator', waitFor: docList, highlight: docList,
-      page: "In Settings, About Me, My Topics, add a topic and the documents your answers come from: a PDF, or text you paste in.",
-      say: "These are the documents his answers come from: his talk notes, and a page of questions people often ask him. You add your own with Add a PDF or text file, or by pasting in text." },
+      say: "These are the documents it uses: his talk notes, and a page of questions people often ask him. You check the ones each topic needs." },
     { speaker: 'narrator', highlight: fieldByHint('How you relate'),
-      page: "Say how you relate to the material, so the answers say \"I\" the right way.",
       say: "The note says how Marc relates to the material. He uses Conversant every day, so his answers can say so." },
     { speaker: 'narrator', highlight: buttonText('Done'), press: true,
       say: "Tap Done." },
