@@ -37,6 +37,11 @@ the one that quietly waits forever.
 
 ## Open
 
+### Should a person or place shape the NATURE of a topic's responses?
+- **Raised 2026-11-26 (Ken).** For now, brief or in depth is an explicit setting on each topic, never inferred from who the user is with or where they are (CLAUDE.md, "everyday conversation with a topic's documents"). In future, the person or place might need to shape topic responses more fundamentally, for example operational answers for SLPs against evidence-based answers for academics. That distinction could also be a topic setting instead.
+- **Already true today, and different:** a group audience's "How I talk with them" (formality, length, warmth, a note such as "tie it to their clients") already adjusts the WORDING of in-depth answers. What is open is letting a person or place change WHAT KIND of answer is given.
+- **Why not now:** Ken: "Allowing other dimensions to fundamentally shape the nature of topic responses is functionality that requires careful thought." It needs a rule for when two dimensions disagree (the topic's setting against the person's), and a way for the user to see what is deciding. Revisit once brief and in-depth topics have been used for real.
+
 ### My Documents: update the talk guide, the manuals and video 3.11
 - **Raised 2026-11-26 (Ken: documents belong to topics, so they are added, replaced and removed in "My Documents", the first row of the My Topics screen; a topic only checks the ones it uses. Restart asks separately before deleting documents).** Built and tested in the app the same day, not yet released.
 - **Still to do:**
