@@ -103,7 +103,11 @@ def build(pg):
     proto = proto.replace('@@PROTO_VERSION@@', 'published from ' + (stamp or 'an uncommitted copy'))
     intro = f'<p>{pg["intro"]}</p>' + ''.join(
         NL + f'<p>{html.escape(text)} <a href="{SITE}{slug}/">Open it</a>.</p>' for slug, text in pg['other'])
+    style = ''
     if pg.get('full'):
+        # The theme pins its menu bar to the top of the screen once the page scrolls, which
+        # would cover the top of a one-screen-tall frame. Hidden on this page only.
+        style = '<style>.navigation-top{display:none !important;}</style>' + NL
         size = ('display:block;width:100vw;max-width:100vw;margin-left:calc(50% - 50vw);'
                 'height:100vh;height:100dvh;border:0;')
     else:
@@ -112,7 +116,7 @@ def build(pg):
              'allow="clipboard-write" '
              f'style="{size}" '
              f'srcdoc="{html.escape(proto, quote=True)}"></iframe>')
-    return '<!-- wp:html -->' + NL + intro + NL + frame + NL + '<!-- /wp:html -->'
+    return '<!-- wp:html -->' + NL + style + intro + NL + frame + NL + '<!-- /wp:html -->'
 
 
 def publish(pg, apply):
