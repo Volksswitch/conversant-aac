@@ -303,6 +303,29 @@ export async function updateScenario(id, fields = {}) {
     await save();
 }
 
+/**
+ * A person was removed from About Me: scenarios linked to them lose the link (Ken,
+ * November 26 2026). The scenarios themselves stay, since the user may have written
+ * them; they now run without that person's About Me details. `keep` (optional) is
+ * the person ids that still exist, used by Restart to clear every stale link at once.
+ * Returns how many scenarios changed.
+ */
+export async function unlinkPerson(personId, keep = null) {
+    const m = ensureLoaded();
+    let n = 0;
+    for (const s of m.scenarios) {
+        if (!s.personId) continue;
+        const stale = keep ? !keep.includes(s.personId) : s.personId === personId;
+        if (stale) { s.personId = null; n++; }
+    }
+    if (n) await save();
+    return n;
+}
+
+export function linkedTo(personId) {
+    return ensureLoaded().scenarios.filter((s) => s.personId && s.personId === personId).length;
+}
+
 export async function removeScenario(id) {
     const m = ensureLoaded();
     m.scenarios = m.scenarios.filter((s) => s.id !== id);

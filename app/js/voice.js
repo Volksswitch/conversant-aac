@@ -418,6 +418,33 @@ export function hideSteer(text, personId = null) {
     return save();
 }
 
+/**
+ * Forget everything the user told the app about wording with one person: the
+ * instructions they typed to them, the ones they kept for them, and the offers they
+ * turned down (Ken, November 26 2026). Called when the person is removed from About
+ * Me, so nothing in "How I Sound" still names somebody who is gone. Instructions for
+ * everyone are untouched. Returns how many entries went.
+ */
+export function forgetPerson(personId) {
+    if (!personId) return 0;
+    const p = current();
+    const before = p.steers.length + p.kept.length + p.hidden.length;
+    p.steers = p.steers.filter((s) => s.personId !== personId);
+    p.kept = p.kept.filter((k) => k.personId !== personId);
+    p.hidden = p.hidden.filter((h) => !h.startsWith(personId + '|'));
+    const gone = before - (p.steers.length + p.kept.length + p.hidden.length);
+    if (gone) save();
+    return gone;
+}
+
+/** How many entries forgetPerson would remove, for the Remove warning. */
+export function countForPerson(personId) {
+    if (!personId) return 0;
+    const p = current();
+    return p.steers.filter((s) => s.personId === personId).length
+        + p.kept.filter((k) => k.personId === personId).length;
+}
+
 /** Every kept instruction. */
 export function keptSteers() { return current().kept.slice(); }
 

@@ -269,3 +269,17 @@ test('a scenario already in the list is recognized before the preview is shown',
     assert.equal(library.alreadyHave(again), true);
     assert.equal(library.alreadyHave({ ...again, details: 'something new' }), false);
 });
+
+// November 26 2026. A scenario linked to a removed person keeps its content and loses
+// the link; Restart clears every link to someone no longer in About Me.
+test('removing a person clears practice scenario links to them, keeping the scenarios', async () => {
+    const a = await library.addScenario({ title: 'With Sue', partnerPersona: 'Sue.', personId: 'sue' });
+    const b = await library.addScenario({ title: 'With Ann', partnerPersona: 'Ann.', personId: 'ann' });
+    assert.equal(library.linkedTo('sue'), 1);
+    assert.equal(await library.unlinkPerson('sue'), 1);
+    assert.equal(library.getScenario(a).personId, null);
+    assert.equal(library.getScenario(a).title, 'With Sue');
+    assert.equal(library.getScenario(b).personId, 'ann');
+    assert.equal(await library.unlinkPerson(null, []), 1);
+    assert.equal(library.getScenario(b).personId, null);
+});

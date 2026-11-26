@@ -667,3 +667,19 @@ test('keeping many instructions never quietly drops an earlier one', async () =>
     for (let i = 0; i < 30; i++) voice.keepSteer(`instruction number ${i}`);
     assert.equal(voice.keptSteers().length, 30);
 });
+
+// November 26 2026. Removing a person from About Me forgets the wording instructions
+// tied to them, and leaves the ones for everyone alone.
+test('forgetting a person removes their instructions and nobody else\'s', async () => {
+    await reset();
+    voice.keepSteer('Use short sentences.');
+    voice.keepSteer('Call her Mama.', { personId: 'p1', label: 'Mom' });
+    voice.keepSteer('Say yo.', { personId: 'p2', label: 'Dev' });
+    voice.recordSteer('keep it light', { personId: 'p1', label: 'Mom' });
+    voice.hideSteer('be gentle', 'p1');
+    assert.equal(voice.countForPerson('p1'), 2);
+    assert.equal(voice.forgetPerson('p1'), 3);
+    assert.deepEqual(voice.keptSteers().map((k) => k.text).sort(), ['Say yo.', 'Use short sentences.']);
+    assert.equal(voice.recentSteers().filter((s) => s.personId === 'p1').length, 0);
+    assert.equal(voice.forgetPerson('p1'), 0);
+});

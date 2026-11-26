@@ -25,6 +25,7 @@ import { SHAPE } from './express-bands.js';
 import { readDocumentFile } from './document-reader.js';
 import * as expressPanel from './express-panel.js';
 import * as voiceProfile from './voice.js';
+import * as practiceLibrary from './practice-library.js';
 import { SOUND_CHECK_ITEMS, VERDICT, questionFor } from './sound-check-items.js';
 import { REGISTER_DIMENSIONS, RELATIONSHIP_GOALS, goalText } from './partner-profile.js';
 import { refreshVoiceHarvest } from './voice-refresh.js';
@@ -520,6 +521,9 @@ async function onRestart() {
     await places.resetAll();
     await topics.resetAll();
     await voiceProfile.resetAll();
+    // Practice scenarios stay (the user may have written them) but lose their links to
+    // people who are now gone.
+    await practiceLibrary.unlinkPerson(null, rel.listPeople().map((p) => p.id));
     // The people, places and topics are gone, so their Express Panel buttons and Flex
     // lists go too, together with any left by an earlier Restart that missed them.
     expressPanel.removeOrphanedSituations({
@@ -883,16 +887,23 @@ function buildPersonCard(p) {
         el('button', { class: 'wv-btn wv-btn-link', text: 'Remove',
             onclick: async () => {
                 const owned = expressPanel.situationsFor({ partnerId: p.id });
+                const said = voiceProfile.countForPerson(p.id);
+                const linked = practiceLibrary.linkedTo(p.id);
                 const ok = await confirmDanger({
                     title: `Remove ${p.name || 'this person'}?`,
                     body: 'This removes them and your relationship from your profile.'
-                        + expressNote(owned) + ' This cannot be undone.',
+                        + expressNote(owned)
+                        + (said ? ` It also removes the ${said} wording instruction${said === 1 ? '' : 's'} you gave the app for talking with them.` : '')
+                        + (linked ? ` ${linked === 1 ? 'A practice scenario linked to them is' : linked + ' practice scenarios linked to them are'} kept, without their About Me details.` : '')
+                        + ' This cannot be undone.',
                     confirmLabel: 'Remove',
                     cancelLabel: 'Cancel'
                 });
                 if (!ok) return;
                 await rel.removePerson(p.id);
                 if (owned.keys.length || owned.buttons) expressPanel.removeSituationsFor({ partnerId: p.id });
+                voiceProfile.forgetPerson(p.id);
+                await practiceLibrary.unlinkPerson(p.id);
                 renderPeople();
             } })
     ]));
