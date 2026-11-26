@@ -22,6 +22,10 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.31": [
+    "New: a keyguard layout file. On the \"Keyguard Design\" tab, \"Save layout file\" saves a small file with just this screen's layout settings and measurements, to email to the person making your keyguard. Type your device's make and model in the box first. Nothing personal goes in it: no phrases, people, places, conversations or keys. \"Load layout file\" loads one someone sends back: it changes only how the screen is laid out, then restarts the app.",
+    "Fixed: on a new topic, choosing \"In depth\" and then tapping \"My Documents\" before saving switched the choice back to \"Brief\". It now comes back as you left it."
+  ],
   "0.15.30": [
     "\"Restart — clear all answers\" in About Me now also removes the Express Panel buttons and phrase lists of the people, places and topics it clears. Before, they stayed on the panel. If some are still left over from an earlier Restart, pressing Restart again removes them.",
     "Removing a person, place or topic in About Me now takes its button off the Express Panel straight away, and switches it off if it was on. Before, the button could stay on screen until the panel was next redrawn.",

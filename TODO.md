@@ -37,6 +37,13 @@ the one that quietly waits forever.
 
 ## Open
 
+### Keyguard layout file: manuals, and a first real request
+- **Raised 2026-11-26 (Ken, first request for a Conversant keyguard).** Built: "Keyguard layout file" on the Keyguard Design tab (save and load; keyguard-layout.js; checked in the real app by `node scripts/keyguard-layout/browser-check.mjs`).
+- **Still to do:**
+  1. **Manuals:** describe the section in all three User Manuals' Keyguard Design part (the device box, Save, Load, and the "matches" line), and how to email the file on each device.
+  2. **Try it with the person who asked**, then adjust from what happens, especially whether they can find the file to attach it (iPad: the Files app; a computer: the data folder or Downloads).
+- **Why not now:** documents wait for "sync docs" (Ken's timing), and the feature may still change after its first real use.
+
 ### Should a person or place shape the NATURE of a topic's responses?
 - **Raised 2026-11-26 (Ken).** For now, brief or in depth is an explicit setting on each topic, never inferred from who the user is with or where they are (CLAUDE.md, "everyday conversation with a topic's documents"). In future, the person or place might need to shape topic responses more fundamentally, for example operational answers for SLPs against evidence-based answers for academics. That distinction could also be a topic setting instead.
 - **Already true today, and different:** a group audience's "How I talk with them" (formality, length, warmth, a note such as "tie it to their clients") already adjusts the WORDING of in-depth answers. What is open is letting a person or place change WHAT KIND of answer is given.

@@ -111,6 +111,7 @@ const SHELL = [
   './js/learned-words-editor.js',
   './js/stt-rest.js',
   './js/platform.js',
+  './js/keyguard-layout.js',
   './js/express-editor.js',
   './js/control-phrases.js',
   './js/control-phrases-editor.js',

@@ -1402,6 +1402,24 @@
                              downloaded (the data folder there is private to the browser),
                              on desktop it is written to the chosen folder. -->
                     </div>
+                    <!-- The keyguard layout file (Ken, November 26 2026): only the
+                         settings that decide where the holes go, plus what this screen
+                         measured, so a person asking for a keyguard sends one file and
+                         nothing personal. Loading one applies only those settings.
+                         See keyguard-layout.js. -->
+                    <div class="setting-group" data-help="keyguardLayoutFile">
+                        <label>Keyguard layout file</label>
+                        <label for="deviceModelInput">Device make and model</label>
+                        <input type="text" id="deviceModelInput" placeholder="For example: iPad Air 11-inch (M2)" autocomplete="off" maxlength="120">
+                        <div class="profiles-row">
+                            <button id="saveLayoutFileBtn" type="button">Save layout file</button>
+                            <button id="loadLayoutFileBtn" type="button">Load layout file</button>
+                            <input id="loadLayoutFileInput" type="file" accept="application/json,.json" hidden>
+                        </div>
+                        <!-- Live status (Rule 14 permits it): after a layout file is
+                             loaded, whether this screen now matches the one it came from. -->
+                        <p id="layoutFileStatus" class="setting-status" role="status" aria-live="polite" hidden></p>
+                    </div>
                 </div>
                 <!-- Troubleshooting — where reporting a problem and reading back
                      what the app has recorded both live (Ken, August 7 2026).

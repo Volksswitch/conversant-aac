@@ -2772,6 +2772,58 @@ export function resetButtonSizing() {
     saveSettings(settings);
 }
 
+// --- The keyguard layout file (Ken, November 26 2026; keyguard-layout.js) ---------
+// The whole settings bundle, for keyguard-layout.pickLayoutSettings to take its few
+// keys from. A copy, so the caller cannot change what is stored.
+export function loadSettingsForLayout() {
+    return { ...loadSettings() };
+}
+
+// Apply layout settings from a keyguard layout file. Only the keys given are touched:
+// a value replaces this device's, null clears it (the reader then supplies the
+// default, which is what "never changed" meant on the other device). Every other
+// setting is left exactly as it is. keyguard-layout.parseLayoutFile has already
+// checked the values; settingValueOk is applied again here so nothing reaches storage
+// that the general rules refuse.
+export function applyLayoutSettings(incoming) {
+    const settings = loadSettings();
+    for (const [k, v] of Object.entries(incoming || {})) {
+        if (v === null) { delete settings[k]; continue; }
+        if (settingValueOk(k, v)) settings[k] = v;
+    }
+    saveSettings(settings);
+}
+
+// The device's make and model as the user typed it on the Keyguard Design tab. Its own
+// key, not a setting, so no profile or backup carries one device's name to another.
+const DEVICE_MODEL_KEY = 'aac_device_model';
+export function loadDeviceModel() {
+    try { return localStorage.getItem(DEVICE_MODEL_KEY) || ''; } catch { return ''; }
+}
+export function saveDeviceModel(text) {
+    try {
+        const t = String(text || '').slice(0, 120);
+        if (t.trim()) localStorage.setItem(DEVICE_MODEL_KEY, t);
+        else localStorage.removeItem(DEVICE_MODEL_KEY);
+    } catch { /* storage full or blocked: the box simply starts empty next time */ }
+}
+
+// Where the last loaded keyguard layout came from, so the Keyguard Design tab can say,
+// after the app restarts, whether this screen now matches theirs.
+const LAYOUT_SOURCE_KEY = 'aac_keyguard_layout_source';
+export function loadKeyguardLayoutSource() {
+    try {
+        const v = JSON.parse(localStorage.getItem(LAYOUT_SOURCE_KEY) || 'null');
+        return v && typeof v === 'object' && !Array.isArray(v) ? v : null;
+    } catch { return null; }
+}
+export function saveKeyguardLayoutSource(source) {
+    try {
+        if (source) localStorage.setItem(LAYOUT_SOURCE_KEY, JSON.stringify(source));
+        else localStorage.removeItem(LAYOUT_SOURCE_KEY);
+    } catch { /* not recorded: the tab just says nothing */ }
+}
+
 // --- Text-size scales (Transcript / Composer / Express Panel) ---
 // Unitless multipliers (1 = the design default) applied to each surface's base
 // font-size via a CSS variable. Independent of the button-size sliders (which
