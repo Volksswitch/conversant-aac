@@ -302,6 +302,41 @@ test('a person\'s situations and button can be found and removed together', asyn
     assert.ok(!after.context.some((x) => x.personId === 'sue'));
 });
 
+// November 26 2026. About Me's Restart left the buttons and Flex lists of people,
+// places and topics it had cleared. Everything tied to an id About Me no longer has
+// goes; a typed-in partner and its own lists stay, and so do the general lists.
+test('buttons and lists for people, places and topics no longer in About Me are removed', async () => {
+    const m = panel.getModel();
+    m.flex = {
+        [bands.flexKey('sue', bands.ANYPLACE)]: [{ id: 'f1', type: 'phrase', text: 'Hi Sue' }],
+        [bands.flexKey('ann', bands.ANYPLACE)]: [{ id: 'f2', type: 'phrase', text: 'Hi Ann' }],
+        [bands.flexKey(bands.ANYONE, 'clinic')]: [{ id: 'f3', type: 'phrase', text: 'Back again' }],
+        [bands.topicFlexKey('talk')]: [{ id: 'f4', type: 'phrase', text: 'Next question' }],
+        [bands.flexKey('c-typed', bands.ANYPLACE)]: [{ id: 'f5', type: 'phrase', text: 'Hey' }],
+        [bands.flexKey(bands.ANYONE, bands.ANYPLACE)]: [{ id: 'f6', type: 'phrase', text: 'Hello' }],
+    };
+    m.context = [
+        { id: 'c-sue', type: 'partner', personId: 'sue', name: 'Sue' },
+        { id: 'c-ann', type: 'partner', personId: 'ann', name: 'Ann' },
+        { id: 'c-typed', type: 'partner', name: 'Bob' },
+        { id: 'c-clinic', type: 'place', placeId: 'clinic', name: 'Clinic' },
+        { id: 'c-talk', type: 'topic', topicId: 'talk', name: 'Talk' },
+        { id: 'c-happy', type: 'feeling', name: 'Happy' },
+    ];
+    panel.setModel(m);
+    await settle();
+    const ids = { personIds: ['ann'], placeIds: [], topicIds: [] };
+    const found = panel.orphanedSituations(ids);
+    assert.equal(found.buttons, 3);
+    assert.equal(found.phrases, 3);
+    panel.removeOrphanedSituations(ids);
+    const after = panel.getModel();
+    assert.deepEqual(after.context.map((x) => x.id).sort(), ['c-ann', 'c-happy', 'c-typed']);
+    assert.deepEqual(Object.keys(after.flex).sort(), [
+        bands.flexKey(bands.ANYONE, bands.ANYPLACE), bands.flexKey('ann', bands.ANYPLACE),
+        bands.flexKey('c-typed', bands.ANYPLACE)].sort());
+});
+
 // CR-219. When a whole list goes, its sound files go with it - unless another button
 // still uses the same file.
 test('resetting a band deletes its sound files, keeping any still in use', async () => {

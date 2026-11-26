@@ -46,7 +46,7 @@ import {
     ALWAYS_DEFAULTS, CONTEXT_DEFAULTS, SEED_REVISION,
     ensureIds, ensureOrigin, markEdits, isUserAuthored, ORIGIN,
 } from './express-items.js';
-import { DEFAULT_SIZES, SHAPE, CONTEXT_FLOOR, sortContext, flexKey, parseFlexKey, topicFlexKey } from './express-bands.js';
+import { DEFAULT_SIZES, SHAPE, CONTEXT_FLOOR, sortContext, flexKey, parseFlexKey, topicFlexKey, ANYONE, ANYPLACE } from './express-bands.js';
 
 const FILE = 'express-panel.json';
 const CACHE_KEY = 'aac_express_items';
@@ -265,6 +265,13 @@ export function situationsFor({ partnerId = null, placeId = null, topicId = null
     return { keys, phrases, buttons };
 }
 
+// Tell the app the panel lost buttons, so it redraws and switches off any that were on.
+function announceRemoval() {
+    if (typeof window !== 'undefined' && window.dispatchEvent && typeof CustomEvent === 'function') {
+        window.dispatchEvent(new CustomEvent('aac-express-situations-removed'));
+    }
+}
+
 export function removeSituationsFor(ids = {}) {
     const { keys } = situationsFor(ids);
     const m = getModel();
@@ -275,6 +282,46 @@ export function removeSituationsFor(ids = {}) {
             || (ids.topicId && it.topicId === ids.topicId))));
     const out = setModel(m);
     releaseClips(before);
+    announceRemoval();
+    return out;
+}
+
+/*
+ * Everything that belongs to a person, place or topic no longer in About Me: their
+ * Context buttons and their Flex lists (Ken, November 26 2026). About Me's Restart
+ * cleared people, places and topics and left their buttons on the panel, still
+ * steering the AI with names About Me no longer had. Each argument is the ids that
+ * still exist. A partner button with no personId is one the user typed a name into,
+ * so it is kept, and so are its Flex lists, which are keyed by the button's own id.
+ */
+export function orphanedSituations({ personIds = [], placeIds = [], topicIds = [] } = {}) {
+    const m = getModel();
+    const people = new Set(personIds), placesOk = new Set(placeIds), topicsOk = new Set(topicIds);
+    const freeForm = new Set((m.context || []).filter((it) => it && it.type === 'partner' && !it.personId).map((it) => it.id));
+    const gone = (it) => it && ((it.personId && !people.has(it.personId))
+        || (it.placeId && !placesOk.has(it.placeId)) || (it.topicId && !topicsOk.has(it.topicId)));
+    const keys = Object.keys(m.flex || {}).filter((k) => {
+        const s = parseFlexKey(k);
+        if (s.topicId) return !topicsOk.has(s.topicId);
+        const badWho = s.partnerId !== ANYONE && !people.has(s.partnerId) && !freeForm.has(s.partnerId);
+        const badWhere = s.placeId !== ANYPLACE && !placesOk.has(s.placeId);
+        return badWho || badWhere;
+    });
+    const buttons = (m.context || []).filter(gone).length;
+    const phrases = keys.reduce((n, k) => n + (m.flex[k] || []).length, 0);
+    return { keys, buttons, phrases, gone };
+}
+
+export function removeOrphanedSituations(ids = {}) {
+    const { keys, buttons, gone } = orphanedSituations(ids);
+    if (!keys.length && !buttons) return getModel();
+    const m = getModel();
+    const before = keys.flatMap((k) => clipsIn(m.flex[k]));
+    for (const k of keys) delete m.flex[k];
+    m.context = (m.context || []).filter((it) => !gone(it));
+    const out = setModel(m);
+    releaseClips(before);
+    announceRemoval();
     return out;
 }
 

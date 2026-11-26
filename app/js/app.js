@@ -623,6 +623,15 @@ function initApp() {
         if (!(e && e.detail && e.detail.quiet)) ui.setTranscriptError(true);
     });
 
+    // About Me removed a person, place or topic, or Restart removed them all, and their
+    // Express Panel buttons went with them (Ken, November 26 2026). Without a redraw the
+    // panel kept showing the buttons until something else redrew it, and one that was
+    // switched on went on steering the AI.
+    window.addEventListener('aac-express-situations-removed', () => {
+        reconcileInfluencers();
+        renderExpressPanel();
+    });
+
     // Log the display metrics (and re-log on every viewport change) so we — and
     // beta testers — can see the real pixel box the app is running in. Started
     // first so the initial numbers are captured even if STT is unsupported.

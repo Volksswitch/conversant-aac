@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **"Restart — clear all answers" in About Me now also removes the Express Panel buttons and phrase lists of the people, places and topics it clears.** Before, they stayed on the panel. If some are still left over from an earlier Restart, pressing Restart again removes them.
+- **Removing a person, place or topic in About Me now takes its button off the Express Panel straight away**, and switches it off if it was on. Before, the button could stay on screen until the panel was next redrawn.
+
 ## Version 0.15.29
 
 - **In About Me, the answer for turning off joking replies now reads "No — keep my response options straight".** If you had already chosen it, it is still chosen.

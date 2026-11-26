@@ -510,7 +510,7 @@ function renderHome() {
 async function onRestart() {
     const ok = await confirmDanger({
         title: 'Clear everything?',
-        body: 'This permanently deletes every answer, all the people you have added, all the places and topics you have added, your goals for any conversation, and everything the app has learned about how you sound. This cannot be undone.',
+        body: 'This permanently deletes every answer, all the people you have added, all the places and topics you have added, your goals for any conversation, and everything the app has learned about how you sound. Their Express Panel buttons and phrase lists go too. This cannot be undone.',
         confirmLabel: 'Yes, clear it all',
         cancelLabel: 'Keep my answers'
     });
@@ -520,6 +520,13 @@ async function onRestart() {
     await places.resetAll();
     await topics.resetAll();
     await voiceProfile.resetAll();
+    // The people, places and topics are gone, so their Express Panel buttons and Flex
+    // lists go too, together with any left by an earlier Restart that missed them.
+    expressPanel.removeOrphanedSituations({
+        personIds: rel.listPeople().map((p) => p.id),
+        placeIds: places.listPlaces().map((p) => p.id),
+        topicIds: topics.listTopics().map((t) => t.id),
+    });
     renderHome();
 }
 
