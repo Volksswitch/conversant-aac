@@ -22,6 +22,11 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.29": [
+    "In About Me, the answer for turning off joking replies now reads \"No — keep my response options straight\". If you had already chosen it, it is still chosen.",
+    "With \"What the command buttons show\" set to words, the \"Ask them to repeat\" button now says \"What?\" instead of \"Pardon?\".",
+    "On a topic's form, \"Show only the short label\" is now a checkbox that stays put. It used to be a button that disappeared once tapped, so you couldn't see your choice or change your mind there, and it didn't appear at all on the next topic. Now every topic shows it, checked or not, and unchecking it puts your response options back the way you had them."
+  ],
   "0.15.28": [
     {
       "for": "ipad",
