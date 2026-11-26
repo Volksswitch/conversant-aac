@@ -38,7 +38,7 @@ the one that quietly waits forever.
 ## Open
 
 ### My Documents: update the talk guide, the manuals and video 3.11
-- **Raised 2026-11-26 (Ken: documents sit above topics in the hierarchy, so they are added, replaced and removed in a new About Me screen, "My Documents"; a topic only checks the ones it uses).** Built and tested in the app the same day, not yet released.
+- **Raised 2026-11-26 (Ken: documents belong to topics, so they are added, replaced and removed in "My Documents", the first row of the My Topics screen; a topic only checks the ones it uses. Restart asks separately before deleting documents).** Built and tested in the app the same day, not yet released.
 - **Still to do:**
   1. **"Taking Questions After a Talk" guide:** section 3 (adding documents on the topic form; now "My Documents", then check them on the topic) and section 6 ("Replace" on the topic's form; now in My Documents, which warns which topics use it). Removing a topic now asks about documents no other topic uses.
   2. **All three User Manuals, sections 4.8 and 5.8:** the same changes, plus the My Documents screen itself.

@@ -451,20 +451,6 @@ function renderHome() {
         el('div', { class: 'wv-chevron', text: '›' })
     ]));
 
-    // My Documents - what the topics draw on, kept once and shared (Ken, November 26 2026).
-    const docsMeta = el('div', { class: 'wv-module-meta',
-        text: 'The papers, pages and notes your topics\' answers come from' });
-    contentEl.append(el('button', { class: 'wv-module-row', onclick: () => renderDocuments() }, [
-        el('div', { class: 'wv-module-main' }, [
-            el('div', { class: 'wv-module-title', text: 'My Documents' }),
-            docsMeta,
-        ]),
-        el('div', { class: 'wv-chevron', text: '›' })
-    ]));
-    sourceMaterial.listSources().then((list) => {
-        if (list && list.length) docsMeta.textContent = `${list.length} ${list.length === 1 ? 'document' : 'documents'} your topics can use`;
-    }).catch(() => { /* no folder: keep the description */ });
-
     // Goals for any conversation - the third source of a conversation goal, after the
     // person and the place. Its own row rather than a section of People or Places,
     // because it is precisely the list that belongs to NEITHER of them.
@@ -523,9 +509,13 @@ function renderHome() {
 }
 
 async function onRestart() {
+    let docs = [];
+    try { docs = await sourceMaterial.listSources(); } catch { /* no folder: no documents */ }
     const ok = await confirmDanger({
         title: 'Clear everything?',
-        body: 'This permanently deletes every answer, all the people you have added, all the places and topics you have added, your goals for any conversation, and everything the app has learned about how you sound. Their Express Panel buttons and phrase lists go too. This cannot be undone.',
+        body: 'This permanently deletes every answer, all the people you have added, all the places and topics you have added, your goals for any conversation, and everything the app has learned about how you sound. Their Express Panel buttons and phrase lists go too.'
+            + (docs.length ? ' Your documents are kept; you will be asked about them separately.' : '')
+            + ' This cannot be undone.',
         confirmLabel: 'Yes, clear it all',
         cancelLabel: 'Keep my answers'
     });
@@ -545,6 +535,21 @@ async function onRestart() {
         placeIds: places.listPlaces().map((p) => p.id),
         topicIds: topics.listTopics().map((t) => t.id),
     });
+    // Documents are a SEPARATE choice (Ken, November 26 2026): a PDF or pasted text may
+    // exist only in the app's own folder, so clearing answers must not take them along.
+    // "Keep them" is the default.
+    if (docs.length) {
+        const one = docs.length === 1;
+        const del = await confirmDanger({
+            title: one ? `Also delete ${docs[0].title}?` : `Also delete your ${docs.length} documents?`,
+            body: `Your topics are gone, but ${one ? 'this document is' : 'these documents are'} still in My Documents. `
+                + `${one ? 'It' : 'They'} may be the only copy you have: a pasted text, or a PDF you no longer keep anywhere else. `
+                + 'Deleting cannot be undone.',
+            confirmLabel: one ? 'Delete document' : 'Delete documents',
+            cancelLabel: one ? 'Keep it' : 'Keep them',
+        });
+        if (del) for (const d of docs) await sourceMaterial.removeSource(d.id);
+    }
     renderHome();
 }
 
@@ -1773,6 +1778,21 @@ function renderTopics(editingId = null) {
         'Add the subjects you take questions on, such as a talk you give, and check the documents '
         + 'your answers should come from. Documents are added in My Documents. Put the topic\'s button on the Express Panel. When '
         + 'you tap it, each question you hear gets four answers drawn from those documents.' }));
+    // My Documents sits at the top of My Topics (Ken, November 26 2026): documents belong
+    // to the topics concept, so they are administered inside it, not beside it.
+    const docsMeta = el('div', { class: 'wv-module-meta',
+        text: 'The papers, pages and notes your topics\' answers come from' });
+    contentEl.append(el('button', { class: 'wv-module-row',
+        onclick: () => renderDocuments({ back: () => renderTopics(), backLabel: '‹ My Topics' }) }, [
+        el('div', { class: 'wv-module-main' }, [
+            el('div', { class: 'wv-module-title', text: 'My Documents' }),
+            docsMeta,
+        ]),
+        el('div', { class: 'wv-chevron', text: '›' })
+    ]));
+    sourceMaterial.listSources().then((list) => {
+        if (list && list.length) docsMeta.textContent = `${list.length} ${list.length === 1 ? 'document' : 'documents'} your topics can use`;
+    }).catch(() => { /* no folder: keep the description */ });
     for (const t of topics.listTopics()) {
         contentEl.append(editingId === t.id ? buildTopicForm(t) : buildTopicCard(t));
     }
@@ -1918,9 +1938,9 @@ async function offerToRemoveOrphanDocs(sourceIds, topicName) {
     }
 }
 
-function renderDocuments({ back = null, backLabel = '‹ About Me' } = {}) {
+function renderDocuments({ back = null, backLabel = '‹ My Topics' } = {}) {
     showDockKeyboard();
-    const goBack = back || renderHome;
+    const goBack = back || (() => renderTopics());
     contentEl.innerHTML = '';
     contentEl.scrollTop = 0;
     contentEl.append(el('button', { class: 'wv-back', text: backLabel, onclick: goBack }));
