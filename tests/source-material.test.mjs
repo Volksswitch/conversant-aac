@@ -26,11 +26,11 @@ function makeDir(name = '') {
             const rec = files.get(n);
             return {
                 kind: 'file', name: n,
-                async getFile() { return { size: rec.data.length, text: async () => rec.data }; },
+                async getFile() { return { size: rec.data.length, text: async () => rec.data, _data: rec.data }; },
                 async createWritable() {
                     let buf = '';
                     return {
-                        async write(chunk) { buf += typeof chunk === 'string' ? chunk : `<blob ${chunk.size}>`; },
+                        async write(chunk) { buf += typeof chunk === 'string' ? chunk : (chunk && typeof chunk._data === 'string' ? chunk._data : `<blob ${chunk.size}>`); },
                         async close() { rec.data = buf; },
                     };
                 },
@@ -64,10 +64,10 @@ const storage = await import('../app/js/storage.js');
 const src = await import('../app/js/source-material.js');
 
 const files = async () => {
-    const dir = await root.getDirectoryHandle('sources');
+    const dir = await root.getDirectoryHandle('documents');
     return [...dir._files.keys()].sort();
 };
-const fileText = async (name) => (await root.getDirectoryHandle('sources'))._files.get(name)?.data;
+const fileText = async (name) => (await root.getDirectoryHandle('documents'))._files.get(name)?.data;
 
 test('without a data folder, adding a document says why it cannot', async () => {
     await assert.rejects(src.addSource({ title: 'Paper', text: 'Words.' }), /Choose a data folder first/);
@@ -75,7 +75,7 @@ test('without a data folder, adding a document says why it cannot', async () => 
 
 test('the sources folder is made when the data folder connects', async () => {
     assert.equal(await storage.restoreDataFolder(), true);
-    assert.ok(root._dirs.has('sources'));
+    assert.ok(root._dirs.has('documents'));
 });
 
 let paperId;
@@ -154,4 +154,37 @@ test('a restore refuses a file name the app could not have written', async () =>
     assert.equal((await src.listSources()).length, before);
     assert.equal(src.isSafeBase('Fine name (2)'), true);
     assert.equal(src.isSafeBase('../x'), false);
+});
+
+// November 26 2026. The folder was renamed "sources" -> "documents". An older folder's
+// files are copied across, checked, then deleted; a file already in "documents" is never
+// overwritten, and the two lists of documents are merged.
+test('an older "sources" folder is moved into "documents", losing nothing', async () => {
+    for (const e of await src.listSources()) await src.removeSource(e.id);
+    const docs = await root.getDirectoryHandle('documents');
+    const write = async (dir, name, text) => {
+        const w = await (await dir.getFileHandle(name, { create: true })).createWritable();
+        await w.write(text); await w.close();
+    };
+    // Another device, already updated, added "Paper B" to the new folder.
+    await write(docs, 'Paper B.txt', 'B from the new folder');
+    await write(docs, 'index.json', JSON.stringify({ version: 1, documents: [{ id: 'b', title: 'Paper B', base: 'Paper B' }] }));
+    // This device's old folder holds "Paper A", and an older copy of "Paper B".
+    const old = await root.getDirectoryHandle('sources', { create: true });
+    await write(old, 'Paper A.txt', 'A from the old folder');
+    await write(old, 'Paper B.txt', 'B from the old folder');
+    await write(old, 'index.json', JSON.stringify({ version: 1, documents: [
+        { id: 'a', title: 'Paper A', base: 'Paper A' }, { id: 'b', title: 'Paper B', base: 'Paper B' }] }));
+
+    const r = await storage.moveOldDocumentsFolder();
+    assert.equal(await fileText('Paper A.txt'), 'A from the old folder');
+    assert.equal(await fileText('Paper B.txt'), 'B from the new folder', 'never overwritten');
+    assert.deepEqual((await src.listSources()).map((e) => e.id).sort(), ['a', 'b']);
+    assert.equal(r.kept, 1, 'the older Paper B is left where it was');
+    assert.ok(root._dirs.has('sources'), 'the old folder stays while it still holds a file');
+    assert.deepEqual([...old._files.keys()], ['Paper B.txt']);
+
+    old._files.delete('Paper B.txt');
+    await storage.moveOldDocumentsFolder();
+    assert.ok(!root._dirs.has('sources'), 'an empty old folder is removed');
 });

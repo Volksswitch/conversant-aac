@@ -1,9 +1,10 @@
 /*
  * SOURCE MATERIAL — the documents a question session draws on (Ken, November 9 2026).
  *
- * One folder in the data folder, `sources/`, with each document kept ONCE whatever uses
- * it. Places and people will point to documents by id, so replacing a document with a
- * newer version reaches every talk that uses it, and no talk can hold a stale copy.
+ * One folder in the data folder, `documents/` (`sources/` before November 26 2026), with
+ * each document kept ONCE whatever uses it. Topics point to documents by id, so replacing
+ * a document with a newer version reaches every topic that uses it, and no topic can
+ * hold a stale copy.
  *
  * What is in the folder:
  *   index.json        the list: [{ id, title, base, original, kind, added, updated, words, chars }]

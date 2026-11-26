@@ -128,7 +128,7 @@ test('connecting the data folder creates all five subfolders, before anything is
     // taken, and all five must be present regardless. (The fourth, audio, holds the
     // clips behind Express Panel sound buttons - September 14 2026.)
     const names = [...root._dirs.keys()].sort();
-    assert.deepEqual(names, ['audio', 'backups', 'conversations', 'settings', 'sources']);
+    assert.deepEqual(names, ['audio', 'backups', 'conversations', 'documents', 'settings']);
 });
 
 test('reconnecting a folder that already has the subfolders changes nothing', async () => {
@@ -141,7 +141,7 @@ test('reconnecting a folder that already has the subfolders changes nothing', as
 
     await storage.restoreDataFolder();
 
-    assert.deepEqual([...root._dirs.keys()].sort(), ['audio', 'backups', 'conversations', 'settings', 'sources']);
+    assert.deepEqual([...root._dirs.keys()].sort(), ['audio', 'backups', 'conversations', 'documents', 'settings']);
     const again = await root.getDirectoryHandle('backups');
     const fh = await again.getFileHandle('keep-me.json');
     assert.equal(await (await fh.getFile()).text(), '{"a":1}', 'reconnecting must not wipe a backup');

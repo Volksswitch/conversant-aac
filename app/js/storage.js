@@ -1270,9 +1270,12 @@ const AUDIO_DIR = 'audio';
  * Failure is deliberately silent. A folder granted read-only, or holding a FILE of
  * the same name, must not stop the app connecting to it - the app worked without
  * these folders before and still does. */
-// The documents behind question sessions (Ken, November 9 2026): one folder, each
-// document kept once, that places and people point to. See source-material.js.
-const SOURCES_DIR = 'sources';
+// The documents behind topics: one folder, each document kept once, that topics point
+// to. See source-material.js. Named "documents" to match "My Documents" on screen (Ken,
+// November 26 2026); it was "sources" until then, and moveOldDocumentsFolder() moves
+// an older folder's files across.
+const SOURCES_DIR = 'documents';
+const OLD_SOURCES_DIR = 'sources';
 const DATA_SUBFOLDERS = [SETTINGS_DIR, CONVERSATIONS_DIR, BACKUP_DIR, AUDIO_DIR, SOURCES_DIR];
 
 async function ensureDataSubfolders() {
@@ -1281,6 +1284,76 @@ async function ensureDataSubfolders() {
         try { await dirHandle.getDirectoryHandle(name, { create: true }); }
         catch { /* read-only, or a file of that name is in the way - not fatal */ }
     }
+    try { await moveOldDocumentsFolder(); }
+    catch (err) { logError('storage', 'moving the documents folder: ' + ((err && err.message) || err), null, { quiet: true }); }
+}
+
+/*
+ * Move the files of an older "sources" folder into "documents" (November 26 2026).
+ * A browser cannot rename a folder, so each file is COPIED, the copy is read back and
+ * its size checked, and only then is the old file deleted. A failure part-way leaves
+ * the old file where it was, and the next connection tries again, so nothing is lost.
+ *
+ * A file already in "documents" under the same name is never overwritten: another
+ * device on a newer version may have put it there. The list of documents (index.json)
+ * is the exception, because both lists can hold real documents: the entries the new
+ * list lacks are added to it. It is handled LAST, so a document is never listed before
+ * its file has arrived. The old folder is removed once it is empty.
+ */
+export async function moveOldDocumentsFolder() {
+    if (!dirHandle) return { moved: 0, kept: 0 };
+    let oldDir;
+    try { oldDir = await dirHandle.getDirectoryHandle(OLD_SOURCES_DIR); } catch { return { moved: 0, kept: 0 }; }
+    const newDir = await dirHandle.getDirectoryHandle(SOURCES_DIR, { create: true });
+    let moved = 0, kept = 0;
+    const names = [];
+    for await (const [name, h] of oldDir.entries()) if (h.kind === 'file') names.push(name);
+    const exists = async (n) => { try { await newDir.getFileHandle(n); return true; } catch { return false; } };
+
+    for (const name of names.filter((n) => n !== 'index.json')) {
+        if (await exists(name)) { kept++; continue; }
+        const file = await (await oldDir.getFileHandle(name)).getFile();
+        const fh = await newDir.getFileHandle(name, { create: true });
+        const w = await fh.createWritable();
+        await w.write(file);
+        await w.close();
+        const copy = await fh.getFile();
+        if (copy.size !== file.size) { kept++; continue; }
+        await oldDir.removeEntry(name);
+        moved++;
+    }
+
+    if (names.includes('index.json')) {
+        const oldText = await (await (await oldDir.getFileHandle('index.json')).getFile()).text();
+        let done = false;
+        if (!(await exists('index.json'))) {
+            const fh = await newDir.getFileHandle('index.json', { create: true });
+            const w = await fh.createWritable();
+            await w.write(oldText);
+            await w.close();
+            done = (await (await fh.getFile()).text()) === oldText;
+        } else {
+            // Both have a list: add the old list's documents the new one lacks.
+            const read = (t) => { try { const j = JSON.parse(t); return Array.isArray(j) ? j : (j && Array.isArray(j.documents) ? j.documents : []); } catch { return null; } };
+            const fh = await newDir.getFileHandle('index.json');
+            const newList = read(await (await fh.getFile()).text());
+            const oldList = read(oldText);
+            if (newList && oldList) {
+                const ids = new Set(newList.map((d) => d && d.id));
+                const merged = newList.concat(oldList.filter((d) => d && !ids.has(d.id)));
+                const w = await fh.createWritable();
+                await w.write(JSON.stringify({ version: 1, documents: merged }, null, 2));
+                await w.close();
+                done = true;
+            }
+        }
+        if (done) { await oldDir.removeEntry('index.json'); moved++; } else kept++;
+    }
+
+    let empty = true;
+    for await (const _ of oldDir.entries()) { empty = false; break; }
+    if (empty) { try { await dirHandle.removeEntry(OLD_SOURCES_DIR); } catch { /* leave it */ } }
+    return { moved, kept };
 }
 
 // True only for a real folder the user picked and can open. DEVICE (OPFS) is a
@@ -1446,7 +1519,7 @@ export async function listAudioFiles() {
 }
 
 // --- Source material (Ken, November 9 2026) ----------------------------------------
-// Plain file operations on <data folder>/sources/. What the files mean - the index, the
+// Plain file operations on <data folder>/documents/. What the files mean - the index, the
 // text beside each original, the names - is source-material.js's business; this only
 // reads and writes. Without a data folder there is nowhere to keep a document: a write
 // throws with a message the screen shows, and a read returns null.
@@ -1460,7 +1533,7 @@ async function getSourcesDir(create) {
     }
 }
 
-/* The sources folder itself, for a file picker to open IN. Fetch it BEFORE the tap,
+/* The documents folder itself, for a file picker to open IN. Fetch it BEFORE the tap,
  * like getBackupsDirHandle. */
 export async function getSourcesDirHandle() {
     return getSourcesDir(true);

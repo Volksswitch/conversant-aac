@@ -47,7 +47,9 @@ export const APP_FILES = [
 const MONTHLY_METRICS = /^metrics-\d{4}-\d{2}\.log$/;
 
 // The folders the app makes in a data folder (storage.js DATA_SUBFOLDERS).
-export const APP_FOLDERS = ['settings', 'conversations', 'backups', 'audio', 'sources'];
+// 'sources' is the documents folder's name before November 26 2026; a device that never
+// ran the move may still have one.
+export const APP_FOLDERS = ['settings', 'conversations', 'backups', 'audio', 'documents', 'sources'];
 
 // The databases the app opens, for a browser that cannot list them (indexedDB.databases()
 // is missing in some older browsers). Deleting one that does not exist does nothing.
@@ -70,6 +72,7 @@ export function isAppFileIn(folder, name, known = { audio: new Set(), sources: n
         case 'backups': return /^conversant-.*\.json$/i.test(name);
         case 'settings': return /\.json$/i.test(name);
         case 'audio': return known.audio.has(name);
+        case 'documents':
         case 'sources': return known.sources.has(name);
         default: return false;
     }
@@ -151,17 +154,19 @@ export async function deleteAppFilesFromFolder(folder, { env = globalThis } = {}
         const cached = env.localStorage && env.localStorage.getItem('aac_express_items');
         if (cached) collectAudioNames(JSON.parse(cached), known.audio);
     } catch { /* no copy, or not readable */ }
-    try {
-        const sourcesDir = await folder.getDirectoryHandle('sources');
-        const index = await readJson(sourcesDir, 'index.json');
-        const docs = index && Array.isArray(index.documents) ? index.documents : [];
-        for (const d of docs) {
-            if (d && typeof d.base === 'string' && d.base) {
-                known.sources.add(`${d.base}.txt`);
-                known.sources.add(`${d.base}.pdf`);
+    for (const docsFolder of ['documents', 'sources']) {
+        try {
+            const sourcesDir = await folder.getDirectoryHandle(docsFolder);
+            const index = await readJson(sourcesDir, 'index.json');
+            const docs = index && Array.isArray(index.documents) ? index.documents : [];
+            for (const d of docs) {
+                if (d && typeof d.base === 'string' && d.base) {
+                    known.sources.add(`${d.base}.txt`);
+                    known.sources.add(`${d.base}.pdf`);
+                }
             }
-        }
-    } catch { /* no documents folder */ }
+        } catch { /* no documents folder */ }
+    }
 
     for (const sub of APP_FOLDERS) {
         let dir;

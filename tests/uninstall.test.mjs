@@ -281,7 +281,9 @@ test('the folders this deletes are the folders the app makes', () => {
     const st = source('storage.js');
     const names = Object.fromEntries([...st.matchAll(/const ([A-Z_]+_DIR) = '([^']+)'/g)].map((m) => [m[1], m[2]]));
     const listed = st.match(/const DATA_SUBFOLDERS = \[([^\]]+)\]/)[1].split(',').map((s) => names[s.trim()]);
-    assert.deepEqual([...listed].sort(), [...un.APP_FOLDERS].sort());
+    // Plus the documents folder's name before November 26 2026, which a device may still have.
+    const old = st.match(/const OLD_SOURCES_DIR = '([^']+)'/)[1];
+    assert.deepEqual([...listed, old].sort(), [...un.APP_FOLDERS].sort());
 });
 
 test('the app’s own databases close when asked, so a delete is not held up', () => {
