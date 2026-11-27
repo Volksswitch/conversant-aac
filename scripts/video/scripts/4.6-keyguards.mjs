@@ -1,7 +1,8 @@
 // How-to video 4.6: keyguards.
 //
-// STAGED: the Keyguard Design tab, shown without generating a file (that writes
-// into a data folder, which this video does not have).
+// STAGED: the Keyguard Design tab, shown without saving a design (the video's screen
+// is not a real tablet, so the Save button stays unavailable). Rewritten November 27
+// 2026 for Your tablet and Save keyguard design.
 
 import { settingsTab, section } from '../helpers.mjs';
 
@@ -9,7 +10,7 @@ export default {
   id: '4.6-keyguards',
   title: 'Keyguards',
   trouble: [
-    "The keyguard's holes don't line up? The layout has changed since the openings were measured. Measure again, and have the keyguard remade.",
+    "The keyguard's holes don't line up? The layout has changed since the design was saved, or Conversant was not filling the screen. Save the design again, and have the keyguard remade.",
   ],
   steps: [
     { speaker: 'narrator', highlight: '#expressPanel',
@@ -21,15 +22,18 @@ export default {
       say: "Then open Settings," },
     { speaker: 'narrator', waitFor: '#settingsDialog[open]', highlight: settingsTab('keyguard'), press: true,
       say: "and Keyguard Design." },
+    { speaker: 'narrator', highlight: section('Your tablet'), press: true,
+      say: "Open Your tablet," },
+    { speaker: 'narrator', waitFor: '#tabletSelect', highlight: '#tabletSelect',
+      page: "In Settings, Keyguard Design, Your tablet, choose your tablet. If it isn't listed, measure the screen with a credit card.",
+      say: "and choose your tablet from the list. If it isn't there, choose the last item and measure the screen with a credit card." },
     { speaker: 'narrator', highlight: section('Spacing'), press: true,
-      say: "Open Spacing." },
+      say: "Then open Spacing." },
     { speaker: 'narrator', waitFor: '#appMarginSlider', highlight: '#appMarginSlider',
-      page: "In Settings, Keyguard Design, Screen edge margin leaves room around the edges, for a case that fits tightly.",
-      say: "If your tablet's case fits tightly around the screen, Screen edge margin leaves room around the edges for the keyguard to sit on." },
-    { speaker: 'narrator', highlight: section('Screen openings'), press: true,
-      say: "Then open Screen openings." },
-    { speaker: 'narrator', waitFor: '#generateOpeningsBtn', highlight: '#generateOpeningsBtn',
-      page: "Generate Screen Openings saves the exact position of every button to your data folder. Give it to whoever is designing your keyguard.",
-      say: "Generate Screen Openings measures where every button is, and saves it to your data folder. Give that file to whoever is designing your keyguard. {next}" },
+      page: "Screen edge margin leaves room around the edges, for a case that fits tightly. Each spacing setting shows its distance in millimeters.",
+      say: "If your tablet's case fits tightly around the screen, Screen edge margin leaves room around the edges for the keyguard to sit on. Each spacing setting shows the distance it sets, in millimeters." },
+    { speaker: 'narrator', highlight: '#saveKeyguardDesignBtn',
+      page: "With Conversant filling the screen, Save keyguard design saves a file the Volksswitch keyguard designer opens directly. Give it to whoever is designing your keyguard.",
+      say: "Make sure Conversant fills the screen, then tap Save keyguard design. It saves a file the Volksswitch keyguard designer opens directly. Give it to whoever is designing your keyguard. {next}" },
   ],
 };

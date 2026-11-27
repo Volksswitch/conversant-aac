@@ -49,7 +49,7 @@ import * as practiceLibrary from './practice-library.js';
 import * as practiceEditor from './practice-editor.js';
 import * as dataTransfer from './data-transfer.js';
 import * as platform from './platform.js';
-import * as keyguardLayout from './keyguard-layout.js';
+import * as keyguardDesign from './keyguard-design.js';
 import * as sttDeepgram from './stt-deepgram.js';
 import * as ttsDeepgram from './tts-deepgram.js';
 import * as ttsAzure from './tts-azure.js';
@@ -647,6 +647,8 @@ function initApp() {
             storage.logError('openai-retired', 'OpenAI speech settings were cleared; using this device instead', {}, { quiet: true });
         }
     } catch { /* never let a clean-up stop the app starting */ }
+    // The keyguard layout file was replaced by "Save keyguard design" (November 27 2026).
+    storage.retireKeyguardLayoutFile();
 
     // Can this environment actually capture the partner? platform.js answers from
     // MEASURED behavior, not feature detection — on iPadOS the API is present and
@@ -915,11 +917,6 @@ function initApp() {
     document.addEventListener('pointermove', onLayoutHover);
     wireLayoutHandles();
     refreshLayoutMode();
-    // Entering or leaving fullscreen changes whether a title-bar offset exists at
-    // all, so the keyguard field has to follow it — including when the user leaves
-    // by Esc, which never touches the setting.
-    document.addEventListener('fullscreenchange', reflectTitleBarNeed);
-    document.addEventListener('webkitfullscreenchange', reflectTitleBarNeed);
     // And entering fullscreen from inside Settings buries the panel under the whole
     // conversation screen until it is re-promoted — see repromoteSettingsOverFullscreen.
     document.addEventListener('fullscreenchange', repromoteSettingsOverFullscreen);
@@ -7255,6 +7252,7 @@ function applyScreenScale() {
     const root = document.documentElement.style;
     if (scale) root.setProperty('--handle-d', (10 / scale).toFixed(1) + 'px');
     else root.removeProperty('--handle-d');
+    reflectKeyguardDesignButton();
 }
 
 function setTabletStatus(text) {
@@ -7617,21 +7615,18 @@ function collectMainControls() {
     return out;
 }
 
-// Measure every opening on the conversation screen, as generateScreenOpenings
-// writes them. Shared with the keyguard layout file, which carries the same lines.
+// Measure every opening on the conversation screen, in screen pixels, for the
+// keyguard design file (saveKeyguardDesign).
 // The caller checks the zoom first: a zoomed page measures wrong.
 function measureScreenOpenings() {
-    // In real fullscreen the page viewport IS the screen, so there is nothing above
-    // it and the offset is necessarily 0 (Ken asked, August 3 2026). Taken from the
-    // browser rather than the field, because the field is the trap: someone who typed
-    // 32 for a windowed setup and later turned on "Use the whole screen" would emit a
-    // file with every opening 32px low — plausible-looking, and only discovered after
-    // the plastic is cut. Read the ACTUAL state, never the setting: the request can be
-    // refused, and Esc leaves fullscreen without touching the setting.
-    const titleBar = isReallyFullscreen()
-        ? 0
-        : Math.max(0, Math.round(Number(document.getElementById('titleBarHeightInput').value) || 0));
+    // The bar above the app is WORKED OUT, not typed (Ken, November 27 2026): the
+    // screen's height in the current orientation less the app's height. That is right
+    // when the app fills the screen or nothing sits below it - the only way a keyguard
+    // design works, and what the instructions say. In real fullscreen it comes out 0 by
+    // itself. A taskbar below the app would be counted as if it were above it.
     const dpr = window.devicePixelRatio || 1;
+    const titleBar = keyguardDesign.titleBarPx(screenDevicePxSize(), isLandscapeNow(),
+        Math.round(layoutVH() * dpr));
     const px = (n) => Math.round(n * dpr); // CSS px → device/screenshot px
 
     const controls = collectMainControls();
@@ -7649,232 +7644,84 @@ function measureScreenOpenings() {
 
     const text = lines.join('\n') + '\n';
 
-    // State the screenshot these coordinates assume. The openings are in device
-    // pixels, so they only line up over a screenshot at EXACTLY this size — and the
-    // commonest way a keyguard comes out misaligned is a screenshot that got
-    // resized on its way to the designer (mail clients shrink attached images by
-    // default), which scales the error with distance from the top-left corner and
-    // looks like the app measured wrong. Naming the expected size makes that
-    // checkable in seconds instead of after the plastic is cut.
-    const shotW = px(layoutVW());
-    const shotH = px(layoutVH()) + titleBar;
-    const expected = `Line these up over a screenshot ${shotW} × ${shotH} pixels — ` +
-        `if yours is a different size, it was resized and the openings will not fit. ` +
-        `(Measured ${layoutVW()} × ${layoutVH()} at ${dpr}×` +
-        `${titleBar ? `, plus ${titleBar}px for the bar above the app`
-            : (isReallyFullscreen() ? ', using the whole screen so there is no bar above the app'
-                                    : ', no bar above the app')}.)`;
-    return { lines, text, expected, titleBar, dpr };
+    return { lines, text, titleBar, dpr };
 }
 
-async function generateScreenOpenings() {
-    // WHERE THE FILE GOES depends on whether the user has a folder they can OPEN
-    // (Ken, July 31 2026). On desktop it is written to the picked data folder, as
-    // before. On a tablet there is no picker and the data folder is OPFS — private
-    // to the browser and invisible in the Files app — so writing there would report
-    // success for a file the user could never reach or email. The download path
-    // (share/save sheet → Files) is the only way off the device, so that is what a
-    // no-picker platform gets. Branch on the CAPABILITY, never on the user agent:
-    // iPadOS Safari reports itself as a Mac, so a UA test would send the one browser
-    // that needs the download down the folder path.
-    const canPickFolder = storage.supportsUserChosenFolder();
-    if (canPickFolder && !storage.hasDataFolder()) {
-        await showNotice({ title: 'Screen openings', body: 'Choose a data folder first (Settings → General → Data Folder), then try again.', buttonLabel: 'OK' });
-        return;
-    }
-    // A zoomed page measures wrong in BOTH directions at once — Safari scales
-    // devicePixelRatio with the zoom and reports the visual viewport — so the file
-    // would come out uniformly off and the error would only show up after the
-    // plastic was cut. Zoom is blocked (blockZoomGestures), but browser-level and
-    // OS accessibility zoom are outside our reach, so refuse rather than emit a
-    // plausible-looking wrong file.
+// --- Save keyguard design (Ken, November 27 2026; keyguard-design.js) -----------------
+// One file the Volksswitch keyguard designer opens directly: the tablet, the
+// orientation and every opening on the conversation screen, starting from Ken's
+// default designer settings. It replaces the Screen Openings file and the Conversant
+// layout file, both of which needed carrying into the designer by hand.
+
+function isLandscapeNow() {
+    return layoutVW() >= layoutVH();
+}
+
+// This screen in device pixels, { long, short }, snapped to a known size where the
+// browser's rounding leaves it a pixel or two out.
+function screenDevicePxSize() {
+    const s = screenDevicePx();
+    return { long: s.w, short: s.h };
+}
+
+// Can a design be saved right now? A tablet is chosen and matches this screen, or
+// the screen has been measured at the present display scaling. Same test as the
+// millimetre readings use, so the button and the readings never disagree.
+function keyguardDesignReady() {
+    return !!currentMmPerCssPx();
+}
+
+function reflectKeyguardDesignButton() {
+    const btn = document.getElementById('saveKeyguardDesignBtn');
+    if (btn) btn.disabled = !keyguardDesignReady();
+}
+
+async function saveKeyguardDesign() {
+    const title = 'Save keyguard design';
+    if (!keyguardDesignReady()) return;
+    // A zoomed page measures every opening wrong, and the error only shows once the
+    // plastic is cut. Zoom is blocked, but browser and system zoom are out of reach.
     if (Math.abs(zoomScale() - 1) > 0.01) {
-        await showNotice({ title: 'Screen openings', buttonLabel: 'OK',
+        await showNotice({ title, buttonLabel: 'OK',
             body: 'The screen is zoomed, so the measurements would be wrong. Reset the zoom to 100% and try again.' });
         return;
     }
-    const { lines, text, expected } = measureScreenOpenings();
-
-    if (!canPickFolder) {
-        dataTransfer.downloadText('Screen Openings.txt', text, 'text/plain');
-        // "Save to Files" is the iPad's wording; elsewhere the browser saves or shares
-        // the file its own way (CR-239).
-        const how = platform.isIOS()
-            ? 'Choose "Save to Files" in the sheet that appears, then attach it to an email.'
-            : 'Your browser will save or share the file. Keep it and attach it to an email.';
-        await showNotice({ title: 'Screen openings', buttonLabel: 'OK',
-            body: `"Screen Openings.txt" (${lines.length} controls) is ready to save. ${how} ${expected}` });
-        return;
-    }
-    // The app's own notice card rather than the browser's pop-up, like every other
-    // outcome in Settings (CR-239). The measuring above is already done, so the card
-    // cannot cover anything being measured.
+    const dpr = window.devicePixelRatio || 1;
+    const { lines } = measureScreenOpenings();
+    let design;
     try {
-        await storage.writeFile('Screen Openings.txt', text);
-        await showNotice({ title: 'Screen openings', buttonLabel: 'OK',
-            body: `Wrote "Screen Openings.txt" (${lines.length} controls) to the data folder. ${expected}` });
+        design = keyguardDesign.buildDesign({
+            choice: storage.loadScreenScale(),
+            landscape: isLandscapeNow(),
+            openings: lines,
+            screen: screenDevicePxSize(),
+            mmPerPx: currentMmPerCssPx() / dpr,
+        });
     } catch (err) {
-        await showNotice({ title: 'Screen openings', buttonLabel: 'OK',
-            body: `Could not write the file: ${err.message}` });
-    }
-}
-
-// --- The keyguard layout file (Ken, November 26 2026; keyguard-layout.js) ----------
-// One file a person asking for a keyguard can send: the layout settings, what this
-// screen measured, and the screen openings. Loading one applies only the layout
-// settings, so Ken can reproduce a user's screen on the same model of device, adjust
-// the spacing if no workable keyguard fits, and send it back.
-
-// What this device and window measure right now. Never applied on import; it is what
-// the other side compares against, because identical settings in a different-sized
-// window give different holes.
-function measureThisDevice(titleBar = 0) {
-    const sig = platform.deviceSignature();
-    return {
-        model: storage.loadDeviceModel(),
-        os: sig.os,
-        shell: sig.shell,
-        screen: sig.screen,
-        appWidth: layoutVW(),
-        appHeight: layoutVH(),
-        pixelRatio: Math.round((window.devicePixelRatio || 1) * 100) / 100,
-        wholeScreen: isReallyFullscreen(),
-        optionsPerCategory: storage.loadResponsesPerCategory(),
-        titleBar,
-        browser: String(navigator.userAgent || '').slice(0, 200),
-    };
-}
-
-async function saveLayoutFile() {
-    const modelInput = document.getElementById('deviceModelInput');
-    storage.saveDeviceModel(modelInput ? modelInput.value.trim() : '');
-    // Same refusal as Screen Openings: the file carries the openings, and a zoomed page
-    // measures every one of them wrong.
-    if (Math.abs(zoomScale() - 1) > 0.01) {
-        await showNotice({ title: 'Keyguard layout file', buttonLabel: 'OK',
-            body: 'The screen is zoomed, so the measurements would be wrong. Reset the zoom to 100% and try again.' });
+        await showNotice({ title, buttonLabel: 'OK', body: err.message || String(err) });
         return;
     }
-    const model = storage.loadDeviceModel();
+    // On a computer with a data folder it is written there; anywhere else (a tablet,
+    // whose data folder is private to the browser) it is offered as a download.
     const toFolder = storage.hasVisibleDataFolder();
-    if (!(await confirmNeutral({
-        title: 'Save this screen’s layout?',
-        body: 'This saves a small file with this screen’s layout settings and its ' +
-              'measurements, so someone can design a keyguard for it. Nothing personal ' +
-              'goes in it: no phrases, people, places, conversations or keys.' +
-              (model ? `\n\nDevice: ${model}`
-                     : '\n\nTip: type this device’s make and model in the box first, so ' +
-                       'the person making your keyguard knows what it is.') +
-              (toFolder ? '\n\nIt will be saved into your data folder.'
-                        : '\n\nYou will be asked where to save it.'),
-        confirmLabel: 'Save it',
-        cancelLabel: 'Not now',
-    }))) return;
-
-    const m = measureScreenOpenings();
-    const file = keyguardLayout.buildLayoutFile({
-        bundle: storage.loadSettingsForLayout(),
-        device: measureThisDevice(m.titleBar),
-        openings: m.lines,
-        screenshotSize: m.expected,
-        appVersion: APP_VERSION,
-    });
-    const text = JSON.stringify(file, null, 2) + '\n';
-    const name = `Conversant keyguard layout ${new Date().toISOString().slice(0, 10)}.json`;
     try {
         let where;
         if (toFolder) {
-            await storage.writeFile(name, text);
-            where = `"${name}" is in your data folder.`;
+            await storage.writeFile(design.fileName, design.json);
+            where = `"${design.fileName}" is in your data folder.`;
         } else {
-            dataTransfer.downloadText(name, text, 'application/json');
+            dataTransfer.downloadText(design.fileName, design.json, 'application/json');
             where = platform.isIOS()
                 ? `Choose "Save to Files" in the sheet that appears.`
                 : 'Your browser will save or share the file.';
         }
-        await showNotice({ title: 'Keyguard layout file', buttonLabel: 'OK',
-            body: `${where} Attach it to an email to the person making your keyguard.` });
+        await showNotice({ title, buttonLabel: 'OK',
+            body: `${where} It opens in the Volksswitch keyguard designer, or attach it to an email to the person making your keyguard.` });
     } catch (err) {
-        storage.logError('keyguard layout save', err.message || String(err));
-        await showNotice({ title: 'Keyguard layout file', buttonLabel: 'OK',
+        storage.logError('keyguard design save', err.message || String(err));
+        await showNotice({ title, buttonLabel: 'OK',
             body: `Could not save the file: ${err.message || 'unknown error'}` });
     }
-}
-
-async function loadLayoutFileText(text) {
-    let parsed;
-    try {
-        parsed = keyguardLayout.parseLayoutFile(text);
-    } catch (err) {
-        await showNotice({ title: 'Keyguard layout file', buttonLabel: 'OK', body: err.message });
-        return;
-    }
-    const theirs = parsed.device;
-    const from = theirs.model ? `“${theirs.model}”` : 'another device';
-    const changes = keyguardLayout.changedSettings(parsed.settings, storage.loadSettingsForLayout());
-    const compare = keyguardLayout.compareDevices(theirs, measureThisDevice());
-    let body = `This changes how this screen is laid out to match the layout from ${from}, ` +
-        'then restarts the app. Nothing else changes: your phrases, people, places, ' +
-        'conversations and other settings stay as they are.';
-    body += changes.length
-        ? `\n\nIt changes:\n\n• ${changes.join('\n• ')}`
-        : '\n\nThis screen already has the same layout settings.';
-    if (compare.lines.length) body += `\n\n${compare.lines.join('\n\n')}`;
-    if (parsed.rejected.length) {
-        body += `\n\n${parsed.rejected.length === 1 ? 'One setting in it is' : 'Some settings in it are'} ` +
-            `not usable and will stay as ${parsed.rejected.length === 1 ? 'it is' : 'they are'} here: ` +
-            `${parsed.rejected.join(', ')}.`;
-    }
-    body += '\n\nTo be able to go back, save your current settings as a profile first (General tab).';
-    if (!(await confirmDanger({ title: 'Load this keyguard layout?', body, confirmLabel: 'Load' }))) return;
-    storage.applyLayoutSettings(parsed.settings);
-    storage.saveKeyguardLayoutSource({
-        model: theirs.model || '',
-        appWidth: theirs.appWidth, appHeight: theirs.appHeight,
-        shell: theirs.shell, pixelRatio: theirs.pixelRatio,
-        optionsPerCategory: theirs.optionsPerCategory,
-        loadedAt: new Date().toISOString(),
-    });
-    location.reload();   // re-apply every setting exactly as at startup, as a profile load does
-}
-
-// After a layout file is loaded (and the app restarts), say on the Keyguard Design tab
-// whether this screen now matches the one it came from. Measured now, not at load
-// time: "Use the whole screen" only takes effect after Start.
-function renderLayoutFileStatus() {
-    const el = document.getElementById('layoutFileStatus');
-    if (!el) return;
-    const src = storage.loadKeyguardLayoutSource();
-    if (!src) { el.hidden = true; el.textContent = ''; return; }
-    const when = src.loadedAt ? new Date(src.loadedAt).toLocaleDateString() : '';
-    const from = src.model ? `“${src.model}”` : 'another device';
-    const { lines } = keyguardLayout.compareDevices(src, measureThisDevice());
-    el.textContent = `Layout loaded from ${from}${when ? ` on ${when}` : ''}. ${lines.join(' ')}`.trim();
-    el.hidden = false;
-}
-
-function wireLayoutFileControls() {
-    const modelInput = document.getElementById('deviceModelInput');
-    const fileInput = document.getElementById('loadLayoutFileInput');
-    if (!modelInput || !fileInput) return;
-    modelInput.value = storage.loadDeviceModel();
-    modelInput.onchange = () => storage.saveDeviceModel(modelInput.value.trim());
-    document.getElementById('saveLayoutFileBtn').onclick = saveLayoutFile;
-    // The picker needs the tap itself, so the button only opens it; the work happens
-    // on change.
-    document.getElementById('loadLayoutFileBtn').onclick = () => fileInput.click();
-    fileInput.onchange = async () => {
-        const f = fileInput.files && fileInput.files[0];
-        fileInput.value = '';   // so choosing the same file again still fires
-        if (!f) return;
-        try {
-            await loadLayoutFileText(await f.text());
-        } catch (err) {
-            storage.logError('keyguard layout load', err.message || String(err));
-            await showNotice({ title: 'Keyguard layout file', buttonLabel: 'OK',
-                body: `Could not read that file: ${err.message || 'unknown error'}` });
-        }
-    };
 }
 
 function initSettingsTabs() {
@@ -7994,19 +7841,6 @@ async function applyScreenOrientation() {
 
 function isReallyFullscreen() {
     return !!(document.fullscreenElement || document.webkitFullscreenElement);
-}
-
-// The keyguard title-bar offset only means something when there is chrome above the
-// page. Report which of the two situations the user is in, and take the field out of
-// play in the one where any value but 0 would be wrong.
-function reflectTitleBarNeed() {
-    const input = document.getElementById('titleBarHeightInput');
-    const status = document.getElementById('titleBarStatus');
-    if (!input || !status) return;
-    const fs = isReallyFullscreen();
-    input.disabled = fs;
-    status.hidden = !fs;
-    if (fs) status.textContent = 'Not needed right now — the app is using the whole screen, so there is no bar above it. Openings are measured from the top of the screen.';
 }
 
 // Toggling "Use the whole screen" from inside Settings painted the conversation
@@ -10181,7 +10015,6 @@ function openSettings() {
         if (fullscreenInput.checked) requestAppFullscreen();
         else exitAppFullscreen();
     };
-    reflectTitleBarNeed();
     updateFolderDisplay();
 
     // Reset to General tab (keep the roving tabindex + aria-selected in sync).
@@ -10473,9 +10306,7 @@ function openSettings() {
         updateStorageDurability(true);
     };
 
-    document.getElementById('generateOpeningsBtn').onclick = generateScreenOpenings;
-    wireLayoutFileControls();
-    renderLayoutFileStatus();
+    document.getElementById('saveKeyguardDesignBtn').onclick = saveKeyguardDesign;
 
     document.getElementById('testVoiceBtn').onclick = () => {
         tts.setVoice(voiceSelect.value || null);

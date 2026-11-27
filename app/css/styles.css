@@ -3866,6 +3866,10 @@ dialog select {
 }
 .spacing-distance:empty { display: none; }
 
+/* "Save keyguard design" sits on its own below the sections (Ken: it acts on the
+   whole tab), so it needs the space a section would have given it. */
+.keyguard-design-btn { margin-top: 0.8rem; }
+
 /* The credit-card measurement. The bar's WIDTH is the measurement, set from the slider
    in CSS pixels, so it must never be scaled by a percentage or a max-width. */
 .card-measure { margin-top: 0.6rem; }
