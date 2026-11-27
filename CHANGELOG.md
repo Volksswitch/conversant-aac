@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.15.32
+
 - **New: spacing in millimeters, for keyguard design.** On the "Keyguard Design" tab, choose your tablet under "Your tablet". Each spacing setting (Screen edge margin, Keyboard separation, Transcript separation and Button spacing) then shows the distance it sets in millimeters as you move it. The tablet list is the same one the Volksswitch keyguard designer uses. If your tablet isn't listed, choose "My tablet isn't listed" and measure the screen against a credit card. The round handles for dragging the layout borders are now their intended 10 mm across once the app knows your tablet.
 
 ## Version 0.15.31

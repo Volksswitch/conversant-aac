@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.15.32": [
+    "New: spacing in millimeters, for keyguard design. On the \"Keyguard Design\" tab, choose your tablet under \"Your tablet\". Each spacing setting (Screen edge margin, Keyboard separation, Transcript separation and Button spacing) then shows the distance it sets in millimeters as you move it. The tablet list is the same one the Volksswitch keyguard designer uses. If your tablet isn't listed, choose \"My tablet isn't listed\" and measure the screen against a credit card. The round handles for dragging the layout borders are now their intended 10 mm across once the app knows your tablet."
+  ],
   "0.15.31": [
     "New: a keyguard layout file. On the \"Keyguard Design\" tab, \"Save layout file\" saves a small file with just this screen's layout settings and measurements, to email to the person making your keyguard. Type your device's make and model in the box first. Nothing personal goes in it: no phrases, people, places, conversations or keys. \"Load layout file\" loads one someone sends back: it changes only how the screen is laid out, then restarts the app.",
     "Fixed: on a new topic, choosing \"In depth\" and then tapping \"My Documents\" before saving switched the choice back to \"Brief\". It now comes back as you left it."
