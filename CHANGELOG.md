@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.15.33
+
 - **New: "Save keyguard design" replaces the screen openings file and the layout file.** On the "Keyguard Design" tab, choose your tablet under "Your tablet", then tap "Save keyguard design". It saves a file that the Volksswitch keyguard designer opens directly, with your tablet, which way the screen is turned, and the position of every button already filled in. Have Conversant filling the screen when you save it (full screen, or an installed app with nothing below it), or the openings come out in the wrong place. "Generate Screen Openings", "Load layout file", and the "Title Bar Height" and "Device make and model" boxes are gone: the app now works out the space above it, and the tablet you choose names the device.
 
 ## Version 0.15.32
