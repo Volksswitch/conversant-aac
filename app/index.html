@@ -845,6 +845,7 @@
                                 <input type="range" id="buttonGapSlider" min="0" max="100" step="1" class="size-slider">
                                 <button type="button" class="slider-step" data-target="buttonGapSlider" data-step="4" aria-label="Wider">+</button>
                             </div>
+                            <p class="spacing-distance" data-distance-for="buttonGapSlider"></p>
                         </div>
                         <button id="resetSizingBtn" type="button" class="reset-sizing-btn">Reset spacing to default</button>
                     </div>
@@ -1355,6 +1356,30 @@
                     <div id="controlEditor"></div>
                 </div>
                 <div class="tab-panel" data-tab="keyguard">
+                    <!-- Which tablet this is, so the spacing settings can be shown in
+                         millimetres (Ken, November 27 2026). The list is the keyguard
+                         designer's own (tablets.js), so the millimetres here are the ones
+                         a keyguard is built with. A tablet not on the list is measured
+                         against a credit card instead. Filled in by app.js
+                         wireScreenScale; see screen-measure.js. -->
+                    <div class="setting-group" data-help="screenScale">
+                        <label>Your tablet</label>
+                        <label for="tabletSelect">Tablet model</label>
+                        <select id="tabletSelect"></select>
+                        <!-- Live status (Rule 14 permits it): whether this screen matches
+                             the chosen tablet, or what the measurement found. -->
+                        <p id="tabletStatus" class="setting-status" role="status" aria-live="polite" hidden></p>
+                        <div id="cardMeasure" class="card-measure" hidden>
+                            <label for="cardSlider">Make the bar as long as the short side of a credit card</label>
+                            <div id="cardBar" class="card-bar" aria-hidden="true"></div>
+                            <div class="slider-row">
+                                <button type="button" class="slider-step" data-target="cardSlider" data-step="-1" aria-label="Shorter">&minus;</button>
+                                <input type="range" id="cardSlider" min="120" max="520" step="1" class="size-slider">
+                                <button type="button" class="slider-step" data-target="cardSlider" data-step="1" aria-label="Longer">+</button>
+                            </div>
+                            <button id="saveCardBtn" type="button">Save this measurement</button>
+                        </div>
+                    </div>
                     <!-- The three spacing sliders are one decision — how much air sits
                          around each part of the app — so they are one section rather than
                          three headings each hiding a single slider (Ken, August 21 2026). -->
@@ -1367,6 +1392,7 @@
                                 <input type="range" id="appMarginSlider" min="0" max="100" step="1" class="size-slider">
                                 <button type="button" class="slider-step" data-target="appMarginSlider" data-step="4" aria-label="Larger margin">+</button>
                             </div>
+                            <p class="spacing-distance" data-distance-for="appMarginSlider"></p>
                         </div>
                         <div class="setting-item">
                             <label for="dockSepSlider">Keyboard separation</label>
@@ -1375,6 +1401,7 @@
                                 <input type="range" id="dockSepSlider" min="0" max="100" step="1" class="size-slider">
                                 <button type="button" class="slider-step" data-target="dockSepSlider" data-step="4" aria-label="More separation">+</button>
                             </div>
+                            <p class="spacing-distance" data-distance-for="dockSepSlider"></p>
                         </div>
                         <div class="setting-item">
                             <label for="transcriptSepSlider">Transcript separation</label>
@@ -1383,6 +1410,7 @@
                                 <input type="range" id="transcriptSepSlider" min="0" max="100" step="1" class="size-slider">
                                 <button type="button" class="slider-step" data-target="transcriptSepSlider" data-step="4" aria-label="More separation">+</button>
                             </div>
+                            <p class="spacing-distance" data-distance-for="transcriptSepSlider"></p>
                         </div>
                     </div>
                     <!-- Same shape as "Button sizes and gaps": Generate is a loose

@@ -112,6 +112,8 @@ const SHELL = [
   './js/stt-rest.js',
   './js/platform.js',
   './js/keyguard-layout.js',
+  './js/screen-measure.js',
+  './js/tablets.js',
   './js/express-editor.js',
   './js/control-phrases.js',
   './js/control-phrases-editor.js',

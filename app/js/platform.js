@@ -332,6 +332,9 @@ export const SCREEN_BOUND = {
     convLayout: 'how much of the screen each part gets',
     optionsArrangement: 'how the response options are arranged',
     screenOrientation: 'whether the screen is held upright or sideways',
+    // Which tablet this is, for showing spacing in millimetres (Ken, November 27 2026).
+    // It describes THIS screen, so a backup from another device must not bring it.
+    screenScale: 'which tablet this is',
 };
 
 /*

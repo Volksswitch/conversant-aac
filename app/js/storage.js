@@ -4,6 +4,8 @@ import * as platform from './platform.js';
 // keyboard-layouts.js imports nothing either.
 import { resolveLayoutId } from './keyboard-layouts.js';
 import { normalizeCount, normalizeNumber, normalizeScan } from './switch-settings.js';
+// screen-measure.js imports only tablets.js, which imports nothing.
+import { isValidChoice as isValidScreenChoice } from './screen-measure.js';
 
 const STORAGE_KEY = 'aac_settings';
 const IDB_NAME = 'aac-db';
@@ -805,6 +807,7 @@ const SETTING_RULES = {
     switchOn:            { label: 'Use switches', check: isBoolean },
     switchScan:          { label: 'Switch access settings', check: (v) => !!v && typeof v === 'object' && !Array.isArray(v) },
     convLayout:          { label: 'Screen layout', check: (v) => !!v && typeof v === 'object' && !Array.isArray(v) },
+    screenScale:         { label: 'Your tablet (for millimeters)', check: isValidScreenChoice },
     spokenWords:         { label: 'Words the voice gets wrong', check: (v) => Array.isArray(v)
         && v.length <= MAX_SPOKEN_WORDS
         && v.every((w) => w && typeof w === 'object'
@@ -2703,6 +2706,21 @@ export function loadLayoutUnlocked() {
 export function saveLayoutUnlocked(on) {
     const settings = loadSettings();
     settings.layoutUnlocked = !!on;
+    saveSettings(settings);
+}
+
+// Which tablet this is, or a card measurement of its screen (Ken, November 27 2026), so
+// the spacing settings can be shown in millimetres. See screen-measure.js. Bound to the
+// screen (platform.SCREEN_BOUND): a backup from another device must not bring its
+// tablet along. null means not chosen.
+export function loadScreenScale() {
+    const v = loadSettings().screenScale;
+    return isValidScreenChoice(v) ? (v || null) : null;
+}
+export function saveScreenScale(choice) {
+    const settings = loadSettings();
+    if (choice && isValidScreenChoice(choice)) settings.screenScale = choice;
+    else delete settings.screenScale;
     saveSettings(settings);
 }
 

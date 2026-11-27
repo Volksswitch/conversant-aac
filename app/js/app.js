@@ -85,6 +85,7 @@ import * as mouseExtras from './mouse-extras.js';
 import { makeTag } from './press-again.js';
 import { SWITCH_APP_SETTINGS, changedFromStart, methodsFor } from './switch-settings.js';
 import * as audioSession from './audio-session.js';
+import * as screenMeasure from './screen-measure.js';
 
 // The platform verdict on partner capture (see platform.js), or null when capture
 // is expected to work. Non-null drives the pre-start warning; it does NOT by
@@ -6708,6 +6709,10 @@ function applyConversationDockClasses() {
 // split, exact shrink curve, calibration of the slider's right end to the true
 // max-growth point) are reasonable choices here, to react to.
 const GAP_MAX_REM = 1.4;          // slider 0-100 -> 0..max rem
+// Set by applyButtonSizing: spacing slider id -> the CSS px it sets, for the
+// millimetre readings (see applyScreenScale). Declared up here so it exists before
+// anything can call applyButtonSizing.
+let spacingCssPx = {};
 const DOCKSEP_MAX_REM = 4.0;      // keyboard-separation slider 0–100 → 0..4rem
 // Screen-edge-margin slider 0–100 → 0..3rem. Smaller ceiling than the others on
 // purpose: this one is subtracted from BOTH sides of BOTH axes, so at 3rem it
@@ -6841,6 +6846,15 @@ function applyButtonSizing() {
     // bar, again without moving the command bar or the dock.
     const transcriptSep = lerp(storage.loadTranscriptSepPos(), 0, TRANSCRIPTSEP_MAX_REM) * rem;
     root.setProperty('--transcript-sep', transcriptSep.toFixed(2) + 'px');
+    // The exact distances just set, for the readings under the four spacing sliders.
+    // Taken from here rather than recomputed, so the reading is the number in use.
+    spacingCssPx = {
+        buttonGapSlider: gap,
+        appMarginSlider: appMargin,
+        dockSepSlider: dockSep,
+        transcriptSepSlider: transcriptSep,
+    };
+    applyScreenScale();
     const { rows, cols } = activeLayoutGrid();
     root.setProperty('--kbd-rows', String(rows));
     root.setProperty('--kbd-cols', String(cols));
@@ -7202,6 +7216,128 @@ function applyFontScales() {
     root.setProperty('--response-font-scale', String(storage.loadResponseFontScale()));
     root.setProperty('--hint-font-scale', String(storage.loadHintFontScale()));
     root.setProperty('--settings-font-scale', String(storage.loadSettingsFontScale()));
+}
+
+// --- Millimetres for the spacing settings (Ken, November 27 2026) ---------------
+// Every spacing setting sets one exact distance in CSS pixels; a keyguard is made in
+// millimetres. The app learns the size of a pixel from the tablet the user picks (the
+// keyguard designer's own list) or from a credit-card measurement. See screen-measure.js.
+
+const CARD_CHOICE = '__card';    // the "my tablet isn't listed" entry in the list
+
+/* This screen in device pixels: snapped to a known screen size where the browser's
+ * rounding leaves it a pixel or two out (screen-measure.screenSize). `exact` says
+ * whether the figure is certain. */
+function screenDevicePx() {
+    const s = screenMeasure.screenSize(window.screen?.width, window.screen?.height,
+        window.devicePixelRatio || 1);
+    return { w: s.long, h: s.short, exact: s.exact };
+}
+
+/** Millimetres per CSS pixel on this screen, or null when not known. */
+function currentMmPerCssPx() {
+    return screenMeasure.mmPerCssPx(storage.loadScreenScale(),
+        window.devicePixelRatio || 1, screenDevicePx());
+}
+
+/* Update the four readings and the size of the layout-border circles. Cheap; called
+ * from applyButtonSizing, which already runs on every change that could move a gap. */
+function applyScreenScale() {
+    const scale = currentMmPerCssPx();
+    const dpr = window.devicePixelRatio || 1;
+    for (const el of document.querySelectorAll('.spacing-distance')) {
+        const px = spacingCssPx[el.dataset.distanceFor];
+        el.textContent = px == null ? '' : screenMeasure.describeDistance(px, dpr, scale);
+    }
+    // The border circles are meant to be 10 mm, finger-sized. The CSS "10mm" is not a
+    // real millimetre (a quarter small on an iPad or a Surface), so once the real pixel
+    // size is known, use it.
+    const root = document.documentElement.style;
+    if (scale) root.setProperty('--handle-d', (10 / scale).toFixed(1) + 'px');
+    else root.removeProperty('--handle-d');
+}
+
+function setTabletStatus(text) {
+    const el = document.getElementById('tabletStatus');
+    if (!el) return;
+    el.textContent = text || '';
+    el.hidden = !text;
+}
+
+function reflectScreenScale() {
+    const choice = storage.loadScreenScale();
+    const select = document.getElementById('tabletSelect');
+    const card = document.getElementById('cardMeasure');
+    const dpr = window.devicePixelRatio || 1;
+    const showCard = select && select.value === CARD_CHOICE;
+    if (card) card.hidden = !showCard;
+    if (choice?.kind === 'tablet') {
+        const t = screenMeasure.findTablet(choice.name);
+        const here = screenDevicePx();
+        const m = screenMeasure.matchTablet(t, here);
+        const about = here.exact ? '' : 'about ';
+        if (!t) setTabletStatus('');
+        else if (m.ok) setTabletStatus(`This screen matches: ${t.long} × ${t.short} pixels.`);
+        else setTabletStatus(`This screen is ${about}${m.long} × ${m.short} pixels, but the ${t.name} is `
+            + `${t.long} × ${t.short}. Check the model, or choose "My tablet isn't listed" to measure the screen.`);
+    } else if (choice?.kind === 'card') {
+        setTabletStatus(screenMeasure.mmPerCssPx(choice, dpr)
+            ? 'Measured with a card.'
+            : 'The display size setting has changed since the screen was measured. Measure it again.');
+    } else {
+        setTabletStatus(showCard ? 'Not measured yet.' : '');
+    }
+    applyScreenScale();
+}
+
+function setCardBar(px) {
+    const bar = document.getElementById('cardBar');
+    if (bar) bar.style.width = Math.round(px) + 'px';
+}
+
+function wireScreenScale() {
+    const select = document.getElementById('tabletSelect');
+    const slider = document.getElementById('cardSlider');
+    const saveBtn = document.getElementById('saveCardBtn');
+    if (!select || !slider || !saveBtn) return;
+    if (!select.options.length) {
+        const add = (value, label) => {
+            const o = document.createElement('option');
+            o.value = value; o.textContent = label;
+            select.appendChild(o);
+        };
+        add('', 'Not chosen');
+        for (const t of screenMeasure.TABLETS) add(t.name, t.name);
+        add(CARD_CHOICE, "My tablet isn't listed (measure the screen)");
+    }
+    const choice = storage.loadScreenScale();
+    select.value = choice?.kind === 'tablet' && screenMeasure.findTablet(choice.name) ? choice.name
+        : choice?.kind === 'card' ? CARD_CHOICE : '';
+    // Start the bar at the last measurement, or at the CSS idea of a card, which is
+    // a sensible first guess on any screen.
+    const startPx = choice?.kind === 'card' && choice.mmPerCssPx > 0
+        ? screenMeasure.CARD_SHORT_MM / choice.mmPerCssPx
+        : screenMeasure.CARD_SHORT_MM * 96 / 25.4;
+    slider.value = String(Math.round(startPx));
+    setCardBar(Number(slider.value));
+
+    select.onchange = () => {
+        if (select.value === CARD_CHOICE) {
+            // Nothing is kept until Save; a tablet picked earlier no longer applies.
+            if (storage.loadScreenScale()?.kind !== 'card') storage.saveScreenScale(null);
+        } else if (select.value) {
+            storage.saveScreenScale({ kind: 'tablet', name: select.value });
+        } else {
+            storage.saveScreenScale(null);
+        }
+        reflectScreenScale();
+    };
+    slider.oninput = () => setCardBar(Number(slider.value));
+    saveBtn.onclick = () => {
+        storage.saveScreenScale(screenMeasure.cardChoice(Number(slider.value), window.devicePixelRatio || 1));
+        reflectScreenScale();
+    };
+    reflectScreenScale();
 }
 
 // The − / + buttons flanking each size slider nudge it by a small fixed step
@@ -11587,6 +11723,8 @@ function openSettings() {
         storage.saveTranscriptSepPos(Number(transcriptSepSlider.value));
         applyButtonSizing();
     };
+    // Which tablet this is, so the four spacing settings read in millimetres.
+    wireScreenScale();
 
     // Reset spacing to its default (Ken).
     document.getElementById('resetSizingBtn').onclick = () => {

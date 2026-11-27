@@ -1404,14 +1404,16 @@ body.conv-bottom #responsesSection {
  * old comment said touch "needs nothing" because the border is live along its whole
  * LENGTH; length was never the problem, thickness was.
  *
- * 10mm is written as 10mm on purpose. A CSS millimetre is defined against the reference
- * pixel, so it is the same physical size on any screen - which is the whole point of a
- * finger-sized target, and something a px value cannot promise. */
+ * ⚠ CORRECTED November 27 2026: this used to say a CSS millimetre is the same physical
+ * size on any screen. It is not - it is a fixed number of CSS pixels, and on an iPad or a
+ * Surface it comes out about a quarter small, so these "10mm" circles were about 7mm.
+ * --handle-d is now set by app.js (applyScreenScale) from the screen's real pixel size
+ * once the tablet is chosen or the screen measured; the CSS 10mm is only the fallback. */
 .layout-handle {
     position: fixed;
-    width: 10mm;
-    height: 10mm;
-    margin: -5mm 0 0 -5mm;      /* so left/top are the CENTRE of the circle */
+    width: var(--handle-d, 10mm);
+    height: var(--handle-d, 10mm);
+    margin: calc(var(--handle-d, 10mm) / -2) 0 0 calc(var(--handle-d, 10mm) / -2);  /* so left/top are the CENTRE of the circle */
     border-radius: 50%;
     /* TWO rings, and the outer one is doing accessibility work rather than decoration.
        The inner ring is the page colour, so the circle reads as a circle whether it sits
@@ -3851,6 +3853,29 @@ dialog select {
     color: var(--ink-faint);
     margin-top: 0.5rem;
     line-height: 1.4;
+}
+
+/* The distance a spacing slider sets, in millimetres and screen pixels (Ken, November
+   27 2026). A live reading, not help text (Rule 14 permits what is true right now).
+   Ink, not the faint hint grey: it is a number someone copies onto a keyguard design. */
+.spacing-distance {
+    font-size: 0.95rem;
+    color: var(--ink);
+    margin: 0.2rem 0 0;
+    font-variant-numeric: tabular-nums;
+}
+.spacing-distance:empty { display: none; }
+
+/* The credit-card measurement. The bar's WIDTH is the measurement, set from the slider
+   in CSS pixels, so it must never be scaled by a percentage or a max-width. */
+.card-measure { margin-top: 0.6rem; }
+.card-bar {
+    height: 2.2rem;
+    margin: 0.5rem 0;
+    background: var(--slot-initiative);
+    border-radius: 0;
+    flex: none;
+    max-width: none;
 }
 
 /* The paragraph at the top of a tab that says what the tab is for. It is PROSE to be
